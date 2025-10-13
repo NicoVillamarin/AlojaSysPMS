@@ -62,7 +62,6 @@ const Header: React.FC = () => {
       scale: 1,
       transition: {
         duration: 0.3,
-        ease: "easeOut",
         staggerChildren: 0.1
       }
     },
@@ -71,8 +70,7 @@ const Header: React.FC = () => {
       y: -20,
       scale: 0.95,
       transition: {
-        duration: 0.2,
-        ease: "easeIn"
+        duration: 0.2
       }
     }
   }
