@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Hotel, Calendar, CreditCard, BarChart3, Users, Settings, DollarSign, Clock, Shield } from 'lucide-react'
+import { Hotel, Calendar, CreditCard, BarChart3, Users, Settings, DollarSign } from 'lucide-react'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
 
 const Modules: React.FC = () => {
@@ -81,7 +81,7 @@ const Modules: React.FC = () => {
       opacity: 1,
       transition: {
         duration: 0.8,
-        ease: "easeOut"
+        ease: [0.25, 0.46, 0.45, 0.94]
       }
     }
   }
@@ -100,7 +100,7 @@ const Modules: React.FC = () => {
       rotateX: 0,
       transition: {
         duration: 0.8,
-        ease: "easeOut"
+        ease: [0.25, 0.46, 0.45, 0.94]
       }
     }
   }

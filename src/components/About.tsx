@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { CheckCircle, Target, Award, Hotel, Users, Calendar, CreditCard } from 'lucide-react'
+import { Hotel, Users, Calendar, CreditCard } from 'lucide-react'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
 
 const About: React.FC = () => {
@@ -54,7 +54,7 @@ const About: React.FC = () => {
       opacity: 1,
       transition: {
         duration: 0.8,
-        ease: "easeOut"
+        ease: [0.25, 0.46, 0.45, 0.94]
       }
     }
   }
@@ -66,7 +66,7 @@ const About: React.FC = () => {
       opacity: 1,
       transition: {
         duration: 0.8,
-        ease: "easeOut"
+        ease: [0.25, 0.46, 0.45, 0.94]
       }
     }
   }
@@ -78,7 +78,7 @@ const About: React.FC = () => {
       opacity: 1,
       transition: {
         duration: 0.6,
-        ease: "easeOut"
+        ease: [0.25, 0.46, 0.45, 0.94]
       }
     }
   }
@@ -90,7 +90,7 @@ const About: React.FC = () => {
       opacity: 1,
       transition: {
         duration: 0.6,
-        ease: "easeOut"
+        ease: [0.25, 0.46, 0.45, 0.94]
       }
     }
   }
