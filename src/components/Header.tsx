@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X } from 'lucide-react'
+import logoImg from '../assets/img/logo_new_alone.png'
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -99,7 +100,7 @@ const Header: React.FC = () => {
         >
           <div className="nav-logo">
             <motion.img 
-              src="/src/assets/img/logo_new_alone.png" 
+              src={logoImg} 
               alt="AlojaSys" 
               className="logo-img"
               whileHover={{ rotate: 5 }}
