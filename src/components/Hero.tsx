@@ -1,10 +1,13 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Play, Hotel, Calendar, BarChart3 } from 'lucide-react'
 import FloatingElements from './FloatingElements'
 import VideoBackground from './VideoBackground'
+import DemoModal from './DemoModal'
 
 const Hero: React.FC = () => {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false)
+  
   // Array de videos - usando los videos desde Cloudinary
   const videos = [
     'https://res.cloudinary.com/dsozqrhns/video/upload/v1760367161/videoUno_yqogk0.mp4', // videoUno
@@ -63,6 +66,7 @@ const Hero: React.FC = () => {
           <motion.div className="hero-buttons" variants={itemVariants}>
             <motion.button
               className="btn btn-primary"
+              onClick={() => setIsDemoModalOpen(true)}
               whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(212, 175, 55, 0.3)' }}
               whileTap={{ scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 300 }}
@@ -516,6 +520,12 @@ const Hero: React.FC = () => {
           </motion.div>
         </div>
       </div>
+      
+      {/* Modal de Demo */}
+      <DemoModal 
+        isOpen={isDemoModalOpen} 
+        onClose={() => setIsDemoModalOpen(false)} 
+      />
     </section>
   )
 }

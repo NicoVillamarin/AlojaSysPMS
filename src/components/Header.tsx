@@ -5,15 +5,47 @@ import { Menu, X } from 'lucide-react'
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [activeSection, setActiveSection] = useState('inicio')
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen)
   }
 
+  // Función para scroll suave a una sección
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId)
+    if (element) {
+      const headerHeight = 80 // Altura del header
+      const elementPosition = element.offsetTop - headerHeight
+      
+      window.scrollTo({
+        top: elementPosition,
+        behavior: 'smooth'
+      })
+    }
+    setIsMenuOpen(false) // Cerrar el menú móvil después del click
+  }
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50)
+      
+      // Detectar sección activa
+      const sections = ['inicio', 'caracteristicas', 'modulos', 'acerca', 'contacto']
+      const scrollPosition = window.scrollY + 100
+
+      for (const section of sections) {
+        const element = document.getElementById(section)
+        if (element) {
+          const { offsetTop, offsetHeight } = element
+          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+            setActiveSection(section)
+            break
+          }
+        }
+      }
     }
+    
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
@@ -81,6 +113,51 @@ const Header: React.FC = () => {
           </div>
         </motion.div>
         
+        {/* Menú de escritorio */}
+        <div className="nav-menu-desktop">
+          <motion.button 
+            onClick={() => scrollToSection('inicio')}
+            className={`nav-link ${activeSection === 'inicio' ? 'active' : ''}`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Inicio
+          </motion.button>
+          <motion.button 
+            onClick={() => scrollToSection('caracteristicas')}
+            className={`nav-link ${activeSection === 'caracteristicas' ? 'active' : ''}`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Características
+          </motion.button>
+          <motion.button 
+            onClick={() => scrollToSection('modulos')}
+            className={`nav-link ${activeSection === 'modulos' ? 'active' : ''}`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Módulos
+          </motion.button>
+          <motion.button 
+            onClick={() => scrollToSection('acerca')}
+            className={`nav-link ${activeSection === 'acerca' ? 'active' : ''}`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Acerca de
+          </motion.button>
+          <motion.button 
+            onClick={() => scrollToSection('contacto')}
+            className={`nav-link ${activeSection === 'contacto' ? 'active' : ''}`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Contacto
+          </motion.button>
+        </div>
+
+        {/* Menú móvil */}
         <AnimatePresence>
           {isMenuOpen && (
             <motion.div 
@@ -90,21 +167,51 @@ const Header: React.FC = () => {
               animate="visible"
               exit="exit"
             >
-              <motion.a href="#inicio" className="nav-link" variants={linkVariants}>
+              <motion.button 
+                onClick={() => scrollToSection('inicio')}
+                className={`nav-link ${activeSection === 'inicio' ? 'active' : ''}`}
+                variants={linkVariants}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 Inicio
-              </motion.a>
-              <motion.a href="#caracteristicas" className="nav-link" variants={linkVariants}>
+              </motion.button>
+              <motion.button 
+                onClick={() => scrollToSection('caracteristicas')}
+                className={`nav-link ${activeSection === 'caracteristicas' ? 'active' : ''}`}
+                variants={linkVariants}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 Características
-              </motion.a>
-              <motion.a href="#modulos" className="nav-link" variants={linkVariants}>
+              </motion.button>
+              <motion.button 
+                onClick={() => scrollToSection('modulos')}
+                className={`nav-link ${activeSection === 'modulos' ? 'active' : ''}`}
+                variants={linkVariants}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 Módulos
-              </motion.a>
-              <motion.a href="#acerca" className="nav-link" variants={linkVariants}>
+              </motion.button>
+              <motion.button 
+                onClick={() => scrollToSection('acerca')}
+                className={`nav-link ${activeSection === 'acerca' ? 'active' : ''}`}
+                variants={linkVariants}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 Acerca de
-              </motion.a>
-              <motion.a href="#contacto" className="nav-link" variants={linkVariants}>
+              </motion.button>
+              <motion.button 
+                onClick={() => scrollToSection('contacto')}
+                className={`nav-link ${activeSection === 'contacto' ? 'active' : ''}`}
+                variants={linkVariants}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
                 Contacto
-              </motion.a>
+              </motion.button>
             </motion.div>
           )}
         </AnimatePresence>
