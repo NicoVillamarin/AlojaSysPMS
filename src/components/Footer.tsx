@@ -1,5 +1,5 @@
 import React from 'react'
-import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone } from 'lucide-react'
+import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from 'lucide-react'
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear()
@@ -62,14 +62,18 @@ const Footer: React.FC = () => {
             <div className="footer-contact">
               <div className="footer-contact-item">
                 <Mail size={16} />
-                <span>info@alojasys.com</span>
+                <span>villamarin.nico@gmail.com</span>
               </div>
               <div className="footer-contact-item">
                 <Phone size={16} />
-                <span>+54 11 1234-5678</span>
+                <span>+54 223 697 6929</span>
               </div>
               <div className="footer-contact-item">
-                <span>Av. Corrientes 1234, Buenos Aires</span>
+                <MapPin size={16} />
+                <span>Roque Saenz Peña 1620</span>
+              </div>
+              <div className="footer-contact-item">
+              <span>Mar del Plata, Buenos Aires, Argentina</span>
               </div>
             </div>
           </div>

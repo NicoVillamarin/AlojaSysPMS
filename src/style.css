@@ -353,6 +353,37 @@ body {
   color: var(--accent-color);
 }
 
+.hero-slogan {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex-wrap: wrap;
+}
+
+.slogan-brand {
+  color: var(--primary-color);
+  font-weight: 700;
+  font-size: 1.6rem;
+}
+
+.slogan-separator {
+  color: var(--accent-color);
+  font-weight: 300;
+  font-size: 1.8rem;
+  margin: 0 0.25rem;
+}
+
+.slogan-text {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-weight: 500;
+}
+
 .hero-description {
   font-size: 1.25rem;
   margin-bottom: 2rem;
@@ -915,33 +946,184 @@ body {
 }
 
 .stats-title {
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 2rem;
   text-align: center;
+  position: relative;
+}
+
+.stats-title::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: var(--accent-color);
+  border-radius: 2px;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
+  gap: 2rem;
+  position: relative;
 }
 
 .stat-item {
   text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  position: relative;
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+  border-radius: 20px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stat-card:hover::before {
+  opacity: 1;
+}
+
+.stat-icon-wrapper {
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-color);
+  color: white;
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-icon::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+  transform: rotate(45deg);
+  transition: all 0.6s ease;
+  opacity: 0;
+}
+
+.stat-card:hover .stat-icon::before {
+  animation: shimmer 1.5s ease-in-out;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateX(100%) translateY(100%) rotate(45deg); opacity: 0; }
 }
 
 .stat-number {
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: 700;
   color: var(--primary-color);
   margin-bottom: 0.5rem;
+  position: relative;
+  z-index: 2;
+  line-height: 1;
 }
 
 .stat-label {
   color: var(--text-secondary);
-  font-size: 0.875rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  position: relative;
+  z-index: 2;
+}
+
+.stat-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.stat-card:hover .stat-glow {
+  opacity: 1;
+}
+
+/* Efectos sutiles de color para cada tarjeta */
+.stat-card.from-blue-50:hover {
+  background: #f8fafc;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.stat-card.from-green-50:hover {
+  background: #f0fdf4;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.stat-card.from-purple-50:hover {
+  background: #faf5ff;
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.stat-card.from-orange-50:hover {
+  background: #fff7ed;
+  border-color: rgba(249, 115, 22, 0.3);
+}
+
+/* Efectos hover sutiles */
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  border-color: var(--accent-color);
+}
+
+.stat-card:hover .stat-icon {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
+}
+
+.stat-card:hover .stat-number {
+  color: var(--accent-color);
 }
 
 /* Contact Section */
@@ -1712,6 +1894,23 @@ body {
     font-size: 2.5rem;
   }
 
+  .hero-slogan {
+    font-size: 1.3rem;
+    gap: 0.5rem;
+  }
+
+  .slogan-brand {
+    font-size: 1.4rem;
+  }
+
+  .slogan-separator {
+    font-size: 1.6rem;
+  }
+
+  .slogan-text {
+    font-size: 1.2rem;
+  }
+
   .floating-bubbles-container {
     position: relative;
     height: 300px;
@@ -1765,6 +1964,29 @@ body {
 
   .stats-grid {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .stats-title {
+    font-size: 1.6rem;
+  }
+
+  .stat-card {
+    padding: 1.5rem 1rem;
+    min-height: 130px;
+  }
+
+  .stat-icon {
+    width: 45px;
+    height: 45px;
+  }
+
+  .stat-number {
+    font-size: 2rem;
+  }
+
+  .stat-label {
+    font-size: 0.85rem;
   }
 
   .footer-bottom {
@@ -1776,6 +1998,47 @@ body {
 @media (max-width: 480px) {
   .hero-title {
     font-size: 2rem;
+  }
+
+  .hero-slogan {
+    font-size: 1.2rem;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+
+  .slogan-brand {
+    font-size: 1.3rem;
+  }
+
+  .slogan-separator {
+    font-size: 1.5rem;
+  }
+
+  .slogan-text {
+    font-size: 1.1rem;
+  }
+
+  .stats-title {
+    font-size: 1.5rem;
+  }
+
+  .stat-card {
+    padding: 1.25rem 0.75rem;
+    min-height: 120px;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .stat-number {
+    font-size: 1.8rem;
+  }
+
+  .stat-label {
+    font-size: 0.8rem;
   }
 
   .hero-buttons {

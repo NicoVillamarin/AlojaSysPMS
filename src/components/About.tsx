@@ -1,16 +1,40 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Hotel, Users, Calendar, CreditCard } from 'lucide-react'
+import { Hotel, Users, Calendar, CreditCard, TrendingUp, Shield, Zap } from 'lucide-react'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
 
 const About: React.FC = () => {
   const { ref, isInView } = useScrollAnimation()
 
   const stats = [
-    { number: "100+", label: "Hoteles gestionados" },
-    { number: "50,000+", label: "Reservas procesadas" },
-    { number: "99.9%", label: "Tiempo de actividad" },
-    { number: "24/7", label: "Soporte disponible" }
+    { 
+      number: "100+", 
+      label: "Hoteles gestionados", 
+      icon: <Hotel size={32} />,
+      color: "from-blue-500 to-blue-600",
+      bgColor: "from-blue-50 to-blue-100"
+    },
+    { 
+      number: "50,000+", 
+      label: "Reservas procesadas", 
+      icon: <TrendingUp size={32} />,
+      color: "from-green-500 to-green-600",
+      bgColor: "from-green-50 to-green-100"
+    },
+    { 
+      number: "99.9%", 
+      label: "Tiempo de actividad", 
+      icon: <Shield size={32} />,
+      color: "from-purple-500 to-purple-600",
+      bgColor: "from-purple-50 to-purple-100"
+    },
+    { 
+      number: "24/7", 
+      label: "Soporte disponible", 
+      icon: <Zap size={32} />,
+      color: "from-orange-500 to-orange-600",
+      bgColor: "from-orange-50 to-orange-100"
+    }
   ]
 
   const benefits = [
@@ -191,28 +215,52 @@ const About: React.FC = () => {
               {stats.map((stat, index) => (
                 <motion.div 
                   key={index} 
-                  className="stat-item"
+                  className={`stat-item stat-card ${stat.bgColor}`}
                   variants={statVariants}
                   whileHover={{ 
-                    scale: 1.05,
-                    y: -5
+                    scale: 1.02,
+                    y: -3
                   }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >
                   <motion.div 
-                    className="stat-number"
-                    initial={{ scale: 0 }}
-                    animate={isInView ? { scale: 1 } : { scale: 0 }}
+                    className="stat-icon-wrapper"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={isInView ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
                     transition={{ 
-                      duration: 0.6, 
-                      delay: 1 + index * 0.1,
-                      type: "spring",
-                      stiffness: 200
+                      duration: 0.5, 
+                      delay: 0.5 + index * 0.1
+                    }}
+                  >
+                    <div className={`stat-icon ${stat.color}`}>
+                      {stat.icon}
+                    </div>
+                  </motion.div>
+                  
+                  <motion.div 
+                    className="stat-number"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+                    transition={{ 
+                      duration: 0.4, 
+                      delay: 0.7 + index * 0.1
                     }}
                   >
                     {stat.number}
                   </motion.div>
-                  <div className="stat-label">{stat.label}</div>
+                  
+                  <motion.div 
+                    className="stat-label"
+                    initial={{ opacity: 0 }}
+                    animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+                    transition={{ 
+                      duration: 0.3, 
+                      delay: 0.9 + index * 0.1
+                    }}
+                  >
+                    {stat.label}
+                  </motion.div>
+                  
                 </motion.div>
               ))}
             </motion.div>

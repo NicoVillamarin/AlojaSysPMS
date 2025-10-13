@@ -58,6 +58,16 @@ const Hero: React.FC = () => {
             </motion.span>
           </motion.h1>
 
+          <motion.div 
+            className="hero-slogan"
+            variants={itemVariants}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2, duration: 0.8 }}
+          >
+            <span className="slogan-text">Simplificá la gestión, potenciá tu hotel.</span>
+          </motion.div>
+
           <motion.p className="hero-description" variants={itemVariants}>
             Administra tu hotel de manera digital y eficiente. Gestiona reservas, habitaciones, 
             pagos y reportes desde una sola plataforma moderna y fácil de usar.
