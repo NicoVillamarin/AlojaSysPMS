@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Hotel, Calendar, CreditCard, BarChart3, Users, Settings, Shield, Clock } from 'lucide-react'
+import { Hotel, Calendar, CreditCard, BarChart3 } from 'lucide-react'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
 
 const Features: React.FC = () => {

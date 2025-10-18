@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { CheckCircle, Clock, Target, Zap } from 'lucide-react'
+import { CheckCircle } from 'lucide-react'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
 
 const Roadmap: React.FC = () => {
@@ -84,34 +84,6 @@ const Roadmap: React.FC = () => {
     }
   }
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.3
-      }
-    }
-  }
-
-  const phaseVariants = {
-    hidden: { 
-      y: 80, 
-      opacity: 0,
-      scale: 0.9,
-      rotateX: -10
-    },
-    visible: {
-      y: 0,
-      opacity: 1,
-      scale: 1,
-      rotateX: 0,
-      transition: {
-        duration: 0.8
-      }
-    }
-  }
 
   const cardVariants = {
     hidden: { 
@@ -129,20 +101,6 @@ const Roadmap: React.FC = () => {
     }
   }
 
-  const featureVariants = {
-    hidden: { 
-      x: -20, 
-      opacity: 0 
-    },
-    visible: {
-      x: 0,
-      opacity: 1,
-      transition: {
-        duration: 0.4,
-        staggerChildren: 0.1
-      }
-    }
-  }
 
   const commitmentVariants = {
     hidden: { opacity: 0, y: 50 },
