@@ -2109,6 +2109,11 @@ body {
   margin: 0;
 }
 
+  /* Ocultar burbujas flotantes en móviles */
+  .floating-bubbles-container {
+    display: none;
+  }
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .about-tools {
@@ -2641,41 +2646,110 @@ body {
 /* Media queries para responsive */
 @media (max-width: 768px) {
   .roadmap {
-    padding: 4rem 0;
+    padding: 3rem 0;
   }
 
   .roadmap-container {
-    padding: 0 1rem;
+    padding: 0 1.5rem;
+  }
+
+  .roadmap-header {
+    margin-bottom: 2rem;
   }
 
   .roadmap-title {
-    font-size: 2.25rem;
+    font-size: 2rem;
+    margin-bottom: 1rem;
   }
 
   .roadmap-subtitle {
-    font-size: 1.125rem;
+    font-size: 1rem;
+    margin-bottom: 0;
   }
 
-  .roadmap-card {
-    width: 100% !important;
-    margin: 0 !important;
+  /* Timeline responsive */
+  .roadmap-timeline {
+    max-width: 100%;
   }
-  
-  .roadmap-card ul {
+
+  .roadmap-timeline::before {
+    left: 20px !important;
+    width: 2px !important;
+  }
+
+  .roadmap-phase {
+    margin-bottom: 2rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .roadmap-phase-left,
+  .roadmap-phase-right {
+    justify-content: flex-start;
+  }
+
+  .roadmap-phase-content {
+    width: calc(100% - 60px) !important;
+    margin: 0 0 0 50px !important;
+    padding: 1.5rem;
+    position: relative;
+  }
+
+  .roadmap-phase-content::before {
+    display: none;
+  }
+
+  .roadmap-phase-content::after {
+    display: none;
+  }
+
+  .roadmap-phase-header {
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .roadmap-phase-icon {
+    width: 50px;
+    height: 50px;
+    align-self: flex-start;
+  }
+
+  .roadmap-phase-title {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .roadmap-phase-description {
+    font-size: 0.95rem;
+    margin-bottom: 0;
+  }
+
+  .roadmap-phase-features {
     grid-template-columns: 1fr !important;
-  }
-  
-  .roadmap-timeline-container .roadmap-timeline::before {
-    left: 30px !important;
-    transform: none !important;
+    gap: 0.75rem;
   }
 
+  .roadmap-phase-feature {
+    font-size: 0.9rem;
+    gap: 0.5rem;
+  }
+
+  .roadmap-feature-check {
+    width: 18px;
+    height: 18px;
+    font-size: 0.75rem;
+  }
+
+  /* Commitment responsive */
   .roadmap-commitment {
-    padding: 2rem;
+    padding: 1.5rem;
+    margin: 2rem 0;
   }
 
   .roadmap-commitment-title {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
   }
 
   .roadmap-commitment-stats {
@@ -2684,16 +2758,112 @@ body {
   }
 
   .roadmap-stat-number {
-    font-size: 2.5rem;
+    font-size: 2.25rem;
+  }
+
+  .roadmap-stat-label {
+    font-size: 1.125rem;
+  }
+
+  .roadmap-stat-description {
+    font-size: 0.9rem;
+  }
+
+  .roadmap-cta {
+    margin-top: 1.5rem;
   }
 
   .roadmap-cta-text {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
+    margin-bottom: 1rem;
   }
 
   .roadmap-cta-button {
-    padding: 0.875rem 2rem;
+    padding: 0.875rem 1.5rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Media query para pantallas muy pequeñas */
+@media (max-width: 480px) {
+  .roadmap {
+    padding: 2rem 0;
+  }
+
+  .roadmap-container {
+    padding: 0 1rem;
+  }
+
+  .roadmap-title {
+    font-size: 1.75rem;
+  }
+
+  .roadmap-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .roadmap-phase-content {
+    width: calc(100% - 50px) !important;
+    margin: 0 0 0 40px !important;
+    padding: 1.25rem;
+  }
+
+  .roadmap-timeline::before {
+    left: 15px !important;
+  }
+
+  .roadmap-phase-icon {
+    width: 45px;
+    height: 45px;
+  }
+
+  .roadmap-phase-title {
+    font-size: 1.25rem;
+  }
+
+  .roadmap-phase-description {
+    font-size: 0.9rem;
+  }
+
+  .roadmap-phase-feature {
+    font-size: 0.85rem;
+  }
+
+  .roadmap-feature-check {
+    width: 16px;
+    height: 16px;
+    font-size: 0.7rem;
+  }
+
+  .roadmap-commitment {
+    padding: 1.25rem;
+    margin: 1.5rem 0;
+  }
+
+  .roadmap-commitment-title {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .roadmap-stat-number {
+    font-size: 2rem;
+  }
+
+  .roadmap-stat-label {
     font-size: 1rem;
+  }
+
+  .roadmap-stat-description {
+    font-size: 0.85rem;
+  }
+
+  .roadmap-cta-text {
+    font-size: 1rem;
+  }
+
+  .roadmap-cta-button {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.9rem;
   }
 }
 

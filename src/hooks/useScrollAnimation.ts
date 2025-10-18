@@ -5,7 +5,7 @@ export const useScrollAnimation = () => {
   const ref = useRef(null)
   const isInView = useInView(ref, { 
     once: true, 
-    margin: "-100px" 
+    margin: "-50px" 
   })
 
   return { ref, isInView }

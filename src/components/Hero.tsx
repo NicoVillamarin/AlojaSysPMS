@@ -65,7 +65,7 @@ const Hero: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.2, duration: 0.8 }}
           >
-            <span className="slogan-text">Moderno, simple y diseñado para hoteles argentinos</span>
+            <span className="slogan-text">Moderno, simple y diseñado para hoteles</span>
           </motion.div>
 
           <motion.p className="hero-description" variants={itemVariants}>
@@ -123,7 +123,7 @@ const Hero: React.FC = () => {
               <Clock size={20} />
             </div>
             <div className="bubble-content">
-              <div className="bubble-text">Setup en 1 día</div>
+              <div className="bubble-text">Configuraciones rápidas</div>
             </div>
           </motion.div>
 

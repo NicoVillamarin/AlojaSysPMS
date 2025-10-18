@@ -8,8 +8,8 @@ const About: React.FC = () => {
 
   const stats = [
     { 
-      number: "1 día", 
-      label: "Setup completo", 
+      number: "Rápido", 
+      label: "Configuración", 
       icon: <Hotel size={32} />,
       color: "from-blue-500 to-blue-600",
       bgColor: "from-blue-50 to-blue-100"
@@ -40,8 +40,8 @@ const About: React.FC = () => {
   const benefits = [
     {
       icon: <Hotel size={24} />,
-      title: "Diseñado para Argentina",
-      description: "Desarrollado específicamente para el mercado hotelero argentino"
+      title: "Diseñado para Hoteles",
+      description: "Desarrollado específicamente para las necesidades del mercado hotelero"
     },
     {
       icon: <Users size={24} />,
@@ -144,9 +144,9 @@ const About: React.FC = () => {
               animate={isInView ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              AlojaSys nació de la necesidad real de hoteles argentinos que buscan una solución 
-              moderna, simple y económica. Desarrollado por un equipo local que conoce las 
-              particularidades del mercado hotelero argentino.
+              AlojaSys nació en Mar del Plata, Buenos Aires, Argentina, de la necesidad real de 
+              hoteles que buscan una solución moderna, simple y económica. Desarrollado por un 
+              equipo local que conoce las particularidades del mercado hotelero.
             </motion.p>
             
             <motion.p 

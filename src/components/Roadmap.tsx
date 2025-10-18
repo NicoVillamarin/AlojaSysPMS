@@ -145,14 +145,14 @@ const Roadmap: React.FC = () => {
   }
 
   const commitmentVariants = {
-    hidden: { opacity: 0, scale: 0.9 },
+    hidden: { opacity: 0, y: 50 },
     visible: {
       opacity: 1,
-      scale: 1,
+      y: 0,
       transition: {
-        delay: 0.5,
-        duration: 0.8,
-        ease: "easeOut"
+        delay: 0.2,
+        duration: 0.6,
+        ease: "easeOut" as const
       }
     }
   }
@@ -165,7 +165,7 @@ const Roadmap: React.FC = () => {
       transition: {
         delay: 0.7,
         duration: 0.6,
-        ease: "easeOut"
+        ease: "easeOut" as const
       }
     }
   }
@@ -288,11 +288,11 @@ const Roadmap: React.FC = () => {
         </div>
 
             <motion.div
+              ref={ref}
               className="roadmap-commitment"
               variants={commitmentVariants}
               initial="hidden"
               animate={isInView ? "visible" : "hidden"}
-              viewport={{ once: true, amount: 0.3 }}
             >
               <h3 className="roadmap-commitment-title">Nuestro Compromiso Contigo</h3>
               <div className="roadmap-commitment-stats">
