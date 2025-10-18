@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Play, Hotel, Calendar, BarChart3 } from 'lucide-react'
+import { ArrowRight, Play, Hotel, Calendar, BarChart3, Clock, Users, CreditCard } from 'lucide-react'
 import FloatingElements from './FloatingElements'
 import VideoBackground from './VideoBackground'
 import DemoModal from './DemoModal'
@@ -47,14 +47,14 @@ const Hero: React.FC = () => {
           animate="visible"
         >
           <motion.h1 className="hero-title" variants={titleVariants}>
-            Sistema de Gestión Hotelera
+            El PMS que tu hotel
             <motion.span
               className="hero-title-accent"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 1, duration: 0.8 }}
             >
-              {" "}AlojaSys
+              {" "}realmente necesita
             </motion.span>
           </motion.h1>
 
@@ -65,12 +65,13 @@ const Hero: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.2, duration: 0.8 }}
           >
-            <span className="slogan-text">Simplificá la gestión, potenciá tu hotel.</span>
+            <span className="slogan-text">Moderno, simple y diseñado para hoteles argentinos</span>
           </motion.div>
 
           <motion.p className="hero-description" variants={itemVariants}>
-            Administra tu hotel de manera digital y eficiente. Gestiona reservas, habitaciones, 
-            pagos y reportes desde una sola plataforma moderna y fácil de usar.
+            Dejá atrás los sistemas complicados y costosos. AlojaSys te permite gestionar 
+            reservas, habitaciones, pagos y reportes desde una plataforma intuitiva, 
+            sin necesidad de conocimientos técnicos.
           </motion.p>
 
           <motion.div className="hero-buttons" variants={itemVariants}>
@@ -81,7 +82,7 @@ const Hero: React.FC = () => {
               whileTap={{ scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 300 }}
             >
-              Solicitar Demo
+              Ver Demo Gratis
               <ArrowRight size={20} />
             </motion.button>
 
@@ -119,11 +120,10 @@ const Hero: React.FC = () => {
             whileHover={{ scale: 1.15, y: -10 }}
           >
             <div className="bubble-icon">
-              <BarChart3 size={20} />
+              <Clock size={20} />
             </div>
             <div className="bubble-content">
-              <div className="bubble-number">60%</div>
-              <div className="bubble-label">Menos Tiempo</div>
+              <div className="bubble-text">Setup en 1 día</div>
             </div>
           </motion.div>
 
@@ -147,11 +147,10 @@ const Hero: React.FC = () => {
             whileHover={{ scale: 1.15, y: -10 }}
           >
             <div className="bubble-icon">
-              <Hotel size={20} />
+              <Users size={20} />
             </div>
             <div className="bubble-content">
-              <div className="bubble-number">25%</div>
-              <div className="bubble-label">Más Ocupación</div>
+              <div className="bubble-text">Super intuitivo</div>
             </div>
           </motion.div>
 
@@ -175,11 +174,10 @@ const Hero: React.FC = () => {
             whileHover={{ scale: 1.15, y: -10 }}
           >
             <div className="bubble-icon">
-              <Calendar size={20} />
+              <CreditCard size={20} />
             </div>
             <div className="bubble-content">
-              <div className="bubble-number">1000+</div>
-              <div className="bubble-label">Reservas/Mes</div>
+              <div className="bubble-text">3 idiomas</div>
             </div>
           </motion.div>
 
@@ -206,7 +204,7 @@ const Hero: React.FC = () => {
               <BarChart3 size={18} />
             </div>
             <div className="bubble-content">
-              <div className="bubble-text">Automatización</div>
+              <div className="bubble-text">Super configurable</div>
             </div>
           </motion.div>
 
@@ -233,7 +231,7 @@ const Hero: React.FC = () => {
               <Hotel size={18} />
             </div>
             <div className="bubble-content">
-              <div className="bubble-text">Eficiencia</div>
+              <div className="bubble-text">Multi-hotel</div>
             </div>
           </motion.div>
 
@@ -260,7 +258,7 @@ const Hero: React.FC = () => {
               <Calendar size={18} />
             </div>
             <div className="bubble-content">
-              <div className="bubble-text">Calidad</div>
+              <div className="bubble-text">Calendario visual</div>
             </div>
           </motion.div>
 
@@ -287,7 +285,7 @@ const Hero: React.FC = () => {
               <BarChart3 size={16} />
             </div>
             <div className="bubble-content">
-              <div className="bubble-text">Gestión</div>
+              <div className="bubble-text">Sin errores</div>
             </div>
           </motion.div>
 
@@ -313,7 +311,7 @@ const Hero: React.FC = () => {
               <Hotel size={16} />
             </div>
             <div className="bubble-content">
-              <div className="bubble-text">Optimización</div>
+              <div className="bubble-text">Soporte local</div>
             </div>
           </motion.div>
 
@@ -340,7 +338,7 @@ const Hero: React.FC = () => {
               <Calendar size={16} />
             </div>
             <div className="bubble-content">
-              <div className="bubble-text">Rendimiento</div>
+              <div className="bubble-text">Tiempo real</div>
             </div>
           </motion.div>
 
@@ -366,7 +364,7 @@ const Hero: React.FC = () => {
               <BarChart3 size={16} />
             </div>
             <div className="bubble-content">
-              <div className="bubble-text">Innovación</div>
+              <div className="bubble-text">Móvil</div>
             </div>
           </motion.div>
 
@@ -393,7 +391,7 @@ const Hero: React.FC = () => {
               <Hotel size={16} />
             </div>
             <div className="bubble-content">
-              <div className="bubble-text">Tecnología</div>
+              <div className="bubble-text">Seguro</div>
             </div>
           </motion.div>
 
@@ -419,7 +417,7 @@ const Hero: React.FC = () => {
               <Calendar size={16} />
             </div>
             <div className="bubble-content">
-              <div className="bubble-text">Solución</div>
+              <div className="bubble-text">Intuitivo</div>
             </div>
           </motion.div>
 
@@ -446,7 +444,7 @@ const Hero: React.FC = () => {
               <BarChart3 size={16} />
             </div>
             <div className="bubble-content">
-              <div className="bubble-text">Digital</div>
+              <div className="bubble-text">Económico</div>
             </div>
           </motion.div>
 
@@ -472,7 +470,7 @@ const Hero: React.FC = () => {
               <Hotel size={16} />
             </div>
             <div className="bubble-content">
-              <div className="bubble-text">Moderno</div>
+              <div className="bubble-text">Escalable</div>
             </div>
           </motion.div>
 
@@ -499,7 +497,7 @@ const Hero: React.FC = () => {
               <Calendar size={16} />
             </div>
             <div className="bubble-content">
-              <div className="bubble-text">Inteligente</div>
+              <div className="bubble-text">Rápido</div>
             </div>
           </motion.div>
 
@@ -525,7 +523,7 @@ const Hero: React.FC = () => {
               <BarChart3 size={16} />
             </div>
             <div className="bubble-content">
-              <div className="bubble-text">Avanzado</div>
+              <div className="bubble-text">Completo</div>
             </div>
           </motion.div>
         </div>

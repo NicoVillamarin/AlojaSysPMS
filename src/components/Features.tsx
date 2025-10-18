@@ -9,43 +9,23 @@ const Features: React.FC = () => {
   const features = [
     {
       icon: <Hotel size={32} />,
-      title: "Gestión de Habitaciones",
-      description: "Administra tipos, precios, capacidad y estado de todas las habitaciones de tu hotel."
+      title: "Gestión Completa",
+      description: "Habitaciones, reservas, pagos y reportes desde una sola plataforma intuitiva."
     },
     {
       icon: <Calendar size={32} />,
-      title: "Calendario de Reservas",
-      description: "Vista visual e interactiva de todas las reservas con gestión eficiente y en tiempo real."
+      title: "Calendario Visual",
+      description: "Vista clara de ocupación con arrastrar y soltar para gestionar reservas fácilmente."
     },
     {
       icon: <CreditCard size={32} />,
-      title: "Sistema de Pagos",
-      description: "Procesa pagos de manera segura con Mercado Pago y múltiples métodos de pago."
+      title: "Pagos Locales",
+      description: "Integración con Mercado Pago y procesamiento manual adaptado a Argentina."
     },
     {
       icon: <BarChart3 size={32} />,
-      title: "Dashboard y Reportes",
-      description: "Métricas y análisis del negocio en tiempo real con reportes automáticos."
-    },
-    {
-      icon: <Users size={32} />,
-      title: "Gestión de Usuarios",
-      description: "Administra el acceso y permisos del personal con perfiles específicos por rol."
-    },
-    {
-      icon: <Settings size={32} />,
-      title: "Multi-Hotel",
-      description: "Gestiona múltiples hoteles desde una sola plataforma con configuraciones centralizadas."
-    },
-    {
-      icon: <Shield size={32} />,
-      title: "Seguro y Confiable",
-      description: "Protección de nivel empresarial para todos tus datos y transacciones."
-    },
-    {
-      icon: <Clock size={32} />,
-      title: "Disponible 24/7",
-      description: "Acceso continuo a la plataforma, cuando y donde lo necesites."
+      title: "Reportes Automáticos",
+      description: "Métricas clave, ocupación e ingresos que se actualizan automáticamente."
     }
   ]
 
@@ -96,9 +76,9 @@ const Features: React.FC = () => {
           initial="hidden"
           animate={isInView ? "visible" : "hidden"}
         >
-          <h2 className="features-title">Funcionalidades Principales</h2>
+          <h2 className="features-title">Características Clave</h2>
           <p className="features-subtitle">
-            Un sistema completo de gestión hotelera con todas las herramientas que necesitas
+            Las 4 funcionalidades principales que hacen la diferencia
           </p>
         </motion.div>
         

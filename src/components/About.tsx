@@ -8,29 +8,29 @@ const About: React.FC = () => {
 
   const stats = [
     { 
-      number: "100+", 
-      label: "Hoteles gestionados", 
+      number: "1 día", 
+      label: "Setup completo", 
       icon: <Hotel size={32} />,
       color: "from-blue-500 to-blue-600",
       bgColor: "from-blue-50 to-blue-100"
     },
     { 
-      number: "50,000+", 
-      label: "Reservas procesadas", 
+      number: "3", 
+      label: "Idiomas disponibles", 
       icon: <TrendingUp size={32} />,
       color: "from-green-500 to-green-600",
       bgColor: "from-green-50 to-green-100"
     },
     { 
-      number: "99.9%", 
-      label: "Tiempo de actividad", 
+      number: "100%", 
+      label: "Configurable", 
       icon: <Shield size={32} />,
       color: "from-purple-500 to-purple-600",
       bgColor: "from-purple-50 to-purple-100"
     },
     { 
       number: "24/7", 
-      label: "Soporte disponible", 
+      label: "Soporte local", 
       icon: <Zap size={32} />,
       color: "from-orange-500 to-orange-600",
       bgColor: "from-orange-50 to-orange-100"
@@ -40,23 +40,23 @@ const About: React.FC = () => {
   const benefits = [
     {
       icon: <Hotel size={24} />,
-      title: "Gestión Completa",
-      description: "Administra todos los aspectos de tu hotel desde una sola plataforma"
+      title: "Diseñado para Argentina",
+      description: "Desarrollado específicamente para el mercado hotelero argentino"
     },
     {
       icon: <Users size={24} />,
-      title: "Multi-Hotel",
-      description: "Gestiona múltiples hoteles desde una cuenta centralizada"
+      title: "Super Intuitivo",
+      description: "Interfaz fácil de usar que cualquier persona puede dominar rápidamente"
     },
     {
       icon: <Calendar size={24} />,
-      title: "Calendario Visual",
-      description: "Vista clara e intuitiva de todas las reservas y ocupación"
+      title: "3 Idiomas",
+      description: "Español, inglés y portugués para hoteles internacionales"
     },
     {
       icon: <CreditCard size={24} />,
-      title: "Pagos Seguros",
-      description: "Integración con Mercado Pago para transacciones seguras"
+      title: "Super Configurable",
+      description: "Adaptable a cualquier tipo de hotel y necesidades específicas"
     }
   ]
 
@@ -135,7 +135,7 @@ const About: React.FC = () => {
               animate={isInView ? { y: 0, opacity: 1 } : { y: 30, opacity: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              ¿Qué es AlojaSys?
+              ¿Por qué elegir AlojaSys?
             </motion.h2>
             
             <motion.p 
@@ -144,10 +144,9 @@ const About: React.FC = () => {
               animate={isInView ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              AlojaSys es un sistema de gestión hotelera completo que permite administrar 
-              todos los aspectos de un hotel de manera digital y eficiente. Es como tener 
-              un asistente digital que se encarga de gestionar habitaciones, administrar 
-              reservas, procesar pagos y generar reportes.
+              AlojaSys nació de la necesidad real de hoteles argentinos que buscan una solución 
+              moderna, simple y económica. Desarrollado por un equipo local que conoce las 
+              particularidades del mercado hotelero argentino.
             </motion.p>
             
             <motion.p 
@@ -156,9 +155,9 @@ const About: React.FC = () => {
               animate={isInView ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
             >
-              Con su arquitectura modular y flexible, AlojaSys se adapta a cualquier tipo 
-              de hotel, desde pequeños establecimientos boutique hasta grandes cadenas hoteleras, 
-              proporcionando una base sólida para el crecimiento y la innovación en el sector hotelero.
+              No necesitás ser experto en tecnología. AlojaSys está diseñado para ser intuitivo 
+              desde el primer día, con soporte en español y atención personalizada para que 
+              tu hotel funcione mejor que nunca.
             </motion.p>
             
             <motion.div 
@@ -206,7 +205,7 @@ const About: React.FC = () => {
               animate={isInView ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
               transition={{ duration: 0.8, delay: 0.8 }}
             >
-              Nuestros números
+              Nuestras ventajas
             </motion.h3>
             <motion.div 
               className="stats-grid"
