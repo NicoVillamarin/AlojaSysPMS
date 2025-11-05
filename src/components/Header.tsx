@@ -32,7 +32,7 @@ const Header: React.FC = () => {
       setScrolled(window.scrollY > 50)
       
       // Detectar sección activa
-      const sections = ['inicio', 'caracteristicas', 'modulos', 'acerca', 'contacto']
+      const sections = ['inicio', 'integraciones', 'caracteristicas', 'modulos', 'casos', 'acerca', 'contacto']
       const scrollPosition = window.scrollY + 100
 
       for (const section of sections) {
@@ -123,6 +123,14 @@ const Header: React.FC = () => {
             Inicio
           </motion.button>
           <motion.button 
+            onClick={() => scrollToSection('integraciones')}
+            className={`nav-link ${activeSection === 'integraciones' ? 'active' : ''}`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Integraciones
+          </motion.button>
+          <motion.button 
             onClick={() => scrollToSection('caracteristicas')}
             className={`nav-link ${activeSection === 'caracteristicas' ? 'active' : ''}`}
             whileHover={{ scale: 1.05 }}
@@ -137,6 +145,14 @@ const Header: React.FC = () => {
             whileTap={{ scale: 0.95 }}
           >
             Módulos
+          </motion.button>
+          <motion.button 
+            onClick={() => scrollToSection('casos')}
+            className={`nav-link ${activeSection === 'casos' ? 'active' : ''}`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Casos de uso
           </motion.button>
           <motion.button 
             onClick={() => scrollToSection('acerca')}
@@ -176,6 +192,15 @@ const Header: React.FC = () => {
                 Inicio
               </motion.button>
               <motion.button 
+                onClick={() => scrollToSection('integraciones')}
+                className={`nav-link ${activeSection === 'integraciones' ? 'active' : ''}`}
+                variants={linkVariants}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Integraciones
+              </motion.button>
+              <motion.button 
                 onClick={() => scrollToSection('caracteristicas')}
                 className={`nav-link ${activeSection === 'caracteristicas' ? 'active' : ''}`}
                 variants={linkVariants}
@@ -192,6 +217,15 @@ const Header: React.FC = () => {
                 whileTap={{ scale: 0.95 }}
               >
                 Módulos
+              </motion.button>
+              <motion.button 
+                onClick={() => scrollToSection('casos')}
+                className={`nav-link ${activeSection === 'casos' ? 'active' : ''}`}
+                variants={linkVariants}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Casos de uso
               </motion.button>
               <motion.button 
                 onClick={() => scrollToSection('acerca')}

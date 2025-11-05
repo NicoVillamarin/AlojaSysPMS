@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Hotel, Calendar, CreditCard, BarChart3, Users, Settings, DollarSign } from 'lucide-react'
+import { Hotel, Calendar, CreditCard, BarChart3, Users, Settings, DollarSign, FileText, Globe, CalendarCheck } from 'lucide-react'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
 
 const Modules: React.FC = () => {
@@ -60,6 +60,24 @@ const Modules: React.FC = () => {
       title: "Gestión de Empresas",
       description: "Administra empresas que pueden tener múltiples hoteles.",
       features: ["Estructura empresarial", "Configuraciones globales", "Personal compartido", "Reportes consolidados"]
+    },
+    {
+      icon: <FileText size={40} />,
+      title: "Facturación con AFIP",
+      description: "Genera facturas electrónicas automáticamente integrado con AFIP de Argentina.",
+      features: ["Facturación electrónica", "Integración AFIP", "Facturas A, B y C", "Comprobantes automáticos"]
+    },
+    {
+      icon: <Globe size={40} />,
+      title: "Integraciones con OTAs",
+      description: "Sincroniza reservas automáticamente con las principales plataformas de reservas online.",
+      features: ["Booking.com integrado", "Airbnb sincronizado", "Sincronización bidireccional", "Gestión unificada"]
+    },
+    {
+      icon: <CalendarCheck size={40} />,
+      title: "Google Calendar",
+      description: "Sincroniza todas tus reservas con Google Calendar para una gestión visual completa.",
+      features: ["Sincronización automática", "Eventos en tiempo real", "Integración nativa", "Vista unificada"]
     }
   ]
 

@@ -20,16 +20,16 @@ const Footer: React.FC = () => {
               de un hotel de manera digital y eficiente.
             </p>
             <div className="footer-social">
-              <a href="#" className="social-link" aria-label="Facebook">
+              <a href="#" className="social-link" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
                 <Facebook size={20} />
               </a>
-              <a href="#" className="social-link" aria-label="Twitter">
+              <a href="#" className="social-link" aria-label="Twitter" target="_blank" rel="noopener noreferrer">
                 <Twitter size={20} />
               </a>
-              <a href="#" className="social-link" aria-label="Instagram">
+              <a href="https://www.instagram.com/alojasys/" className="social-link" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
                 <Instagram size={20} />
               </a>
-              <a href="#" className="social-link" aria-label="LinkedIn">
+              <a href="#" className="social-link" aria-label="LinkedIn" target="_blank" rel="noopener noreferrer">
                 <Linkedin size={20} />
               </a>
             </div>

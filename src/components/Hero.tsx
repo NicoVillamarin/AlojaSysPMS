@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Play, Hotel, Calendar, BarChart3, Clock, Users, CreditCard } from 'lucide-react'
+import { ArrowRight, Play, Hotel, Calendar, BarChart3, Clock, Users, CreditCard, FileText, Globe, CalendarCheck } from 'lucide-react'
 import FloatingElements from './FloatingElements'
 import VideoBackground from './VideoBackground'
 import DemoModal from './DemoModal'
@@ -71,7 +71,7 @@ const Hero: React.FC = () => {
           <motion.p className="hero-description" variants={itemVariants}>
             Dejá atrás los sistemas complicados y costosos. AlojaSys te permite gestionar 
             reservas, habitaciones, pagos y reportes desde una plataforma intuitiva, 
-            sin necesidad de conocimientos técnicos.
+            con integraciones con Booking.com, Airbnb, facturación AFIP y Google Calendar.
           </motion.p>
 
           <motion.div className="hero-buttons" variants={itemVariants}>
@@ -524,6 +524,85 @@ const Hero: React.FC = () => {
             </div>
             <div className="bubble-content">
               <div className="bubble-text">Completo</div>
+            </div>
+          </motion.div>
+
+          {/* Nuevas burbujas para destacar módulos nuevos */}
+          <motion.div
+            className="floating-bubble bubble-17"
+            initial={{ opacity: 0, scale: 0.3, x: 70, y: -15 }}
+            animate={{ 
+              opacity: 1, 
+              scale: 1, 
+              x: 0, 
+              y: [0, -9, 0],
+              rotate: [0, 3.5, -3.5, 0]
+            }}
+            transition={{ 
+              delay: 4.4, 
+              duration: 1.2,
+              rotate: { duration: 5.5, repeat: Infinity, ease: "easeInOut" },
+              y: { duration: 3.3, repeat: Infinity, ease: "easeInOut" }
+            }}
+            whileHover={{ scale: 1.2, y: -15, boxShadow: "0 10px 30px rgba(212, 175, 55, 0.4)" }}
+          >
+            <div className="bubble-icon" style={{ background: 'linear-gradient(135deg, #d4af37, #f4d03f)' }}>
+              <FileText size={18} />
+            </div>
+            <div className="bubble-content">
+              <div className="bubble-text">Facturación AFIP</div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            className="floating-bubble bubble-18"
+            initial={{ opacity: 0, scale: 0.3, x: -70, y: 15 }}
+            animate={{ 
+              opacity: 1, 
+              scale: 1, 
+              x: 0, 
+              y: [0, 11, 0],
+              rotate: [0, -3.5, 3.5, 0]
+            }}
+            transition={{ 
+              delay: 4.6, 
+              duration: 1.2,
+              rotate: { duration: 6.5, repeat: Infinity, ease: "easeInOut" },
+              y: { duration: 5.2, repeat: Infinity, ease: "easeInOut" }
+            }}
+            whileHover={{ scale: 1.2, y: -15, boxShadow: "0 10px 30px rgba(212, 175, 55, 0.4)" }}
+          >
+            <div className="bubble-icon" style={{ background: 'linear-gradient(135deg, #d4af37, #f4d03f)' }}>
+              <Globe size={18} />
+            </div>
+            <div className="bubble-content">
+              <div className="bubble-text">Booking & Airbnb</div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            className="floating-bubble bubble-19"
+            initial={{ opacity: 0, scale: 0.3, x: 75, y: 20 }}
+            animate={{ 
+              opacity: 1, 
+              scale: 1, 
+              x: 0, 
+              y: [0, -12, 0],
+              rotate: [0, 4, -4, 0]
+            }}
+            transition={{ 
+              delay: 4.8, 
+              duration: 1.2,
+              rotate: { duration: 7, repeat: Infinity, ease: "easeInOut" },
+              y: { duration: 3.8, repeat: Infinity, ease: "easeInOut" }
+            }}
+            whileHover={{ scale: 1.2, y: -15, boxShadow: "0 10px 30px rgba(212, 175, 55, 0.4)" }}
+          >
+            <div className="bubble-icon" style={{ background: 'linear-gradient(135deg, #d4af37, #f4d03f)' }}>
+              <CalendarCheck size={18} />
+            </div>
+            <div className="bubble-content">
+              <div className="bubble-text">Google Calendar</div>
             </div>
           </motion.div>
         </div>

@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Hotel, Calendar, CreditCard, BarChart3 } from 'lucide-react'
+import { Hotel, Calendar, CreditCard, BarChart3, FileText, Globe, CalendarCheck } from 'lucide-react'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
 
 const Features: React.FC = () => {
@@ -26,6 +26,21 @@ const Features: React.FC = () => {
       icon: <BarChart3 size={32} />,
       title: "Reportes Automáticos",
       description: "Métricas clave, ocupación e ingresos que se actualizan automáticamente."
+    },
+    {
+      icon: <FileText size={32} />,
+      title: "Facturación AFIP",
+      description: "Genera facturas electrónicas automáticamente integrado con AFIP de Argentina."
+    },
+    {
+      icon: <Globe size={32} />,
+      title: "Integraciones OTAs",
+      description: "Sincroniza automáticamente con Booking.com y Airbnb desde un solo lugar."
+    },
+    {
+      icon: <CalendarCheck size={32} />,
+      title: "Google Calendar",
+      description: "Sincroniza todas tus reservas con Google Calendar para gestión visual completa."
     }
   ]
 
@@ -78,7 +93,7 @@ const Features: React.FC = () => {
         >
           <h2 className="features-title">Características Clave</h2>
           <p className="features-subtitle">
-            Las 4 funcionalidades principales que hacen la diferencia
+            Las funcionalidades principales que hacen la diferencia, incluyendo integraciones con OTAs y facturación AFIP
           </p>
         </motion.div>
         

@@ -4,6 +4,8 @@ import Hero from './components/Hero'
 import ProblemSolution from './components/ProblemSolution'
 import Features from './components/Features'
 import Modules from './components/Modules'
+import Integrations from './components/Integrations'
+import UseCases from './components/UseCases'
 import Roadmap from './components/Roadmap'
 import About from './components/About'
 import Contact from './components/Contact'
@@ -22,6 +24,7 @@ function App() {
               <ProblemSolution />
               <Features />
               <Modules />
+              <Integrations />
               <Roadmap />
               <About />
               <Contact />

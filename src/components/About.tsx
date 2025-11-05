@@ -160,6 +160,17 @@ const About: React.FC = () => {
               tu hotel funcione mejor que nunca.
             </motion.p>
             
+            <motion.p 
+              className="about-description"
+              initial={{ y: 20, opacity: 0 }}
+              animate={isInView ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+            >
+              Con integraciones con Booking.com, Airbnb, facturación electrónica AFIP y 
+              sincronización con Google Calendar, AlojaSys te permite gestionar todas tus 
+              reservas desde un solo lugar, sin importar de dónde vengan.
+            </motion.p>
+            
             <motion.div 
               className="about-benefits"
               variants={containerVariants}
