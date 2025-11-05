@@ -62,7 +62,7 @@ const Footer: React.FC = () => {
             <div className="footer-contact">
               <div className="footer-contact-item">
                 <Mail size={16} />
-                <span>villamarin.nico@gmail.com</span>
+                <span>admin@alojasys.com</span>
               </div>
               <div className="footer-contact-item">
                 <Phone size={16} />

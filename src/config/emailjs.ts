@@ -15,7 +15,7 @@ export const EMAILJS_CONFIG = {
   PUBLIC_KEY: 'q4D0A1CJaZ9Z35WBs',
   
   // Email de destino
-  TO_EMAIL: 'villamarin.nico@gmail.com',
+  TO_EMAIL: 'admin@alojasys.com',
   
   // Número de WhatsApp (formato internacional sin +)
   WHATSAPP_NUMBER: '542236976929'

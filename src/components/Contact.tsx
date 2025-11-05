@@ -80,7 +80,7 @@ const Contact: React.FC = () => {
                 <Mail size={24} className="contact-icon" />
                 <div>
                   <h4>Email</h4>
-                  <p>villamarin.nico@gmail.com</p>
+                  <p>admin@alojasys.com</p>
                 </div>
               </div>
               <div className="contact-item">
