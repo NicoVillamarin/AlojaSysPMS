@@ -21,10 +21,11 @@ function App() {
           <Route path="/" element={
             <>
               <Hero />
+              <Integrations />
               <ProblemSolution />
               <Features />
               <Modules />
-              <Integrations />
+              <UseCases />
               <Roadmap />
               <About />
               <Contact />
