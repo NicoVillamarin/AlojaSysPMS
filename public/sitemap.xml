@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Sitemap XML para AlojaSys - Sistema de Gestión Hotelera
+  Generado para: https://www.alojasys.com
+  
+  Este sitemap incluye:
+  - Página principal (inicio)
+  - Todas las secciones con hash navigation para SEO
+  
+  Para actualizar automáticamente en el futuro:
+  1. Usar un script de build que genere el sitemap dinámicamente
+  2. Integrar con un plugin de Vite como 'vite-plugin-sitemap'
+  3. O usar un script Node.js que lea la estructura de rutas y genere el XML
+  
+  Última actualización: 2025-01-15
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+  
+  <!-- Página Principal - Mayor prioridad -->
+  <url>
+    <loc>https://www.alojasys.com/</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- Sección: Inicio -->
+  <url>
+    <loc>https://www.alojasys.com/#inicio</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- Sección: Integraciones - Muy importante para SEO -->
+  <url>
+    <loc>https://www.alojasys.com/#integraciones</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- Sección: Problema y Solución -->
+  <url>
+    <loc>https://www.alojasys.com/#problema-solucion</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Sección: Características -->
+  <url>
+    <loc>https://www.alojasys.com/#caracteristicas</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- Sección: Módulos -->
+  <url>
+    <loc>https://www.alojasys.com/#modulos</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- Sección: Casos de Uso -->
+  <url>
+    <loc>https://www.alojasys.com/#casos</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Sección: Roadmap -->
+  <url>
+    <loc>https://www.alojasys.com/#roadmap</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- Sección: Acerca de -->
+  <url>
+    <loc>https://www.alojasys.com/#acerca</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- Sección: Contacto - Importante para conversión -->
+  <url>
+    <loc>https://www.alojasys.com/#contacto</loc>
+    <lastmod>2025-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+</urlset>
+

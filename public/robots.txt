@@ -1,0 +1,13 @@
+# Robots.txt para AlojaSys
+# https://www.alojasys.com
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://www.alojasys.com/sitemap.xml
+
+# Disallow si hay alguna sección que no quieras indexar
+# Disallow: /admin/
+# Disallow: /private/
+
