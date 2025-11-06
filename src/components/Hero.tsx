@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Hotel, Calendar, BarChart3, Clock, Users, CreditCard, FileText, Globe, CalendarCheck } from 'lucide-react'
 import FloatingElements from './FloatingElements'
@@ -7,6 +7,18 @@ import DemoModal from './DemoModal'
 
 const Hero: React.FC = () => {
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // Array de videos - usando los videos desde Cloudinary
   const videos = [
@@ -31,6 +43,18 @@ const Hero: React.FC = () => {
   const titleVariants = {
     hidden: { y: 50, opacity: 0 },
     visible: { y: 0, opacity: 1, transition: { duration: 1 } }
+  }
+
+  // Función para obtener props de animación condicionalmente
+  const getBubbleAnimationProps = (defaultProps: any) => {
+    if (isMobile) {
+      return {
+        initial: { opacity: 1, scale: 1, x: 0, y: 0 },
+        animate: { opacity: 1, scale: 1, x: 0, y: 0 },
+        transition: { duration: 0 }
+      }
+    }
+    return defaultProps
   }
 
 
@@ -100,7 +124,7 @@ const Hero: React.FC = () => {
         </motion.div>
 
         {/* Burbujas flotantes que rodean el contenido central */}
-        <div className="floating-bubbles-container">
+        <div className={`floating-bubbles-container ${isMobile ? 'no-animations' : ''}`}>
           {/* Burbuja 1 - Superior izquierda */}
           <motion.div
             className="floating-bubble bubble-1"

@@ -395,6 +395,7 @@ body {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .btn {
@@ -1929,6 +1930,9 @@ body {
     height: 100px;
     max-width: 140px;
     margin: 0 auto;
+    /* Desactivar animaciones de Framer Motion en responsive */
+    animation: none !important;
+    transition: none !important;
   }
 
   .bubble-1, .bubble-2, .bubble-3, 
@@ -1937,11 +1941,31 @@ body {
   .bubble-11, .bubble-12, .bubble-13, .bubble-14,
   .bubble-15, .bubble-16 {
     position: relative;
-    top: auto;
-    left: auto;
-    right: auto;
-    bottom: auto;
-    transform: none;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    /* Forzar que no haya animaciones */
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  /* Desactivar todas las transformaciones inline de Framer Motion */
+  .floating-bubble[style*="transform"] {
+    transform: none !important;
+  }
+  
+  /* Clase para desactivar animaciones completamente */
+  .floating-bubbles-container.no-animations .floating-bubble {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+  
+  .floating-bubbles-container.no-animations .floating-bubble * {
+    animation: none !important;
+    transition: none !important;
   }
 
   .modules-grid {

@@ -1,10 +1,12 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { AlertTriangle, CheckCircle, Clock, DollarSign, Users, Zap } from 'lucide-react'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
+import DemoModal from './DemoModal'
 
 const ProblemSolution: React.FC = () => {
   const { ref, isInView } = useScrollAnimation()
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false)
 
   const problems = [
     {
@@ -181,6 +183,7 @@ const ProblemSolution: React.FC = () => {
             </p>
             <motion.button
               className="btn btn-primary cta-button"
+              onClick={() => setIsDemoModalOpen(true)}
               whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(212, 175, 55, 0.3)' }}
               whileTap={{ scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 300 }}
@@ -190,6 +193,12 @@ const ProblemSolution: React.FC = () => {
           </motion.div>
         </motion.div>
       </div>
+
+      {/* Modal de Demo */}
+      <DemoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
     </section>
   )
 }

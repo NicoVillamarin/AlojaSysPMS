@@ -98,16 +98,6 @@ const Contact: React.FC = () => {
                 </div>
               </div>
             </div>
-            
-            <div className="contact-cta">
-              <h4>Solicita tu demo gratuita</h4>
-              <p>Descubre cómo AlojaSys puede transformar la gestión de tu hotel. 
-                 Agenda una demostración personalizada sin compromiso.</p>
-              <button className="btn btn-primary">
-                Solicitar Demo
-                <Send size={20} />
-              </button>
-            </div>
           </div>
 
           <form className="contact-form" onSubmit={handleSubmit}>

@@ -13,22 +13,22 @@ const Integrations: React.FC = () => {
     {
       icon: <Booking size="32" />,
       title: 'Booking.com',
-      description: 'Sincronización de disponibilidad y reservas. Conectado.'
+      description: 'Sincronización de disponibilidad y reservas.'
     },
     {
       icon: <Airbnb size="32" />,
       title: 'Airbnb',
-      description: 'Actualización automática del calendario. Conectado.'
+      description: 'Actualización automática del calendario.'
     },
     {
       icon: <FileText size={32} />,
       title: 'AFIP',
-      description: 'Facturación electrónica integrada. Conectado.'
+      description: 'Facturación electrónica integrada.'
     },
     {
       icon: <GoogleCalendar size="32" />,
       title: 'Google Calendar',
-      description: 'Eventos de reservas en tiempo real. Conectado.'
+      description: 'Eventos de reservas en tiempo real.'
     }
   ]
 

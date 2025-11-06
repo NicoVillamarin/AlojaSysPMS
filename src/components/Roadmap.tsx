@@ -1,10 +1,12 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { CheckCircle } from 'lucide-react'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
+import DemoModal from './DemoModal'
 
 const Roadmap: React.FC = () => {
   const { ref, isInView } = useScrollAnimation()
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false)
 
   const phases = [
     {
@@ -280,9 +282,23 @@ const Roadmap: React.FC = () => {
               viewport={{ once: true, amount: 0.3 }}
             >
               <p className="roadmap-cta-text">¿Quieres ser uno de nuestros primeros hoteles?</p>
-              <a href="#contact" className="roadmap-cta-button">Solicitar Demo</a>
+              <motion.button 
+                className="roadmap-cta-button"
+                onClick={() => setIsDemoModalOpen(true)}
+                whileHover={{ scale: 1.05, boxShadow: '0 20px 40px rgba(212, 175, 55, 0.3)' }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: 'spring', stiffness: 300 }}
+              >
+                Solicitar Demo
+              </motion.button>
             </motion.div>
       </div>
+
+      {/* Modal de Demo */}
+      <DemoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
     </section>
   )
 }

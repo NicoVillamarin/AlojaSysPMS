@@ -147,14 +147,6 @@ const Header: React.FC = () => {
             Módulos
           </motion.button>
           <motion.button 
-            onClick={() => scrollToSection('casos')}
-            className={`nav-link ${activeSection === 'casos' ? 'active' : ''}`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Casos de uso
-          </motion.button>
-          <motion.button 
             onClick={() => scrollToSection('acerca')}
             className={`nav-link ${activeSection === 'acerca' ? 'active' : ''}`}
             whileHover={{ scale: 1.05 }}
