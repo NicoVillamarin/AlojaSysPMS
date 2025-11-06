@@ -447,6 +447,18 @@ body {
   padding: 4rem 6rem;
 }
 
+/* Wrapper para parallax en burbujas */
+.bubble-parallax {
+  position: absolute;
+  width: auto;
+  height: auto;
+}
+
+/* Asegurar que las burbujas dentro del wrapper mantengan sus posiciones */
+.bubble-parallax .floating-bubble {
+  position: absolute;
+}
+
 .floating-bubble {
   position: absolute;
   display: flex;
@@ -528,11 +540,15 @@ body {
 }
 
 .bubble-text {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   color: rgba(255, 255, 255, 0.9);
   font-weight: 500;
   text-align: center;
-  line-height: 1.1;
+  line-height: 1.2;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  max-width: 100%;
 }
 
 /* Distribución orgánica alrededor del contenido central */
@@ -573,7 +589,7 @@ body {
 }
 
 .bubble-7 {
-  top: -5%;
+  top: 2%;
   left: 45%;
   transform: translate(-30px, -10px);
 }
@@ -716,6 +732,74 @@ body {
 .feature-description {
   color: var(--text-secondary);
   line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+/* Filtros de Features */
+.features-filters {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+.filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: white;
+  border: 2px solid var(--border-color);
+  border-radius: 50px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  transform: translateY(-2px);
+}
+
+.filter-btn.active {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
+}
+
+/* Lista de features dentro de las cards */
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0 0;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.feature-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: var(--accent-color);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 /* Modules Section */
@@ -865,10 +949,9 @@ body {
 }
 
 .about-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 4rem;
-  align-items: center;
 }
 
 .about-title {
@@ -885,57 +968,65 @@ body {
   line-height: 1.7;
 }
 
-.about-benefits {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
+/* About Values Section */
+.about-values {
   margin-top: 2rem;
 }
 
-.about-benefit {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 1.5rem;
+.values-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.value-card {
   background: white;
-  border-radius: 0.75rem;
+  padding: 2rem;
+  border-radius: 1rem;
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-color);
+  text-align: center;
   transition: all 0.3s ease;
 }
 
-.about-benefit:hover {
-  transform: translateY(-2px);
+.value-card:hover {
+  transform: translateY(-5px);
   box-shadow: var(--shadow-md);
+  border-color: var(--accent-color);
 }
 
-.benefit-icon {
-  color: var(--primary-color);
-  flex-shrink: 0;
+.value-icon {
+  color: var(--accent-color);
+  margin: 0 auto 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  background: rgba(10, 48, 74, 0.1);
+  width: 64px;
+  height: 64px;
+  background: rgba(212, 175, 55, 0.1);
   border-radius: 50%;
 }
 
-.benefit-content {
-  flex: 1;
-}
-
-.benefit-title {
-  font-size: 1.125rem;
+.value-title {
+  font-size: 1.25rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
-.benefit-description {
+.value-description {
   color: var(--text-secondary);
-  font-size: 0.9rem;
-  line-height: 1.5;
+  font-size: 0.95rem;
+  line-height: 1.6;
   margin: 0;
 }
 

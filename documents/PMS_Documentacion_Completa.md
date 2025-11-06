@@ -14,10 +14,16 @@
    - [3.8 Módulo Locations](#38-módulo-locations)
    - [3.9 Módulo Dashboard](#39-módulo-dashboard)
    - [3.10 Módulo Notifications](#310-módulo-notifications)
+   - [3.11 Módulo Cobros](#311-módulo-cobros-payment-collections)
+   - [3.12 Módulo Conciliación Bancaria](#312-módulo-conciliación-bancaria)
+   - [3.13 Módulo Facturación Electrónica](#313-módulo-facturación-electrónica)
+   - [3.14 Módulo Comprobantes de Pagos](#314-módulo-comprobantes-de-pagos-payment-receipts)
+   - [3.15 Módulo OTAs (Channel Manager)](#315-módulo-otas-channel-manager)
 4. [Flujos de Trabajo Principales](#flujos-de-trabajo-principales)
 5. [APIs y Endpoints](#apis-y-endpoints)
 6. [Configuraciones y Políticas](#configuraciones-y-políticas)
 7. [Integraciones](#integraciones)
+   - [7.1 Integraciones OTAs (Channel Manager)](#integraciones-otas-channel-manager)
 
 ---
 
@@ -30,6 +36,9 @@
 - ✅ Sistema de tarifas flexible con reglas y promociones
 - ✅ Procesamiento de pagos con Mercado Pago y métodos manuales
 - ✅ Políticas de pago configurables (adelantos, saldos)
+- ✅ **Sistema de señas (pagos parciales) con integración AFIP**
+- ✅ **Dos modos de facturación: solo recibos o facturación en seña**
+- ✅ **Múltiples pagos por factura (señas + pago final)**
 - ✅ Dashboard con métricas en tiempo real
 - ✅ Gestión multi-hotel y multi-empresa
 - ✅ Sistema de usuarios con perfiles y permisos
@@ -38,6 +47,12 @@
 - ✅ Sistema de vouchers de crédito para reembolsos
 - ✅ Aplicación de vouchers en nuevas reservas
 - ✅ Gestión completa de reembolsos con múltiples métodos
+- ✅ Conciliación bancaria automática con matching inteligente
+- ✅ Generación automática de PDFs de recibos
+- ✅ Envío automático de emails con recibos adjuntos
+- ✅ Facturación electrónica argentina con integración AFIP
+- ✅ Generación automática de facturas desde reservas
+- ✅ PDFs fiscales con diseño oficial AFIP
 
 ---
 
@@ -91,6 +106,7 @@ class Hotel(models.Model):
     check_in_time = TimeField()          # Hora de check-in
     check_out_time = TimeField()         # Hora de check-out
     auto_check_in_enabled = BooleanField # Check-in automático
+    auto_check_out_enabled = BooleanField(default=True) # Check-out automático (habilitado por defecto)
     auto_no_show_enabled = BooleanField  # Auto no-show automático
     is_active = BooleanField             # Estado activo
 ```
@@ -99,7 +115,9 @@ class Hotel(models.Model):
 - ✅ Gestión de información básica del hotel
 - ✅ Configuración de horarios de check-in/check-out
 - ✅ Gestión de zona horaria
-- ✅ Configuración de auto no-show automático
+- ✅ Configuración de check-in automático (`auto_check_in_enabled`)
+- ✅ Configuración de check-out automático (`auto_check_out_enabled`, default=True)
+- ✅ Configuración de auto no-show automático (`auto_no_show_enabled`)
 - ✅ Validación de datos (horarios no pueden ser iguales)
 - ✅ Relación con empresa y ubicación
 
@@ -132,6 +150,13 @@ class Reservation(models.Model):
     notes = TextField                   # Notas adicionales
     applied_cancellation_policy = ForeignKey('payments.CancellationPolicy', null=True, blank=True)
     applied_cancellation_snapshot = JSONField(null=True, blank=True)
+    
+    # Campos para pagos OTA (v2.5)
+    paid_by = CharField(20, choices=[('OTA', 'OTA'), ('HOTEL', 'Hotel')], null=True, blank=True)
+    # Indica si el pago fue realizado por la OTA o debe cobrarse en el hotel
+    
+    overbooking_flag = BooleanField(default=False)
+    # Indica si la reserva tiene solapamiento con otra reserva en la misma habitación
 ```
 
 #### Estados de Reserva
@@ -216,6 +241,7 @@ class Payment(models.Model):
 - ✅ **Max Stay**: Máximo de noches permitidas
 - ✅ **Días cerrados**: Bloqueo completo de fechas
 - ✅ **Bloqueos de habitación**: Mantenimiento, fuera de servicio
+- ✅ **Validación de disponibilidad en OTAs**: Verifica conflictos con reservas de OTAs antes de confirmar (ver sección 3.15 para detalles)
 
 #### APIs Principales
 - `GET /api/reservations/` - Listar reservas con filtros
@@ -372,6 +398,45 @@ class PaymentIntentStatus(models.TextChoices):
     CANCELLED = "cancelled", "Cancelado"
 ```
 
+#### Payment (Extendido para Señas y Pagos OTA)
+```python
+class Payment(models.Model):
+    reservation = ForeignKey(Reservation)
+    date = DateField                     # Fecha del pago
+    method = CharField(30)               # Método de pago
+    amount = DecimalField                # Monto del pago
+    status = CharField(20)               # Estado del pago
+    
+    # Campos específicos para POSTNET
+    terminal_id = CharField(50)          # ID del terminal POSTNET
+    batch_number = CharField(100)        # Número de batch del terminal
+    notes = TextField                    # Notas adicionales
+    
+    # Campos para señas (pagos parciales)
+    is_deposit = BooleanField            # Indica si es una seña/depósito
+    metadata = JSONField                 # Metadatos adicionales del pago
+    
+    # Campos para pagos OTA (v2.5)
+    payment_source = CharField(30, choices=[
+        ('OTA_PAYOUT', 'OTA Payout'),      # Liquidación directa de la OTA
+        ('OTA_VCC', 'OTA Virtual Card'),   # Tarjeta virtual de la OTA
+        ('HOTEL_POS', 'Hotel POS'),        # Pago en el hotel
+        ('ONLINE_GATEWAY', 'Online Gateway') # Gateway online
+    ], null=True, blank=True)
+    provider = CharField(50, null=True, blank=True)  # Booking.com, Airbnb, etc.
+    external_reference = CharField(120, null=True, blank=True)  # ID de transacción de la OTA
+    currency = CharField(3, default='ARS')
+    
+    # Desglose financiero OTA
+    gross_amount = DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    commission_amount = DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    net_amount = DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    
+    # Fechas importantes
+    activation_date = DateField(null=True, blank=True)  # Fecha de activación del pago
+    payout_date = DateField(null=True, blank=True)      # Fecha de liquidación de la OTA
+```
+
 #### PaymentGatewayConfig
 ```python
 class PaymentGatewayConfig(models.Model):
@@ -384,6 +449,7 @@ class PaymentGatewayConfig(models.Model):
     integrator_id = CharField(200)      # ID del integrador
     
     is_test = BooleanField              # Modo de prueba
+    is_production = BooleanField(default=False)  # Modo de producción
     country_code = CharField(2)         # Código de país
     currency_code = CharField(3)        # Código de moneda
     webhook_secret = CharField(200)     # Secreto del webhook
@@ -392,6 +458,81 @@ class PaymentGatewayConfig(models.Model):
     # Configuración de reembolsos
     refund_window_days = PositiveIntegerField(null=True, blank=True)  # Días límite para procesar reembolsos
     partial_refunds_allowed = BooleanField(default=True)              # Permitir reembolsos parciales
+```
+
+#### BankTransferPayment (Transferencias Bancarias)
+```python
+class BankTransferPayment(models.Model):
+    reservation = ForeignKey(Reservation)    # Reserva asociada
+    hotel = ForeignKey(Hotel)               # Hotel
+    amount = DecimalField                   # Monto de la transferencia
+    transfer_date = DateField               # Fecha de la transferencia
+    cbu_iban = CharField(34)                # CBU/IBAN del destinatario
+    bank_name = CharField(100)              # Nombre del banco
+    
+    # Archivos adjuntos
+    receipt_file = FileField(upload_to='bank_transfers/')  # Archivo local
+    receipt_filename = CharField(255)       # Nombre del archivo
+    receipt_url = URLField(blank=True)      # URL del archivo (Cloudinary)
+    storage_type = CharField(20)            # Tipo de almacenamiento
+    
+    # Estados de la transferencia
+    status = CharField(20)                  # Estado actual
+    created_at = DateTimeField              # Fecha de creación
+    updated_at = DateTimeField              # Fecha de actualización
+    
+    # Datos de OCR y validación
+    ocr_amount = DecimalField(null=True)    # Monto extraído por OCR
+    ocr_cbu = CharField(34, null=True)      # CBU extraído por OCR
+    ocr_confidence = FloatField(null=True)  # Confianza del OCR
+    is_amount_valid = BooleanField          # Validación de monto
+    is_cbu_valid = BooleanField             # Validación de CBU
+    validation_notes = TextField()          # Notas de validación
+    
+    # Referencias y auditoría
+    external_reference = CharField(120)     # Referencia externa
+    payment_reference = CharField(120)      # Referencia del pago
+    created_by = ForeignKey(User)           # Usuario que creó
+    reviewed_by = ForeignKey(User, null=True) # Usuario que revisó
+    reviewed_at = DateTimeField(null=True)  # Fecha de revisión
+    notes = TextField(blank=True)           # Notas adicionales
+    history = JSONField(default=list)       # Historial de cambios
+```
+
+#### Estados de Transferencia Bancaria
+```python
+class BankTransferStatus(models.TextChoices):
+    UPLOADED = "uploaded", "Subido"
+    PENDING_REVIEW = "pending_review", "Pendiente de Revisión"
+    CONFIRMED = "confirmed", "Confirmado"
+    REJECTED = "rejected", "Rechazado"
+    PROCESSING = "processing", "Procesando"
+```
+
+#### HybridFileStorage (Almacenamiento Híbrido)
+```python
+class HybridFileStorage:
+    """Servicio de almacenamiento híbrido (local/Cloudinary)"""
+    
+    @staticmethod
+    def save_file(file, folder='bank_transfers/'):
+        """Guarda archivo localmente o en Cloudinary según configuración"""
+        if settings.USE_CLOUDINARY:
+            # Subir a Cloudinary
+            result = cloudinary.uploader.upload(file)
+            return {
+                'receipt_url': result['secure_url'],
+                'receipt_filename': result['original_filename'],
+                'storage_type': 'cloudinary'
+            }
+        else:
+            # Guardar localmente
+            return {
+                'receipt_url': None,
+                'receipt_filename': file.name,
+                'storage_type': 'local'
+            }
+```
 ```
 
 #### CancellationPolicy
@@ -768,6 +909,78 @@ def auto_cancel_pending_deposits():
     # - Protección contra race conditions con locks
 ```
 
+#### Check-out Automático de Reservas (v2.4 - Mejorado)
+```python
+@shared_task(bind=True, autoretry_for=(ProgrammingError, OperationalError), retry_backoff=5, retry_jitter=True, retry_kwargs={"max_retries": 5})
+def process_automatic_checkouts(self):
+    """
+    Tarea para procesar checkouts automáticos basados en el horario configurado en cada hotel.
+    Esta tarea se ejecuta cada hora para verificar si hay reservas que deben hacer checkout.
+    Procesa tanto reservas con check_out=today como check_out<today (check-outs pasados que no se procesaron).
+    
+    Características:
+    - Respeta la configuración auto_check_out_enabled del hotel (default=True)
+    - Procesa check-outs pasados inmediatamente sin esperar hora configurada
+    - Procesa check-outs del día actual después de la hora configurada del hotel
+    - Considera la zona horaria del hotel para cálculos precisos
+    - Libera automáticamente las habitaciones al hacer check-out
+    - Usa skip_clean=True para evitar validaciones innecesarias al cambiar solo el estado
+    """
+    today = timezone.localdate()
+    
+    # Obtener reservas en CHECK_IN con check_out <= today
+    checkout_reservations = Reservation.objects.select_related("room", "hotel").filter(
+        status=ReservationStatus.CHECK_IN,
+        check_out__lte=today,
+    )
+    
+    for res in checkout_reservations:
+        # Verificar si el hotel tiene check-out automático habilitado
+        if not getattr(res.hotel, "auto_check_out_enabled", True):
+            continue
+        
+        checkout_date = res.check_out
+        hotel_checkout_time = res.hotel.check_out_time
+        
+        # Si la fecha ya pasó, hacer checkout automático inmediatamente
+        if checkout_date < today:
+            res.status = ReservationStatus.CHECK_OUT
+            res.save(update_fields=["status"], skip_clean=True)
+            if res.room and res.room.status == RoomStatus.OCCUPIED:
+                res.room.status = RoomStatus.AVAILABLE
+                res.room.save(update_fields=["status"])
+        
+        # Si es hoy, verificar si ya pasó la hora de checkout
+        elif checkout_date == today:
+            # Calcular hora actual en zona horaria del hotel
+            hotel_tz = ZoneInfo(res.hotel.timezone) if res.hotel.timezone else None
+            local_now = timezone.localtime(timezone.now(), hotel_tz) if hotel_tz else timezone.now()
+            current_time_local = local_now.time()
+            
+            if current_time_local >= hotel_checkout_time:
+                res.status = ReservationStatus.CHECK_OUT
+                res.save(update_fields=["status"], skip_clean=True)
+                if res.room and res.room.status == RoomStatus.OCCUPIED:
+                    res.room.status = RoomStatus.AVAILABLE
+                    res.room.save(update_fields=["status"])
+```
+
+```python
+@shared_task(bind=True, autoretry_for=(ProgrammingError, OperationalError), retry_backoff=5, retry_jitter=True, retry_kwargs={"max_retries": 5})
+def sync_room_occupancy_for_today(self):
+    """
+    Tarea que sincroniza el estado de las habitaciones con las reservas activas.
+    También procesa checkouts automáticos para reservas con check_out <= today.
+    
+    Características:
+    - Verifica auto_check_out_enabled antes de procesar check-outs
+    - Procesa check-outs pasados automáticamente
+    - Actualiza estado de habitaciones basado en reservas activas
+    - Respetando configuración auto_check_in_enabled del hotel
+    """
+    # ... lógica similar a process_automatic_checkouts ...
+```
+
 #### Auto No-Show de Reservas CONFIRMED (v2.0 - Mejorado)
 ```python
 @shared_task(bind=True, autoretry_for=(ProgrammingError, OperationalError), retry_backoff=5, retry_jitter=True, retry_kwargs={"max_retries": 5})
@@ -951,6 +1164,14 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.reservations.tasks.auto_mark_no_show_daily",
         "schedule": crontab(hour=9, minute=0),  # Diario a las 9:00 AM
     },
+    "process_automatic_checkouts_hourly": {
+        "task": "apps.reservations.tasks.process_automatic_checkouts",
+        "schedule": crontab(minute=0),  # Cada hora a los 0 minutos
+    },
+    "sync_room_occupancy_daily": {
+        "task": "apps.reservations.tasks.sync_room_occupancy_for_today",
+        "schedule": crontab(hour=6, minute=0),  # Diario a las 6:00 AM
+    },
     "process_pending_refunds_hourly": {
         "task": "apps.payments.tasks.process_pending_refunds",
         "schedule": crontab(minute=30),  # Cada hora a los 30 minutos
@@ -963,12 +1184,21 @@ CELERY_BEAT_SCHEDULE = {
 ```
 
 #### Cronograma de Tareas Automáticas
-1. **8:00 AM** - `auto_cancel_expired_reservations`: Cancela por falta de pago del depósito
-2. **8:15 AM** - `auto_cancel_pending_deposits`: Cancela PENDING por depósito vencido
-3. **8:30 AM** - `auto_cancel_expired_pending_reservations`: Cancela PENDING vencidas
-4. **9:00 AM** - `auto_mark_no_show_daily`: Marca CONFIRMED como no-show
-5. **Cada hora (30 min)** - `process_pending_refunds`: Procesa reembolsos pendientes
-6. **10:00 AM** - `retry_failed_refunds`: Reintenta reembolsos fallidos
+1. **6:00 AM** - `sync_room_occupancy_daily`: Sincroniza ocupación de habitaciones y procesa check-outs pasados
+2. **Cada hora (0 min)** - `process_automatic_checkouts_hourly`: Procesa check-outs automáticos (respetando hora configurada del hotel)
+3. **8:00 AM** - `auto_cancel_expired_reservations`: Cancela por falta de pago del depósito
+4. **8:15 AM** - `auto_cancel_pending_deposits`: Cancela PENDING por depósito vencido
+5. **8:30 AM** - `auto_cancel_expired_pending_reservations`: Cancela PENDING vencidas
+6. **9:00 AM** - `auto_mark_no_show_daily`: Marca CONFIRMED como no-show
+7. **Cada hora (30 min)** - `process_pending_refunds`: Procesa reembolsos pendientes
+8. **10:00 AM** - `retry_failed_refunds`: Reintenta reembolsos fallidos
+
+#### Lógica de Check-out Automático
+- **Reservas CHECK_IN con check-out pasado**: `CHECK_IN` → `CHECK_OUT` (liberar habitación inmediatamente)
+- **Reservas CHECK_IN con check-out hoy**: `CHECK_IN` → `CHECK_OUT` (después de hora configurada del hotel)
+- **Configuración por hotel**: Campo `auto_check_out_enabled` en modelo Hotel (default=True)
+- **Consideración de zona horaria**: Usa la zona horaria del hotel para cálculos precisos
+- **Procesamiento sin validaciones**: Usa `skip_clean=True` para evitar validaciones innecesarias
 
 #### Lógica de Cancelación Automática
 - **Reservas PENDING por depósito vencido**: `PENDING` → `CANCELLED` (liberar habitación, enviar emails)
@@ -1135,13 +1365,90 @@ class PaymentGatewayConfig(models.Model):
 - **Mantenibilidad**: Código modular y bien documentado
 - **Performance**: Procesamiento eficiente con índices optimizados
 
+### Validaciones de Configuración de Pasarelas
+
+#### Validaciones Implementadas
+```python
+def clean(self):
+    from django.core.exceptions import ValidationError
+    
+    # Validar que no se mezclen keys de producción con is_test=True
+    if self.is_production and self.is_test:
+        raise ValidationError({
+            'is_production': 'No se puede marcar como producción si is_test=True',
+            'is_test': 'No se puede usar is_test=True en configuración de producción'
+        })
+    
+    # Validar que las keys de producción no sean de test
+    if self.is_production:
+        if 'TEST' in self.access_token.upper() or len(self.access_token) < 20:
+            raise ValidationError({
+                'access_token': 'El access_token parece ser de test. En producción debe usar keys reales.'
+            })
+        
+        if 'TEST' in self.public_key.upper() or len(self.public_key) < 20:
+            raise ValidationError({
+                'public_key': 'El public_key parece ser de test. En producción debe usar keys reales.'
+            })
+    
+    # Validar que las keys de test no sean de producción
+    if self.is_test and not self.is_production:
+        if 'TEST' not in self.access_token.upper() and len(self.access_token) > 20:
+            raise ValidationError({
+                'access_token': 'El access_token parece ser de producción. En test debe usar keys de prueba.'
+            })
+        
+        if 'TEST' not in self.public_key.upper() and len(self.public_key) > 20:
+            raise ValidationError({
+                'public_key': 'El public_key parece ser de producción. En test debe usar keys de prueba.'
+            })
+```
+
+### Endpoint de Rotación de Tokens
+
+#### Rotar Tokens de Pasarela
+```python
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def rotate_payment_tokens(request):
+    """
+    Endpoint para rotar access_token y public_key de una configuración de pago
+    """
+    # Parámetros requeridos:
+    # - config_id: ID de la configuración a actualizar
+    # - new_access_token: Nuevo access token
+    # - new_public_key: Nueva public key
+    
+    # Respuesta exitosa:
+    # {
+    #     "success": true,
+    #     "message": "Tokens rotados exitosamente",
+    #     "config_id": 1,
+    #     "rotated_at": "2024-01-15T10:30:00Z"
+    # }
+    
+    # Respuesta de error:
+    # {
+    #     "success": false,
+    #     "error": "Error de validación: [detalles]"
+    # }
+```
+
+#### Características del Endpoint
+- **Autenticación requerida**: Solo usuarios autenticados pueden rotar tokens
+- **Validación automática**: Aplica las mismas validaciones que el modelo
+- **Rollback automático**: Si la validación falla, se revierten los cambios
+- **Logging de auditoría**: Registra todas las rotaciones para seguimiento
+- **Transacciones atómicas**: Garantiza consistencia en la base de datos
+
 ### APIs Principales
 - `GET /api/payments/policies/` - Listar políticas de pago
 - `POST /api/payments/policies/` - Crear política de pago
 - `GET /api/payments/methods/` - Listar métodos de pago
 - `POST /api/payments/process_card/` - Procesar pago con tarjeta
-- `POST /api/payments/webhook/` - Webhook de Mercado Pago
+- `POST /api/payments/webhook/` - **Webhook de Mercado Pago (Mejorado)**
 - `GET /api/payments/reservation/{id}/payments/` - Pagos de una reserva
+- `POST /api/payments/rotate-tokens/` - **Rotar tokens de pasarela**
 
 ### APIs de Políticas de Cancelación
 - `GET /api/payments/cancellation-policies/` - Listar políticas de cancelación
@@ -1174,6 +1481,247 @@ class PaymentGatewayConfig(models.Model):
 - `PATCH /api/payments/refunds/{id}/` - Actualizar estado del reembolso
 - `GET /api/payments/refunds/for_reservation/` - Reembolsos por reserva
 - `GET /api/payments/refunds/stats/` - Estadísticas de reembolsos
+
+---
+
+## 3.4.1 Sistema de Webhooks Mejorado (v2.0)
+
+**Propósito**: Procesamiento seguro y robusto de notificaciones de pagos de Mercado Pago con verificación HMAC, idempotencia y post-procesamiento asíncrono.
+
+### Características Principales
+
+#### Seguridad Avanzada
+- ✅ **Verificación HMAC obligatoria** para todas las notificaciones
+- ✅ **Validación de firma** usando webhook_secret configurado
+- ✅ **Rechazo automático** de notificaciones no verificadas
+- ✅ **Logging de seguridad** detallado para auditoría
+
+#### Sistema de Idempotencia
+- ✅ **Prevención de duplicados** mediante cache Redis
+- ✅ **Verificación por notification_id** y external_reference
+- ✅ **Manejo elegante** de notificaciones ya procesadas
+- ✅ **Fallback a cache dummy** cuando Redis no está disponible
+
+#### Procesamiento Atómico
+- ✅ **Actualización atómica** de PaymentIntent
+- ✅ **Transacciones de base de datos** para consistencia
+- ✅ **Rollback automático** en caso de errores
+- ✅ **Validación de estados** antes de procesar
+
+#### Post-procesamiento Asíncrono
+- ✅ **Tareas Celery** para procesamiento posterior
+- ✅ **Notificaciones automáticas** a usuarios y staff
+- ✅ **Auditoría completa** de eventos de webhook
+- ✅ **Procesamiento de eventos** internos del sistema
+
+### Arquitectura del Sistema
+
+#### WebhookSecurityService
+```python
+class WebhookSecurityService:
+    @staticmethod
+    def verify_webhook_signature(request, webhook_secret: str) -> bool:
+        """Verifica la firma HMAC del webhook"""
+    
+    @staticmethod
+    def is_notification_processed(notification_id: str, external_reference: str = None) -> bool:
+        """Verifica si una notificación ya fue procesada"""
+    
+    @staticmethod
+    def mark_notification_processed(notification_id: str, external_reference: str = None, ttl: int = 86400) -> None:
+        """Marca una notificación como procesada"""
+    
+    @staticmethod
+    def extract_webhook_data(request) -> Dict[str, Any]:
+        """Extrae datos del webhook de forma segura"""
+    
+    @staticmethod
+    def log_webhook_security_event(event_type: str, notification_id: str = None, 
+                                 external_reference: str = None, details: Dict[str, Any] = None):
+        """Registra eventos de seguridad para auditoría"""
+```
+
+#### PaymentProcessorService
+```python
+class PaymentProcessorService:
+    @staticmethod
+    @transaction.atomic
+    def process_webhook_payment(payment_data: Dict[str, Any], 
+                              webhook_secret: str = None,
+                              notification_id: str = None) -> Dict[str, Any]:
+        """Procesa un pago desde webhook de forma atómica"""
+```
+
+#### Tareas de Celery
+```python
+@shared_task(bind=True, autoretry_for=(ProgrammingError, OperationalError), 
+             retry_backoff=5, retry_jitter=True, retry_kwargs={"max_retries": 3})
+def process_webhook_post_processing(self, payment_intent_id: int, webhook_data: Dict[str, Any], 
+                                   notification_id: str = None, external_reference: str = None):
+    """Tarea asíncrona para post-procesamiento de webhooks"""
+```
+
+### Flujo de Procesamiento
+
+#### 1. Recepción del Webhook
+```python
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def webhook(request):
+    # 1. Extraer datos del webhook
+    payment_data = WebhookSecurityService.extract_webhook_data(request)
+    
+    # 2. Verificar HMAC si está configurado
+    if webhook_secret:
+        if not WebhookSecurityService.verify_webhook_signature(request, webhook_secret):
+            return Response({"success": False, "error": "Firma HMAC inválida"}, status=400)
+    
+    # 3. Verificar idempotencia
+    if WebhookSecurityService.is_notification_processed(notification_id, external_reference):
+        return Response({"success": True, "processed": False, "message": "Notificación ya procesada"})
+```
+
+#### 2. Procesamiento Atómico
+```python
+    # 4. Procesar pago de forma atómica
+    result = PaymentProcessorService.process_webhook_payment(
+        payment_data=payment_data,
+        webhook_secret=webhook_secret,
+        notification_id=notification_id
+    )
+    
+    # 5. Marcar como procesado si fue exitoso
+    if result.get('success') and result.get('processed', False):
+        WebhookSecurityService.mark_notification_processed(notification_id, external_reference)
+```
+
+#### 3. Post-procesamiento Asíncrono
+```python
+    # 6. Encolar tarea de post-procesamiento
+    if result.get('success') and result.get('processed', False):
+        process_webhook_post_processing.delay(
+            payment_intent_id=result.get('payment_intent_id'),
+            webhook_data=payment_data,
+            notification_id=notification_id,
+            external_reference=external_reference
+        )
+```
+
+### Respuestas HTTP Estandarizadas
+
+#### Respuesta Exitosa
+```json
+{
+    "success": true,
+    "processed": true,
+    "payment_intent_id": 123,
+    "status": "approved",
+    "message": "Pago procesado exitosamente",
+    "post_processing_queued": true
+}
+```
+
+#### Respuesta de Duplicado
+```json
+{
+    "success": true,
+    "processed": false,
+    "message": "Notificación ya procesada",
+    "code": "DUPLICATE_NOTIFICATION"
+}
+```
+
+#### Respuesta de Error HMAC
+```json
+{
+    "success": false,
+    "error": "Firma HMAC inválida",
+    "code": "HMAC_VERIFICATION_FAILED"
+}
+```
+
+#### Respuesta de Error de Procesamiento
+```json
+{
+    "success": false,
+    "error": "Error procesando pago: [detalles]",
+    "code": "PAYMENT_PROCESSING_ERROR"
+}
+```
+
+### Configuración de Seguridad
+
+#### Variables de Entorno
+```bash
+# Configuración de webhook
+MERCADO_PAGO_WEBHOOK_SECRET=tu_webhook_secret_aqui
+MERCADO_PAGO_ACCESS_TOKEN=tu_access_token_aqui
+
+# Configuración de Redis para idempotencia
+REDIS_URL=redis://localhost:6379/0
+```
+
+#### Configuración por Hotel
+```python
+class PaymentGatewayConfig(models.Model):
+    # ... campos existentes ...
+    webhook_secret = CharField(200)  # Secreto para verificación HMAC
+    is_production = BooleanField(default=False)  # Modo de producción
+```
+
+### Monitoreo y Logging
+
+#### Eventos de Seguridad
+- **HMAC_VERIFICATION_SUCCESS**: Firma verificada correctamente
+- **HMAC_VERIFICATION_FAILED**: Firma inválida rechazada
+- **DUPLICATE_NOTIFICATION**: Notificación duplicada detectada
+- **WEBHOOK_PROCESSED**: Webhook procesado exitosamente
+
+#### Métricas de Performance
+- **Tiempo de procesamiento**: Latencia del webhook
+- **Tasa de éxito**: % de webhooks procesados correctamente
+- **Tasa de duplicados**: % de notificaciones duplicadas
+- **Tasa de errores HMAC**: % de webhooks con firma inválida
+
+### Testing y Validación
+
+#### Tests Implementados
+- **Test de verificación HMAC**: Validación de firmas válidas e inválidas
+- **Test de idempotencia**: Prevención de procesamiento duplicado
+- **Test de extracción de datos**: Parsing seguro de datos del webhook
+- **Test de respuestas HTTP**: Validación de respuestas estandarizadas
+- **Test de tareas Celery**: Verificación de post-procesamiento asíncrono
+
+#### Test Manual
+```python
+# Ejecutar tests manuales
+python test_webhook_manual.py
+
+# Ejecutar tests de Django
+python manage.py test test_webhook_simple --settings=test_settings -v 2
+```
+
+### Beneficios Técnicos
+
+#### Seguridad
+- **Verificación HMAC obligatoria** previene ataques de falsificación
+- **Idempotencia garantizada** evita procesamiento duplicado
+- **Logging completo** facilita auditoría y debugging
+
+#### Escalabilidad
+- **Post-procesamiento asíncrono** no bloquea el webhook
+- **Cache Redis** para idempotencia de alto rendimiento
+- **Tareas Celery** para procesamiento distribuido
+
+#### Mantenibilidad
+- **Código modular** con responsabilidades separadas
+- **Tests completos** para validación continua
+- **Logging estructurado** para debugging eficiente
+
+#### Confiabilidad
+- **Transacciones atómicas** garantizan consistencia
+- **Manejo de errores robusto** con reintentos automáticos
+- **Fallbacks elegantes** cuando servicios externos fallan
 
 ### Sistema de Vouchers de Crédito
 
@@ -1549,6 +2097,9 @@ class MercadoPagoAdapter(PaymentGatewayAdapter):
 - **Fallos Simulados**: Para testing de escenarios de error
 - **Retrasos Simulados**: Para testing de timeouts
 - **Logging Detallado**: Registro de todas las operaciones
+- **Idempotencia**: Claves únicas para evitar llamadas duplicadas
+- **Trace ID**: Rastreo completo de peticiones salientes
+- **Simulación de Errores E2E**: Para testing de escenarios específicos
 
 #### Configuración
 ```python
@@ -1576,6 +2127,56 @@ adapter = MercadoPagoAdapter(
 - **`already_refunded`**: Reembolso ya procesado
 - **`partial_refund_not_allowed`**: Reembolso parcial no permitido
 - **`refund_not_found`**: Reembolso no encontrado
+
+#### Mejoras Implementadas (v2.1)
+
+##### Idempotencia en Llamadas de Captura/Refund
+```python
+def _generate_idempotency_key(self, operation: str, payment_id: str) -> str:
+    """
+    Genera una clave de idempotencia única para una operación
+    Formato: {operation}_{payment_id}_{timestamp}_{unique_id}
+    """
+    timestamp = int(datetime.now().timestamp())
+    unique_id = str(uuid.uuid4())[:8]
+    return f"{operation}_{payment_id}_{timestamp}_{unique_id}"
+```
+
+##### Simulación de Errores para Tests E2E
+```python
+# Configuración para simular errores específicos
+adapter = MercadoPagoAdapter(
+    config=config,
+    mock_mode=True,
+    simulate_errors={
+        'connection_error': True,
+        'partial_refund_not_allowed': True
+    }
+)
+```
+
+##### Logging de Trace ID
+```python
+def _generate_trace_id(self) -> str:
+    """
+    Genera un trace ID único para rastrear peticiones
+    Formato: trace_{timestamp}_{random_id}
+    """
+    timestamp = int(datetime.now().timestamp())
+    random_id = str(uuid.uuid4())[:8]
+    return f"trace_{timestamp}_{random_id}"
+```
+
+##### Headers HTTP Mejorados
+```python
+headers = {
+    'Authorization': f'Bearer {self.access_token}',
+    'Content-Type': 'application/json',
+    'X-Idempotency-Key': idempotency_key,
+    'X-Trace-ID': trace_id,
+    'X-Request-ID': str(uuid.uuid4())
+}
+```
 
 ### Integración con RefundProcessor Original
 
@@ -1633,6 +2234,9 @@ class PaymentGatewayConfigSerializer(serializers.ModelSerializer):
 - **Tests de validación**: Ventana de reembolso y configuraciones
 - **Tests de integración**: Flujo completo de procesamiento
 - **Tests de reintentos**: Lógica de backoff exponencial
+- **Tests de idempotencia**: Verificación de claves únicas
+- **Tests de trace ID**: Validación de rastreo de peticiones
+- **Tests de simulación de errores**: Escenarios E2E específicos
 
 #### Ejemplo de Uso
 ```python
@@ -1912,6 +2516,265 @@ describe('CancellationModal', () => {
 - ✅ **Tests unitarios completos** para renderizado e interacciones
 
 ---
+
+### Sistema de Generación de PDFs y Envío de Emails
+
+#### Arquitectura del Sistema
+El sistema de generación de PDFs y envío de emails está diseñado para funcionar de manera asíncrona y automática:
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Trigger       │    │   Celery Task   │    │   PDF Generator │
+│   (Signal)      │───►│   (Async)       │───►│   (ReportLab)   │
+│                 │    │                 │    │                 │
+│ • Payment Save  │    │ • PDF Creation  │    │ • Hotel Logo    │
+│ • Refund Save   │    │ • Email Send    │    │ • Professional  │
+│ • Manual Pay    │    │ • Error Handle  │    │   Design        │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+#### Componentes Principales
+
+##### 1. PDFReceiptGenerator
+**Ubicación**: `apps/payments/services/pdf_generator.py`
+
+**Propósito**: Generar PDFs profesionales de recibos de pagos y reembolsos.
+
+**Características**:
+- ✅ **Logo del hotel** en el encabezado (si está configurado)
+- ✅ **Información completa del hotel** (nombre, dirección, teléfono, email, RUT)
+- ✅ **Fecha y hora de emisión** automática
+- ✅ **Datos del pago/reembolso** estructurados en tabla
+- ✅ **Información del huésped** principal
+- ✅ **Diseño profesional** con colores y estilos consistentes
+- ✅ **Sello fiscal interno** "Recibo generado automáticamente por AlojaSys (sin validez fiscal)"
+- ✅ **Logo de AlojaSys** en el pie de página
+
+**Métodos principales**:
+```python
+def generate_payment_receipt(payment_data: Dict[str, Any]) -> str
+def generate_refund_receipt(refund_data: Dict[str, Any]) -> str
+def _build_header(data: Dict[str, Any], is_refund: bool = False) -> list
+def _build_payment_info(data: Dict[str, Any]) -> list
+def _build_refund_info(data: Dict[str, Any]) -> list
+def _build_footer() -> list
+```
+
+##### 2. Tareas Celery Asíncronas
+**Ubicación**: `apps/payments/tasks.py`
+
+**Tareas principales**:
+
+###### generate_payment_receipt_pdf()
+```python
+@shared_task(bind=True)
+def generate_payment_receipt_pdf(self, payment_id: int, payment_type: str = 'payment'):
+    """
+    Genera un PDF de recibo para un pago o refund
+    - Obtiene datos del hotel (incluyendo logo)
+    - Extrae información del huésped principal
+    - Genera PDF con diseño profesional
+    - Encadena envío de email automático
+    """
+```
+
+###### send_payment_receipt_email()
+```python
+@shared_task(bind=True)
+def send_payment_receipt_email(self, payment_id: int, payment_type: str = 'payment', recipient_email: str = None):
+    """
+    Envía un email con el recibo PDF adjunto
+    - Usa email del hotel como remitente
+    - Adjunta PDF generado automáticamente
+    - Configura reply-to al email del hotel
+    - Maneja errores de envío
+    """
+```
+
+##### 3. Señales Django (Triggers)
+**Ubicación**: `apps/payments/signals.py`
+
+**Señales configuradas**:
+
+###### generate_payment_receipt
+```python
+@receiver(post_save, sender='reservations.Payment')
+def generate_payment_receipt(sender, instance, created, **kwargs):
+    """
+    Trigger: Cuando se crea un pago manual
+    Acción: Genera PDF y envía email automáticamente
+    """
+```
+
+###### generate_refund_receipt
+```python
+@receiver(post_save, sender='payments.Refund')
+def generate_refund_receipt(sender, instance, created, **kwargs):
+    """
+    Trigger: Cuando se crea un reembolso
+    Acción: Genera PDF y envía email automáticamente
+    """
+```
+
+#### Flujo de Trabajo
+
+##### 1. Creación de Pago Manual
+```
+1. Usuario confirma reserva con pago en efectivo
+2. Se crea Payment object en la base de datos
+3. Signal post_save se dispara automáticamente
+4. Celery task generate_payment_receipt_pdf se ejecuta
+5. Se extrae información del hotel (incluyendo logo)
+6. Se genera PDF con diseño profesional
+7. Se encadena tarea de envío de email
+8. Email se envía al huésped principal con PDF adjunto
+```
+
+##### 2. Procesamiento de Reembolso
+```
+1. Usuario cancela reserva con reembolso
+2. Se crea Refund object en la base de datos
+3. Signal post_save se dispara automáticamente
+4. Celery task generate_payment_receipt_pdf se ejecuta
+5. Se genera PDF de reembolso con información completa
+6. Se envía email al huésped con recibo de reembolso
+```
+
+#### Configuración de Email
+
+##### Variables de Entorno Requeridas
+```bash
+# Backend/.env
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.resend.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=resend
+EMAIL_HOST_PASSWORD=TU_API_KEY_DE_RESEND
+DEFAULT_FROM_EMAIL=AlojaSys <noreply@aloja.com>
+```
+
+##### Configuración SMTP
+- **Proveedor**: Resend (recomendado) o cualquier SMTP
+- **Autenticación**: API Key como contraseña
+- **Seguridad**: TLS habilitado
+- **Remitente**: Email global de AlojaSys
+- **Reply-To**: Email específico del hotel
+
+#### Estructura de Datos
+
+##### payment_data (para pagos)
+```python
+{
+    'payment_id': int,
+    'reservation_code': str,  # "RES-{id}"
+    'amount': float,
+    'method': str,  # "Efectivo", "Transferencia", etc.
+    'date': str,  # "DD/MM/YYYY HH:MM:SS"
+    'hotel_info': {
+        'name': str,
+        'address': str,
+        'tax_id': str,
+        'phone': str,
+        'email': str,
+        'logo_path': str  # Ruta al archivo de logo
+    },
+    'guest_info': {
+        'name': str,
+        'email': str
+    }
+}
+```
+
+##### refund_data (para reembolsos)
+```python
+{
+    'refund_id': int,
+    'payment_id': int,  # ID del pago original
+    'reservation_code': str,
+    'amount': float,
+    'method': str,
+    'date': str,
+    'reason': str,  # Motivo del reembolso
+    'hotel_info': { ... },  # Misma estructura
+    'guest_info': { ... }   # Misma estructura
+}
+```
+
+#### Almacenamiento de PDFs
+
+##### Estructura de Directorios
+```
+/media/
+└── receipts/
+    ├── payment_123.pdf
+    ├── payment_124.pdf
+    ├── refund_45.pdf
+    └── refund_46.pdf
+```
+
+##### Convención de Nombres
+- **Pagos**: `payment_{payment_id}.pdf`
+- **Reembolsos**: `refund_{refund_id}.pdf`
+
+#### Manejo de Errores
+
+##### Errores de Generación de PDF
+- **Logo no encontrado**: Continúa sin logo
+- **Datos faltantes**: Usa valores por defecto
+- **Error de ReportLab**: Log del error, continúa proceso
+
+##### Errores de Envío de Email
+- **Email no encontrado**: Log de advertencia
+- **Error SMTP**: Reintento automático
+- **PDF no generado**: No envía email
+
+#### Logs y Monitoreo
+
+##### Logs de Celery
+```bash
+# Generación exitosa
+[INFO] Generando PDF de recibo para payment ID: 123
+[INFO] PDF generado exitosamente: /app/media/receipts/payment_123.pdf
+
+# Envío de email
+[INFO] Enviando email con recibo para payment ID: 123
+[INFO] Email enviado exitosamente a: cliente@email.com
+```
+
+##### Logs de Error
+```bash
+# Error de generación
+[ERROR] Error generando PDF para payment 123: [detalle del error]
+
+# Error de envío
+[ERROR] Error enviando email para payment 123: [detalle del error]
+```
+
+#### Beneficios del Sistema
+
+##### Para el Hotel
+- ✅ **Automatización completa** del proceso de recibos
+- ✅ **Diseño profesional** con logo del hotel
+- ✅ **Información completa** del hotel en cada recibo
+- ✅ **Sin intervención manual** requerida
+- ✅ **Consistencia visual** en todos los recibos
+
+##### Para el Huésped
+- ✅ **Recibo inmediato** por email
+- ✅ **Información clara** del pago/reembolso
+- ✅ **Datos de contacto** del hotel
+- ✅ **Formato profesional** y fácil de imprimir
+- ✅ **Historial digital** de transacciones
+
+##### Para el Sistema
+- ✅ **Procesamiento asíncrono** sin bloquear la UI
+- ✅ **Manejo robusto de errores**
+- ✅ **Escalabilidad** con Celery
+- ✅ **Logs detallados** para debugging
+- ✅ **Configuración flexible** por hotel
+
+----
 
 ## 3.5 Módulo Rates
 
@@ -2338,6 +3201,523 @@ def calculate_metrics(cls, hotel, target_date=None):
 
 ---
 
+## 3.12 Módulo Cobros (Payment Collections)
+
+**Propósito**: Historial unificado de todos los pagos y cobros del hotel con funcionalidades avanzadas de análisis y exportación.
+
+### Modelos Principales
+
+#### PaymentCollectionViewSet
+```python
+class PaymentCollectionViewSet(ReadOnlyModelViewSet):
+    """ViewSet para historial unificado de pagos"""
+    
+    def get_queryset(self):
+        """Combina pagos de diferentes fuentes:
+        - Payment (pagos manuales)
+        - PaymentIntent (pagos online)
+        - BankTransferPayment (transferencias bancarias)
+        - Reservation (reservas pendientes)
+        """
+```
+
+### Funcionalidades Principales
+
+#### Historial Unificado de Pagos
+- **Pagos Manuales**: Efectivo, tarjeta, POS registrados manualmente
+- **Pagos Online**: Mercado Pago y otras pasarelas
+- **Transferencias Bancarias**: Con comprobantes y validación OCR
+- **Reservas Pendientes**: Reservas sin confirmar que requieren pago
+
+#### Filtros Avanzados
+- **Por Fecha**: Rango de fechas personalizable
+- **Por Tipo**: Manual, Online, Transferencia, Pendiente
+- **Por Método**: Efectivo, Tarjeta, Transferencia Bancaria, Mercado Pago
+- **Por Estado**: Aprobado, Pendiente, Rechazado, Cancelado
+- **Por Monto**: Rango de montos mínimo y máximo
+- **Por Hotel**: Filtro por hotel específico
+- **Por Huésped**: Búsqueda por nombre de huésped
+
+#### Estadísticas y Métricas
+- **Resumen General**: Total de pagos, monto total, promedio
+- **Por Tipo**: Distribución de pagos por tipo
+- **Por Método**: Distribución de pagos por método
+- **Por Mes**: Evolución temporal de cobros
+- **Tendencias**: Análisis de patrones de pago
+
+#### Exportación de Datos
+- **Formato CSV**: Exportación completa con filtros aplicados
+- **Datos Incluidos**: Todos los campos relevantes del pago
+- **Filtros Aplicados**: Respeta los filtros seleccionados
+- **Descarga Directa**: Sin necesidad de procesamiento adicional
+
+#### Sistema de Archivos Adjuntos
+- **Comprobantes de Transferencia**: PDFs, JPGs, PNGs subidos
+- **Almacenamiento Híbrido**: Local (desarrollo) / Cloudinary (producción)
+- **Visualización**: Previsualización y descarga de archivos
+- **Metadatos**: Información del archivo y validación
+
+### APIs Principales
+
+#### Endpoints de Cobros
+- `GET /api/payments/collections/` - Historial unificado con filtros
+- `GET /api/payments/collections/stats/` - Estadísticas agregadas
+- `GET /api/payments/collections/export/` - Exportación CSV
+
+#### Parámetros de Filtrado
+```python
+# Filtros disponibles
+{
+    'date_from': '2024-01-01',      # Fecha desde
+    'date_to': '2024-12-31',        # Fecha hasta
+    'type': 'bank_transfer',        # Tipo de pago
+    'method': 'card',               # Método de pago
+    'status': 'approved',           # Estado del pago
+    'min_amount': 1000,             # Monto mínimo
+    'max_amount': 50000,            # Monto máximo
+    'hotel_id': 1,                  # ID del hotel
+    'search': 'Juan Pérez'          # Búsqueda por huésped
+}
+```
+
+### Beneficios del Módulo
+
+#### Para la Gestión Hotelera
+- ✅ **Visión Unificada**: Todos los pagos en un solo lugar
+- ✅ **Análisis Completo**: Métricas detalladas del negocio
+- ✅ **Trazabilidad Total**: Seguimiento completo de transacciones
+- ✅ **Exportación Fácil**: Datos para contabilidad y análisis
+
+---
+
+## 3.12 Módulo Conciliación Bancaria
+
+**Propósito**: Automatización de la conciliación entre movimientos bancarios y pagos del hotel mediante algoritmos de matching inteligente.
+
+### Modelos Principales
+
+#### BankReconciliation
+```python
+class BankReconciliation(models.Model):
+    """Registro de conciliación bancaria"""
+    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE)
+    reconciliation_date = models.DateField()
+    csv_file = models.FileField(upload_to='reconciliations/')
+    total_transactions = models.IntegerField()
+    matched_transactions = models.IntegerField()
+    unmatched_transactions = models.IntegerField()
+    status = models.CharField(max_length=20, choices=ReconciliationStatus.choices)
+    match_percentage = models.FloatField()
+```
+
+#### BankTransaction
+```python
+class BankTransaction(models.Model):
+    """Transacción bancaria del CSV"""
+    reconciliation = models.ForeignKey(BankReconciliation, on_delete=models.CASCADE)
+    transaction_date = models.DateField()
+    description = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=3)
+    reference = models.CharField(max_length=100)
+    is_matched = models.BooleanField(default=False)
+```
+
+#### ReconciliationMatch
+```python
+class ReconciliationMatch(models.Model):
+    """Match entre transacción bancaria y pago"""
+    reconciliation = models.ForeignKey(BankReconciliation, on_delete=models.CASCADE)
+    bank_transaction = models.ForeignKey(BankTransaction, on_delete=models.CASCADE)
+    payment_id = models.IntegerField()
+    match_type = models.CharField(max_length=20, choices=MatchType.choices)
+    confidence_score = models.FloatField()
+    is_confirmed = models.BooleanField(default=False)
+```
+
+### Funcionalidades Principales
+
+#### Algoritmos de Matching
+- **Exact Match**: Monto exacto + fecha ±1 día
+- **Fuzzy Match**: Monto ±0.5% + fecha ±2 días  
+- **Partial Match**: Monto ±1% + fecha ±3 días
+- **Manual Match**: Aprobación manual de matches de baja confianza
+
+#### Procesamiento Automático
+- **CSV Upload**: Subida de archivos de extractos bancarios
+- **Parsing Inteligente**: Detección automática de formato y encoding
+- **Matching Automático**: Algoritmos de coincidencia por monto y fecha
+- **Confirmación Automática**: Pagos confirmados con confianza ≥90%
+
+#### Configuración Flexible
+- **Tolerancias Ajustables**: Configuración por hotel
+- **Múltiples Monedas**: Conversión automática de tipos de cambio
+- **Umbrales de Confianza**: Configuración de auto-confirmación
+- **Notificaciones**: Alertas por email y sistema
+
+### APIs Principales
+
+#### Endpoints de Conciliación
+- `GET /api/payments/reconciliations/` - Lista de conciliaciones
+- `POST /api/payments/reconciliations/upload-csv/` - Subir CSV
+- `GET /api/payments/reconciliations/{id}/` - Detalle de conciliación
+- `POST /api/payments/reconciliations/{id}/process/` - Procesar conciliación
+- `GET /api/payments/reconciliation-matches/` - Matches encontrados
+- `POST /api/payments/reconciliation-matches/{id}/approve/` - Aprobar match
+
+#### Formato CSV Esperado
+```csv
+fecha,descripcion,importe,moneda,referencia
+2025-01-15,"Transferencia Juan Perez",25000.00,"ARS","CBU 28500109...1234"
+2025-01-16,"Transferencia Maria Garcia",18000.00,"ARS","CBU 28500109...5678"
+```
+
+### Tareas Asíncronas (Celery)
+
+#### Procesamiento Nocturno
+```python
+@shared_task
+def nightly_bank_reconciliation():
+    """Job nocturno para conciliación automática"""
+    # Procesa conciliaciones pendientes
+    # Actualiza tipos de cambio
+    # Envía notificaciones
+```
+
+#### Procesamiento de CSV
+```python
+@shared_task
+def process_bank_reconciliation(reconciliation_id):
+    """Procesa una conciliación específica"""
+    # Parsea el CSV
+    # Ejecuta algoritmos de matching
+```
+
+---
+
+## 3.13 Módulo Facturación Electrónica
+
+**Propósito**: Generación y gestión de facturas electrónicas argentinas con integración AFIP, cumpliendo normativas fiscales locales.
+
+### Modelos Principales
+
+#### Invoice
+```python
+class Invoice(models.Model):
+    """Factura electrónica"""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE)
+    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE, null=True)
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, null=True)
+    
+    # Datos de la factura
+    number = models.CharField(max_length=20, unique=True)
+    type = models.CharField(max_length=2, choices=InvoiceType.choices)
+    status = models.CharField(max_length=20, choices=InvoiceStatus.choices)
+    issue_date = models.DateField()
+    currency = models.CharField(max_length=3, default='ARS')
+    
+    # Datos del cliente
+    client_name = models.CharField(max_length=200)
+    client_document_type = models.CharField(max_length=2)
+    client_document_number = models.CharField(max_length=20)
+    client_tax_condition = models.CharField(max_length=2)
+    client_address = models.CharField(max_length=200, blank=True)
+    
+    # Montos
+    net_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    vat_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    total = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    # AFIP
+    cae = models.CharField(max_length=14, blank=True)
+    cae_expiration = models.DateField(null=True, blank=True)
+    sent_to_afip_at = models.DateTimeField(null=True, blank=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    
+    # Archivos
+    pdf_file = models.FileField(upload_to='invoices/pdf/', null=True, blank=True)
+    pdf_url = models.URLField(blank=True)
+    
+    # Control
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+```
+
+#### InvoiceItem
+```python
+class InvoiceItem(models.Model):
+    """Item de factura"""
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='items')
+    description = models.CharField(max_length=200)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    total = models.DecimalField(max_digits=10, decimal_places=2)
+    afip_code = models.CharField(max_length=10, blank=True)
+```
+
+#### AfipConfig
+```python
+class AfipConfig(models.Model):
+    """Configuración AFIP por hotel"""
+    hotel = models.OneToOneField(Hotel, on_delete=models.CASCADE)
+    environment = models.CharField(max_length=10, choices=Environment.choices)
+    cuit = models.CharField(max_length=11)
+    point_of_sale = models.IntegerField()
+    certificate_path = models.CharField(max_length=500)
+    private_key_path = models.CharField(max_length=500)
+    tax_condition = models.CharField(max_length=2)
+    gross_income = models.CharField(max_length=50, blank=True)
+    activity_start_date = models.DateField(null=True, blank=True)
+    
+    # Tokens AFIP
+    afip_token = models.TextField(blank=True)
+    afip_sign = models.TextField(blank=True)
+    afip_token_generation = models.DateTimeField(null=True, blank=True)
+    afip_token_expiration = models.DateTimeField(null=True, blank=True)
+```
+
+### Servicios Principales
+
+#### AfipAuthService
+```python
+class AfipAuthService:
+    """Autenticación con AFIP WSAA"""
+    
+    def get_token_and_sign(self) -> Tuple[str, str]:
+        """Obtiene token y sign válidos para AFIP"""
+        # 1) Verificar cache
+        # 2) Verificar persistencia en BD
+        # 3) Generar nuevo token si es necesario
+        # 4) Manejar caso "TA ya válido"
+```
+
+#### InvoicePDFService
+```python
+class InvoicePDFService:
+    """Generación de PDFs de facturas"""
+    
+    def generate_pdf(self, invoice: Invoice) -> str:
+        """Genera PDF fiscal completo"""
+        # 1) Renderizar template HTML
+        # 2) Convertir a PDF con WeasyPrint
+        # 3) Fallback a ReportLab si falla
+```
+
+#### AfipInvoiceService
+```python
+class AfipInvoiceService:
+    """Envío de facturas a AFIP"""
+    
+    def send_invoice_to_afip(self, invoice: Invoice) -> dict:
+        """Envía factura a AFIP y obtiene CAE"""
+        # 1) Autenticación con AFIP
+        # 2) Construcción de XML
+        # 3) Envío a WSFEv1
+        # 4) Procesamiento de respuesta
+```
+
+### APIs Principales
+
+#### Endpoints de Facturación
+- `GET /api/invoicing/invoices/` - Lista de facturas
+- `POST /api/invoicing/invoices/create-from-reservation/` - Crear desde reserva
+- `GET /api/invoicing/invoices/{id}/pdf/` - Obtener PDF
+- `POST /api/invoicing/invoices/{id}/send_to_afip/` - Enviar a AFIP
+- `POST /api/invoicing/invoices/{id}/cancel/` - Cancelar factura
+- `GET /api/invoicing/invoices/by-reservation/{id}/` - Facturas por reserva
+
+#### Configuración AFIP
+- `GET /api/invoicing/afip-config/` - Configuración AFIP
+- `POST /api/invoicing/afip-config/` - Crear configuración
+- `PUT /api/invoicing/afip-config/{id}/` - Actualizar configuración
+
+### Flujos de Trabajo
+
+#### Generación de Factura
+1. **Creación**: Desde reserva o pago
+2. **Validación**: Datos del cliente y hotel
+3. **Generación**: Número único secuencial
+4. **Estado**: Draft (borrador)
+
+#### Envío a AFIP
+1. **Autenticación**: Token AFIP válido
+2. **Construcción**: XML según normativas
+3. **Envío**: WSFEv1 de AFIP
+4. **Procesamiento**: CAE y fecha de vencimiento
+5. **Estado**: Approved (aprobada)
+
+#### Generación de PDF
+1. **Template**: HTML con estilos AFIP
+2. **Datos**: Información de factura y hotel
+3. **Conversión**: WeasyPrint → PDF
+4. **Almacenamiento**: Media files
+
+### Integraciones
+
+#### AFIP WSAA
+- **Autenticación**: Certificados digitales
+- **Tokens**: Cache y persistencia
+- **Manejo de errores**: "TA ya válido"
+
+#### AFIP WSFEv1
+- **Envío**: Facturas electrónicas
+- **Respuesta**: CAE y autorización
+- **Estados**: Aprobada/Rechazada
+
+#### WeasyPrint
+- **HTML → PDF**: Conversión de templates
+- **Fallback**: ReportLab si falla
+- **Estilos**: CSS compatible
+
+### Configuraciones
+
+#### Certificados AFIP
+- **Desarrollo**: Certificados de prueba
+- **Producción**: Certificados reales
+- **Renovación**: Proceso automático
+
+#### Templates PDF
+- **HTML**: Template AFIP SDK
+- **CSS**: Estilos oficiales
+- **Responsive**: A4 optimizado
+
+### Tareas Asíncronas
+
+#### Generación Automática
+```python
+@shared_task
+def generate_invoice_on_payment_approved(payment_id):
+    """Genera factura automáticamente al aprobar pago"""
+    # Buscar reserva
+    # Crear factura
+    # Enviar a AFIP
+```
+
+#### Envío a AFIP
+```python
+@shared_task
+def send_invoice_to_afip_async(invoice_id):
+    """Envía factura a AFIP de forma asíncrona"""
+    # Obtener token
+    # Construir XML
+    # Enviar a AFIP
+    # Actualizar estado
+```
+
+### Validaciones
+
+#### Datos Obligatorios
+- CUIT del hotel
+- Datos del cliente
+- Montos válidos
+- Fechas correctas
+
+#### Normativas AFIP
+- Tipos de comprobante
+- Condiciones de IVA
+- Numeración secuencial
+- CAE válido
+
+### Estados de Factura
+
+- **Draft**: Borrador, no enviada
+- **Sent**: Enviada a AFIP
+- **Approved**: Aprobada por AFIP
+- **Rejected**: Rechazada por AFIP
+- **Cancelled**: Cancelada
+- **Expired**: CAE expirado
+    # Actualiza estados de pagos
+    # Genera logs de auditoría
+```
+
+### Logs de Auditoría
+
+#### BankReconciliationLog
+```python
+class BankReconciliationLog(models.Model):
+    """Log de eventos de conciliación"""
+    reconciliation = models.ForeignKey(BankReconciliation, on_delete=models.CASCADE)
+    event_type = models.CharField(max_length=30, choices=ReconciliationEventType.choices)
+    event_description = models.TextField()
+    details = models.JSONField()
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+```
+
+#### Tipos de Eventos
+- `CSV_UPLOADED`: CSV subido exitosamente
+- `PROCESSING_STARTED`: Inicio de procesamiento
+- `AUTO_MATCHED`: Match automático encontrado
+- `MANUAL_MATCHED`: Match aprobado manualmente
+- `PENDING_REVIEW`: Match requiere revisión
+- `UNMATCHED`: Transacción sin match
+- `PROCESSING_COMPLETED`: Procesamiento finalizado
+
+### Beneficios del Módulo
+
+#### Para la Gestión Hotelera
+- ✅ **Automatización Total**: Conciliación sin intervención manual
+- ✅ **Precisión Alta**: Algoritmos de matching inteligentes
+- ✅ **Ahorro de Tiempo**: Procesamiento automático 24/7
+- ✅ **Trazabilidad Completa**: Logs detallados de todas las operaciones
+- ✅ **Flexibilidad**: Configuración por hotel y moneda
+- ✅ **Escalabilidad**: Procesamiento asíncrono con Celery
+
+#### Para el Personal
+- ✅ **Interfaz Intuitiva**: Subida de CSV con drag & drop
+- ✅ **Reportes Detallados**: Análisis de efectividad de matching
+- ✅ **Notificaciones**: Alertas automáticas de problemas
+- ✅ **Revisión Manual**: Aprobación de matches de baja confianza
+- ✅ **Acceso a Archivos**: Comprobantes y documentos adjuntos
+
+#### Para la Contabilidad
+- ✅ **Exportación CSV**: Datos listos para importar
+- ✅ **Filtros Precisos**: Solo los datos necesarios
+- ✅ **Formato Estándar**: Compatible con sistemas contables
+
+### Mejoras Implementadas (v2.3)
+
+#### Flujo de Transferencias Bancarias Mejorado
+- **Problema Resuelto**: Las transferencias bancarias confirmaban automáticamente las reservas, dejando sin propósito la conciliación bancaria
+- **Solución Implementada**: 
+  - Transferencias bancarias ahora dejan las reservas en estado "Pendiente de Confirmación"
+  - La conciliación bancaria es la que confirma definitivamente las reservas
+  - Mayor seguridad al verificar que el dinero realmente llegó al banco
+
+#### Algoritmo de Matching Expandido
+- **Nuevo Tipo de Match**: Matching directo con reservas pendientes sin pagos asociados
+- **Criterios de Matching**:
+  - Monto exacto o dentro de tolerancias configuradas
+  - Fecha de transacción vs fecha de creación de reserva
+  - Nombres de huéspedes en descripción bancaria
+- **Tipos de Confianza**:
+  - **Exacto**: Monto y fecha coinciden exactamente
+  - **Fuzzy**: Pequeñas diferencias en monto/fecha
+  - **Parcial**: Diferencias mayores pero dentro de tolerancias
+
+#### Estados de Badge Corregidos
+- **Problema**: Estados en español vs inglés causaban badges incorrectos
+- **Solución**: Mapeo correcto de estados del backend a variantes de Badge
+  - `pending` → `warning` (amarillo)
+  - `processing` → `info` (azul)  
+  - `completed` → `success` (verde)
+  - `failed` → `error` (rojo)
+  - `manual_review` → `warning` (amarillo)
+
+#### Integración con Hooks Existentes
+- **Reemplazo**: Uso de `useCreate` hook en lugar de llamadas manuales a `fetch`
+- **Consistencia**: Misma capa de autenticación (`fetchWithAuth`) en todos los servicios
+- **Manejo de Errores**: Notificaciones toast unificadas (`showSuccess`/`showErrorConfirm`)
+
+#### Configuración Temporal para Pruebas
+- **Permisos**: `permission_classes = [permissions.AllowAny]` temporalmente para testing
+- **URLs**: Corrección de rutas API (`/api/payments/reconciliations/`)
+- **Headers**: Eliminación de headers de autorización duplicados
+
+---
+
 ## Flujos de Trabajo Principales
 
 ### 1. Flujo de Reserva Completo
@@ -2360,8 +3740,34 @@ def calculate_metrics(cls, hotel, target_date=None):
 1. **Sistema determina política** de pago del hotel
 2. **Cliente selecciona tipo** de pago (adelanto/total)
 3. **Sistema calcula monto** según política
-4. **Cliente procesa pago** (tarjeta/manual)
+4. **Cliente procesa pago** (tarjeta/manual/transferencia)
 5. **Sistema confirma reserva** si pago exitoso
+
+#### 1.3.1 Flujo de Transferencia Bancaria
+1. **Cliente selecciona transferencia** como método de pago
+2. **Cliente sube comprobante** (PDF, JPG, PNG) con datos:
+   - Monto de la transferencia
+   - Fecha de la transferencia
+   - CBU/IBAN del destinatario
+   - Nombre del banco
+3. **Sistema procesa archivo** con almacenamiento híbrido:
+   - **Desarrollo**: Almacenamiento local
+   - **Producción**: Cloudinary
+4. **Sistema confirma automáticamente** la transferencia:
+   - Crea `BankTransferPayment` con estado "CONFIRMED"
+   - Crea `Payment` asociado
+   - Actualiza reserva a "CONFIRMED"
+5. **Sistema registra auditoría** completa del proceso
+6. **Cliente recibe confirmación** inmediata del pago
+
+#### 1.3.2 Procesamiento OCR (Opcional)
+1. **Sistema ejecuta OCR** en segundo plano (Celery)
+2. **Sistema extrae datos** del comprobante:
+   - Monto de la transferencia
+   - CBU/IBAN del destinatario
+3. **Sistema valida datos** extraídos vs. datos ingresados
+4. **Si hay discrepancia**: Marca para revisión manual
+5. **Si coinciden**: Confirma automáticamente
 
 #### 1.4 Check-in
 1. **Personal inicia check-in** de reserva confirmada
@@ -2568,6 +3974,23 @@ def validate_voucher(voucher_code, reservation_amount):
 - `POST /api/payments/webhook/` - Webhook Mercado Pago
 - `GET /api/payments/reservation/{id}/payments/` - Pagos de reserva
 
+### Transferencias Bancarias
+- `GET /api/payments/bank-transfers/` - Listar transferencias (con filtros)
+- `POST /api/payments/bank-transfers/` - Crear transferencia
+- `GET /api/payments/bank-transfers/{id}/` - Obtener transferencia
+- `PUT /api/payments/bank-transfers/{id}/` - Actualizar transferencia
+- `POST /api/payments/bank-transfers/{id}/confirm/` - Confirmar transferencia
+- `POST /api/payments/bank-transfers/{id}/reject/` - Rechazar transferencia
+- `POST /api/payments/bank-transfers/{id}/mark_pending_review/` - Marcar para revisión
+- `GET /api/payments/bank-transfers/pending_review/` - Transferencias pendientes
+- `GET /api/payments/bank-transfers/stats/` - Estadísticas de transferencias
+- `POST /api/payments/upload-bank-transfer/` - Subir comprobante (con OCR)
+
+### Cobros (Historial Unificado)
+- `GET /api/payments/collections/` - Historial unificado de pagos
+- `GET /api/payments/collections/stats/` - Estadísticas de cobros
+- `GET /api/payments/collections/export/` - Exportar cobros a CSV
+
 ### Vouchers de Crédito
 - `GET /api/payments/refund-vouchers/` - Listar vouchers con filtros
 - `POST /api/payments/refund-vouchers/` - Crear voucher manual
@@ -2668,10 +4091,13 @@ def validate_voucher(voucher_code, reservation_amount):
 
 ### Mercado Pago
 - **Preferencias**: Creación de preferencias de pago
-- **Webhooks**: Confirmación automática de pagos
+- **Webhooks**: Confirmación automática de pagos con verificación HMAC
 - **Estados**: Seguimiento de estados de pago
 - **Configuración**: Por hotel o por empresa
 - **Modo**: Prueba y producción
+- **Seguridad**: Verificación HMAC obligatoria para webhooks
+- **Idempotencia**: Prevención de procesamiento duplicado
+- **Post-procesamiento**: Tareas asíncronas para notificaciones y auditoría
 
 ### Celery (Tareas Asíncronas)
 - **Métricas**: Cálculo diario de métricas
@@ -2690,6 +4116,1311 @@ def validate_voucher(voucher_code, reservation_amount):
 - **Variables**: Configuración de ambiente
 - **Logs**: Monitoreo de aplicación
 - **Escalabilidad**: Recursos ajustables
+
+## 3.15 Módulo OTAs (Channel Manager)
+
+**Propósito**: Sincronización bidireccional de disponibilidad, tarifas y reservas con plataformas OTA (Online Travel Agencies) como Booking.com y Airbnb.
+
+#### Arquitectura
+
+El módulo OTAs está diseñado con un patrón de adapters que permite:
+- **Escalabilidad**: Agregar nuevos proveedores sin modificar código core
+- **Flexibilidad**: Modo mock para desarrollo, real para producción
+- **Observabilidad**: Logs detallados y jobs para auditoría
+
+```
+apps/otas/
+├── models.py              # OtaConfig, OtaRoomMapping, OtaSyncJob, etc.
+├── services/
+│   ├── ical_importer.py  # Importación de feeds iCal (legacy, usa ICALSyncService)
+│   ├── ical_sync_service.py  # ICALSyncService: servicio centralizado de sync iCal
+│   └── ari_publisher.py  # Push ARI (Availability, Rates, Inventory)
+├── adapters/              # Adapters por proveedor (BookingAdapter, AirbnbAdapter)
+├── tasks.py               # Tareas Celery para sync asíncrono
+├── signals.py             # Triggers automáticos on-change
+└── views.py               # APIs REST para gestión
+```
+
+#### Modelos Principales
+
+##### OtaConfig
+```python
+class OtaConfig(models.Model):
+    hotel = ForeignKey(Hotel)
+    provider = CharField(choices=[ICAL, BOOKING, AIRBNB, EXPEDIA, OTHER])
+    is_active = BooleanField(default=True)
+    
+    # iCal (export/import básico)
+    ical_out_token = CharField(max_length=64)  # Token para URLs .ics
+    
+    # Booking.com
+    booking_hotel_id = CharField(max_length=64)
+    booking_client_id = CharField(max_length=120)
+    booking_client_secret = CharField(max_length=120)
+    booking_base_url = URLField()
+    booking_mode = CharField(choices=[TEST, PROD])
+    
+    # Airbnb
+    airbnb_account_id = CharField(max_length=64)
+    airbnb_client_id = CharField(max_length=120)
+    airbnb_client_secret = CharField(max_length=120)
+    airbnb_base_url = URLField()
+    airbnb_mode = CharField(choices=[TEST, PROD])
+    
+    # JSON genérico para otros proveedores
+    credentials = JSONField(default=dict)
+    
+    # Verificación de configuración
+    verified = BooleanField(default=False)  # Indica si base_url es válido y está verificado
+```
+
+##### OtaRoomMapping
+```python
+class OtaRoomMapping(models.Model):
+    class SyncDirection(models.TextChoices):
+        IMPORT = "import", "Import"
+        EXPORT = "export", "Export"
+        BOTH = "both", "Both"
+
+    hotel = ForeignKey(Hotel)
+    room = ForeignKey(Room)
+    provider = CharField(choices=[ICAL, BOOKING, AIRBNB, ...])
+    external_id = CharField(max_length=120)      # ID de habitación en la OTA
+    ical_in_url = URLField()                      # URL feed iCal para importar reservas
+    sync_direction = CharField(choices=SyncDirection, default=SyncDirection.BOTH)
+    last_synced = DateTimeField(null=True, blank=True)  # Última sincronización exitosa
+    is_active = BooleanField(default=True)
+```
+
+**Campos Clave**:
+- `sync_direction`: Controla la dirección de sincronización:
+  - `"import"`: Solo importa desde la OTA (no exporta)
+  - `"export"`: Solo exporta hacia la OTA (no importa)
+  - `"both"`: Importa y exporta (comportamiento por defecto)
+- `last_synced`: Se actualiza automáticamente cuando hay una sincronización exitosa (import o export)
+
+##### OtaRoomTypeMapping / OtaRatePlanMapping
+```python
+class OtaRoomTypeMapping(models.Model):
+    hotel = ForeignKey(Hotel)
+    provider = CharField()
+    room_type_code = CharField(max_length=60)    # Código interno PMS (ej: "DOUBLE")
+    provider_code = CharField(max_length=120)     # Código en la OTA (ej: "STD_DBL")
+    is_active = BooleanField(default=True)
+
+class OtaRatePlanMapping(models.Model):
+    hotel = ForeignKey(Hotel)
+    provider = CharField()
+    rate_plan_code = CharField(max_length=60)     # Código interno PMS (ej: "STANDARD")
+    provider_code = CharField(max_length=120)     # ID en la OTA
+    currency = CharField(max_length=3, default="ARS")
+    is_active = BooleanField(default=True)
+```
+
+##### OtaSyncJob / OtaSyncLog
+```python
+class OtaSyncJob(models.Model):
+    hotel = ForeignKey(Hotel)
+    provider = CharField()
+    job_type = CharField(choices=[IMPORT_ICS, EXPORT_ICS, PUSH_ARI, PULL_RESERVATIONS])
+    status = CharField(choices=[PENDING, RUNNING, SUCCESS, FAILED])
+    stats = JSONField(default=dict)  # {pushed: N, errors: M, fetched: K, ...}
+    error_message = TextField(blank=True)
+
+class OtaSyncLog(models.Model):
+    job = ForeignKey(OtaSyncJob)
+    level = CharField(choices=[INFO, WARNING, ERROR])
+    message = TextField()
+    payload = JSONField(default=dict)  # Request/response sanitizados
+```
+
+#### Flujos Principales
+
+##### 1. iCal Export (AlojaSys → OTA)
+
+**Endpoint**: `GET /api/otas/ical/hotel/{hotel_id}.ics?token={token}`
+**Endpoint por habitación**: `GET /api/otas/ical/room/{room_id}.ics?token={token}`
+
+**Servicio**: `ICALSyncService.export_reservations()` (preparación) + `views.ical_export_*` (generación del archivo)
+
+**Lógica**:
+- Verifica `sync_direction`: Si hay mapeos específicos de la habitación, debe ser `"export"` o `"both"` para permitir export
+- Obtiene reservas confirmadas (`status=CONFIRMED`) para la habitación/hotel
+- Genera archivo `.ics` con todas las reservas confirmadas/pendientes del hotel/habitación
+- Cada reserva = evento "BUSY" en el calendario
+- Token autenticado para seguridad
+- Actualiza `last_synced` del mapeo automáticamente
+- Registra logs en `OtaSyncLog`
+
+**Uso**: Las OTAs leen este feed periódicamente para bloquear fechas ocupadas.
+
+##### 2. iCal Import (OTA → AlojaSys)
+
+**Trigger**: Manual ("Importar ahora") o automático (Celery Beat cada hora)
+
+**Servicio**: `ICALSyncService.import_reservations()`
+
+**Proceso**:
+1. Verificar `sync_direction`: Si es `"export"` solo, no procede con el import
+2. Fetch de `ical_in_url` del `OtaRoomMapping`
+3. Parse con `icalendar` library
+4. Por cada evento VEVENT:
+   - **Extraer `UID` como `external_id`** para idempotencia y tracking
+   - **Mapear provider a source y channel**:
+     - `source`: "ical", "booking", "airbnb", "expedia" (para logging y trazabilidad)
+     - `channel`: `ReservationChannel.BOOKING` (Booking), `EXPEDIA` (Expedia), `OTHER` (iCal/Airbnb genérico)
+   - **Decidir tipo de entidad**: Por defecto crea `Reservation`, opcionalmente `RoomBlock` si no se requiere reserva visible
+   - **Crear o actualizar `Reservation`** (si `create_reservation=True` por defecto):
+     - `external_id` = `event.UID` (busca por este campo para evitar duplicados)
+     - `channel` = provider mapeado (booking, expedia, other)
+     - `status` = `CONFIRMED`
+     - `guests` = 1, `guests_data` = `[{"source": "ical"}]` (valores mínimos requeridos)
+     - `check_in` = `DTSTART`, `check_out` = `DTEND`
+     - Guarda con `skip_clean=True` para permitir solapamientos con reservas del PMS
+   - **O crear `RoomBlock`** (si `create_reservation=False` para ICAL genérico):
+     - `block_type` = `HOLD`
+     - `reason` = `"external_id:{uid} - {summary}"` (almacena UID para búsqueda)
+     - `start_date` = `DTSTART`, `end_date` = `DTEND`
+   - Si hay conflictos de solapamiento al crear Reservation, registrar como WARNING pero continuar
+5. **Registrar en `OtaSyncLog`** con información completa:
+   - Mensajes: `RESERVATION_CREATED`, `RESERVATION_UPDATED`, `RESERVATION_NO_CHANGES`, `RESERVATION_CONFLICT`, `ROOMBLOCK_CREATED`, `ROOMBLOCK_UPDATED`, `ROOMBLOCK_ERROR`
+   - Payload con `source`, `channel`, `external_id`, `status` ("success"/"error"), `room_id`, `provider`, `check_in`, `check_out`, `error` (si aplica)
+6. Actualizar `last_synced` si hubo procesamiento exitoso (`processed > 0` o `created > 0` o `updated > 0`)
+
+**Task Celery**:
+```python
+@shared_task
+def import_ics_for_mapping_task(mapping_id: int, job_id: int | None):
+    mapping = OtaRoomMapping.objects.get(id=mapping_id)
+    stats = ICALSyncService.import_reservations(mapping, job=job)
+    # stats = {processed: N, created: M, updated: K, skipped: L, errors: P}
+```
+
+**Características mejoradas**:
+- ✅ **Idempotencia**: UID del evento (`external_id`) previene duplicados y permite actualizar reservas existentes
+- ✅ **Source tracking**: Cada evento registra su origen ("booking", "airbnb", "ical", "expedia") en logs
+- ✅ **Channel mapping**: Reservas se categorizan según provider (Booking → `ReservationChannel.BOOKING`, etc.)
+- ✅ **Logs detallados**: Cada acción registra `source`, `channel`, `status`, `external_id` para auditoría completa
+- ✅ **Flexibilidad**: Opción de crear `RoomBlock` en lugar de `Reservation` para bloqueos no visibles
+- ✅ **Manejo de errores robusto**: Continúa procesando aunque algunos eventos fallen, registrando cada error
+
+##### 3. Push ARI (AlojaSys → OTA)
+
+**Endpoint**: `POST /api/otas/ari/push/` con body:
+```json
+{
+  "hotel": 1,
+  "provider": "booking",
+  "date_from": "2025-11-01",
+  "date_to": "2025-11-07"
+}
+```
+
+**Proceso**:
+1. Resolver `OtaConfig` activo del hotel/proveedor
+2. Buscar mapeos activos (`OtaRoomTypeMapping`, `OtaRatePlanMapping`)
+3. Construir payload ARI diario (disponibilidad + precio por fecha)
+4. Ejecutar `adapter.push_ari(payload)` → HTTP POST al endpoint de la OTA
+5. Loggear request/response en `OtaSyncLog`
+
+**Task Celery**:
+```python
+@shared_task
+def push_ari_for_hotel_task(hotel_id: int, provider: str, date_from_str: str, date_to_str: str):
+    stats = push_ari_for_hotel(job, hotel_id, provider, date_from, date_to)
+```
+
+##### 4. Pull Reservations (OTA → AlojaSys)
+
+**Trigger**: Celery Beat cada 1-2 minutos (`pull_reservations_all_hotels_task`)
+
+**Proceso**:
+1. Para cada `OtaConfig` activo (Booking/Airbnb)
+2. Ejecutar `adapter.pull_reservations(since=last_check)`
+3. Obtener lista de reservas nuevas/modificadas
+4. Normalizar a modelo interno (crear/actualizar `Reservation`)
+5. Idempotencia por `external_id` de la OTA
+
+**Task Celery**:
+```python
+@shared_task
+def pull_reservations_for_hotel_task(hotel_id: int, provider: str, since_iso: str | None):
+    stats = pull_reservations_for_hotel(job, hotel_id, provider, since)
+```
+
+**Nota**: Este método de polling se usa como **respaldo**. Los webhooks (ver sección siguiente) proporcionan sincronización instantánea.
+
+##### 5. Webhooks (OTA → AlojaSys) - Sincronización Instantánea
+
+**Endpoints**:
+- `POST /api/otas/webhooks/booking/` - Webhook de Booking.com
+- `POST /api/otas/webhooks/airbnb/` - Webhook de Airbnb
+
+**Trigger**: Automático cuando Booking/Airbnb envía notificaciones HTTP en tiempo real
+
+**Ventaja sobre Pull**: Sincronización **instantánea** (segundos) en lugar de cada 1-2 minutos, evitando overbooking.
+
+**Implementación** (`apps/otas/views.py`):
+- Función `_process_reservation_webhook(provider, request)` procesa todos los webhooks
+- Funciones `booking_webhook()` y `airbnb_webhook()` son wrappers específicos
+
+**Proceso**:
+1. **Verificación HMAC**: Valida firma del webhook usando `WebhookSecurityService`
+   - Header requerido: `X-Signature` (HMAC-SHA256 del body)
+   - Secret desde variables de entorno: `BOOKING_WEBHOOK_SECRET`, `AIRBNB_WEBHOOK_SECRET` (fallback: `OTAS_WEBHOOK_SECRET`)
+   - En modo DEBUG, permite sin firma (útil para desarrollo/testing)
+2. **Idempotencia**: Verifica si el `event_id` ya fue procesado
+   - Usa `WebhookSecurityService.is_notification_processed(notification_id, None)`
+   - **Importante**: Verifica solo por `notification_id`, NO por `external_res_id`
+   - Permite múltiples eventos para la misma reserva (created, updated, cancelled)
+   - Rechaza el mismo `event_id` procesado dos veces
+3. **Extracción de datos** del payload:
+   - `event_id` o `id`: Identificador único del evento
+   - `reservation_id` o `external_id`: ID de la reserva en la OTA
+   - `hotel_id` o `property_id`: ID del hotel
+   - `ota_room_id` o `room_id`: ID de la habitación en la OTA
+   - `pms_room_id` o `room`: ID de la habitación en el PMS
+   - `check_in`, `check_out`: Fechas (ISO format)
+   - `guests`: Número de huéspedes
+   - `notes`: Notas adicionales
+4. **Resolución de hotel/habitación**:
+   - Primero busca `OtaRoomMapping` por `provider` + `ota_room_id` (external_id del mapping)
+   - Fallback: Busca `Room` por `pms_room_id` directamente
+   - Fallback: Busca `Hotel` por `hotel_id`
+5. **Creación/actualización de `Reservation`**:
+   - Busca reserva existente por `external_id` + `channel` (provider)
+   - Si existe: Actualiza `check_in`, `check_out`, `room`, `guests`, `status=CONFIRMED`
+   - Si no existe: Crea nueva reserva con:
+     - `external_id` = `reservation_id` del webhook
+     - `channel` = mapeado según provider (Booking → `ReservationChannel.BOOKING`, Airbnb → `OTHER`)
+     - `status` = `CONFIRMED`
+     - `guests` y `guests_data` desde payload
+     - `skip_clean=True` para permitir restricciones diferentes (reservas desde OTAs pueden tener validaciones más flexibles)
+6. **Procesamiento de pagos OTA** (si aplica):
+   - Si el webhook incluye información de pago (`payment_info`), se crea un registro `Payment` con:
+     - `payment_source`: OTA_PAYOUT, OTA_VCC, etc.
+     - `provider`: Booking.com, Airbnb, etc.
+     - `external_reference`: ID de transacción de la OTA
+     - `gross_amount`, `commission_amount`, `net_amount`: Desglose financiero
+     - `payout_date`: Fecha de liquidación
+   - Se marca `reservation.paid_by = 'OTA'` automáticamente
+7. **Detección de overbooking**:
+   - Si hay otras reservas activas que se solapan en la misma habitación:
+     - Se marca `reservation.overbooking_flag = True`
+     - Se registra en logs para auditoría
+8. **Registro en logs**:
+   - Crea `OtaSyncJob` con `job_type=PULL_RESERVATIONS`, `stats={"webhook": True, "provider": provider}`
+   - Crea `OtaSyncLog` con mensajes:
+     - `WEBHOOK_RESERVATION_CREATED`: Nueva reserva creada
+     - `WEBHOOK_RESERVATION_UPDATED`: Reserva existente actualizada
+     - `WEBHOOK_RESERVATION_NO_CHANGES`: Reserva no necesitó cambios
+     - `WEBHOOK_INCOMPLETE`: Datos insuficientes para procesar
+     - `WEBHOOK_ERROR`: Error durante procesamiento
+   - Payload incluye: `reservation_id`, `external_id`, `provider`, `status`, `room_id`, `check_in`, `check_out`
+7. **Marcar como procesado**: `WebhookSecurityService.mark_notification_processed(notification_id, None)` para idempotencia
+
+**Ejemplo de Payload (Booking)**:
+```json
+{
+  "event_id": "evt_1234567890",
+  "reservation_id": "BK_RES_ABC123",
+  "hotel_id": 1,
+  "ota_room_id": "BK_ROOM_001",
+  "check_in": "2025-11-10",
+  "check_out": "2025-11-12",
+  "guests": 2,
+  "notes": "Reserva desde Booking.com"
+}
+```
+
+**Seguridad**:
+- ✅ Verificación HMAC obligatoria en producción
+- ✅ Idempotencia para evitar procesamiento duplicado
+- ✅ Logs detallados para auditoría
+- ✅ Manejo robusto de errores (continúa procesando aunque algunos eventos fallen)
+
+**Testing**:
+```bash
+python manage.py test_ota_webhooks --hotel-id 1 --room-id 1 --skip-hmac
+```
+El comando prueba:
+- Creación de reserva desde webhook
+- Idempotencia (no procesa el mismo `event_id` dos veces)
+- Actualización de reserva existente (con nuevo `event_id`)
+- Webhooks de Booking y Airbnb
+
+#### Automatización (Signals)
+
+**Django Signals** (`apps/otas/signals.py`):
+
+```python
+@receiver(post_save, sender=Reservation)
+def reservation_saved(sender, instance, **kwargs):
+    # Encola push ARI automático para todos los proveedores activos
+    _enqueue_for_active_providers(instance.hotel_id)
+```
+
+**Throttling**: Coalesce eventos por 60 segundos (evita tormenta de jobs si hay múltiples cambios).
+
+#### Adapters
+
+**Patrón Base** (`OtaAdapterBase`):
+
+```python
+class OtaAdapterBase:
+    def push_ari(self, payload: Dict) -> AriPushResult:
+        """Envía disponibilidad/tarifas a la OTA"""
+        pass
+    
+    def pull_reservations(self, since: datetime) -> Dict:
+        """Obtiene reservas nuevas/modificadas desde la OTA"""
+        pass
+    
+    def is_available(self) -> bool:
+        """Valida si el adapter tiene config válida"""
+        pass
+```
+
+**BookingAdapter**:
+- Lee `OtaConfig.booking_base_url`, `booking_client_id/secret`
+- Construye requests HTTP con headers/auth según API de Booking
+- Maneja rate limiting (429) con backoff exponencial
+- Logs request/response en `OtaSyncLog`
+
+**AirbnbAdapter**:
+- Similar a BookingAdapter, con formato específico de Airbnb
+- Endpoints y payloads según documentación de Airbnb
+
+**Mock Mode**: Si no hay `base_url` configurado, el adapter opera en modo mock (no hace HTTP real, solo retorna success con conteos simulados).
+
+#### APIs Principales
+
+##### Configuración
+- `GET /api/otas/configs/` - Listar configuraciones OTA
+- `POST /api/otas/configs/` - Crear configuración
+- `PUT /api/otas/configs/{id}/` - Actualizar configuración
+- `DELETE /api/otas/configs/{id}/` - Eliminar configuración
+
+##### Mapeos
+- `GET /api/otas/mappings/` - Listar mapeos por habitación
+- `POST /api/otas/mappings/` - Crear mapeo
+- `POST /api/otas/mappings/{id}/import_now/` - Trigger manual import iCal
+
+##### Tipos y Planes
+- `GET /api/otas/room-type-mappings/` - Listar mapeos de tipos
+- `POST /api/otas/room-type-mappings/` - Crear mapeo tipo
+- `GET /api/otas/rate-plan-mappings/` - Listar mapeos de planes
+- `POST /api/otas/rate-plan-mappings/` - Crear mapeo plan
+
+##### ARI Push
+- `POST /api/otas/ari/push/` - Disparar push ARI manual
+
+##### Jobs y Logs
+- `GET /api/otas/jobs/` - Listar jobs de sincronización
+- `GET /api/otas/logs/` - Listar logs (filtrable por job_id)
+
+##### iCal Export
+- `GET /api/otas/ical/hotel/{hotel_id}.ics?token={token}` - Feed iCal del hotel
+- `GET /api/otas/ical/room/{room_id}.ics?token={token}` - Feed iCal de habitación
+
+##### Webhooks OTA (Sincronización Instantánea)
+- `POST /api/otas/webhooks/booking/` - Webhook de Booking.com para notificaciones en tiempo real
+  - **Autenticación**: Header `X-Signature` con HMAC-SHA256 del body (secret: `BOOKING_WEBHOOK_SECRET`)
+  - **Payload**: JSON con `event_id`, `reservation_id`, `hotel_id`, `ota_room_id`, `check_in`, `check_out`, `guests`, `notes`
+  - **Respuesta**: `{"ok": true, "status": "processed"}` o `{"ok": false, "status": "error", "error": "..."}`
+  - **Idempotencia**: Verifica `event_id` para evitar duplicados
+  - **Respuesta HTTP**: `200 OK` si procesado, `400 Bad Request` si error
+  
+- `POST /api/otas/webhooks/airbnb/` - Webhook de Airbnb para notificaciones en tiempo real
+  - Misma estructura que Booking.com
+  - Secret: `AIRBNB_WEBHOOK_SECRET` (fallback: `OTAS_WEBHOOK_SECRET`)
+
+**Configuración de Webhooks en OTAs**:
+- Booking.com: Configurar URL en Partner Hub → Webhooks → Reservations
+- Airbnb: Configurar URL en Partner Portal → Webhooks → Reservations
+
+**Ventajas de Webhooks vs Pull**:
+- ⚡ **Sincronización instantánea**: Reservas aparecen en segundos, no minutos
+- 🔒 **Menor riesgo de overbooking**: Actualización inmediata de disponibilidad
+- 📊 **Mejor trazabilidad**: Cada evento tiene un `event_id` único
+- 🎯 **Menos carga en servidores**: Push en lugar de polling constante
+
+**Fallback**: Si los webhooks fallan o no están configurados, el sistema usa pull cada 1-2 minutos como respaldo.
+
+##### 6. Validación de Disponibilidad en Tiempo Real (Prevención de Overbooking)
+
+**Servicio**: `OtaAvailabilityChecker` (`apps/otas/services/availability_checker.py`)
+
+**Propósito**: Verificar disponibilidad en OTAs antes de confirmar una reserva en AlojaSys para evitar overbooking.
+
+**Implementación**:
+- Se integra en `ReservationSerializer.create()` y `ReservationSerializer.update()` 
+- Solo se aplica a reservas sin `external_id` (reservas directas del PMS, no importadas desde OTAs)
+- Se activa cuando `status=CONFIRMED` (modo estricto) o antes de confirmar
+
+**Proceso**:
+1. **Obtener OTAs configuradas** para el hotel de la habitación
+2. **Para cada OTA activa** (Booking/Airbnb):
+   - Buscar `OtaRoomMapping` activo para la habitación
+   - Verificar si hay reservas en el PMS con `external_id` + `channel` correspondiente en el rango de fechas
+   - Si hay conflicto → retornar `AvailabilityCheckResult(is_available=False)`
+3. **Modo estricto** (`strict=True`):
+   - Si cualquier OTA indica no disponible → **rechaza la reserva** con `ValidationError`
+   - Mensaje: "La habitación no está disponible en las OTAs. [detalles]"
+4. **Modo no estricto** (`strict=False`):
+   - Si hay conflictos → permite la reserva pero agrega advertencias en las notas
+   - Formato: `"[OTA Check] [advertencias]"`
+
+**Integración en Reservations**:
+```python
+# En ReservationSerializer.create()
+if not instance.external_id and instance.room_id and instance.check_in and instance.check_out:
+    from apps.otas.services.availability_checker import OtaAvailabilityChecker
+    
+    strict_mode = validated_data.get('status') == ReservationStatus.CONFIRMED
+    
+    is_valid, warnings = OtaAvailabilityChecker.validate_before_confirmation(
+        room=instance.room,
+        check_in=instance.check_in,
+        check_out=instance.check_out,
+        exclude_reservation_id=None,
+        strict=strict_mode
+    )
+    
+    if not is_valid:
+        raise ValidationError("La habitación no está disponible en las OTAs. " + "; ".join(warnings))
+```
+
+**Métodos principales**:
+- `check_availability_for_room(room, check_in, check_out, exclude_reservation_id=None)`: Verifica todas las OTAs y retorna lista de `AvailabilityCheckResult`
+- `validate_before_confirmation(room, check_in, check_out, exclude_reservation_id, strict)`: Retorna `(is_valid: bool, warnings: List[str])`
+
+**Lógica actual**:
+- **Verificación local**: Consulta reservas en el PMS con `external_id` (reservas importadas desde OTAs)
+- **No hace llamadas externas** a APIs de OTAs (por ahora)
+- **Preparado para expansión**: Estructura lista para agregar llamadas reales a APIs de OTAs en el futuro
+
+**Testing**:
+```bash
+python manage.py test_ota_availability_check --hotel-id 1 --room-id 1
+```
+El comando prueba:
+- Verificación sin conflictos
+- Detección de conflictos con reservas de OTAs
+- Validación estricta (rechaza reserva)
+- Modo no estricto (permite con advertencias)
+- Exclusión de reserva propia al actualizar
+
+**Ventajas**:
+- ✅ **Evita overbooking**: Rechaza reservas que colisionan con reservas de OTAs
+- ✅ **Verificación rápida**: Consulta local (no requiere llamadas externas)
+- ✅ **Flexible**: Modo estricto/no estricto según necesidad
+- ✅ **Extensible**: Listo para agregar consultas reales a APIs de OTAs
+
+**Limitaciones actuales**:
+- Solo verifica reservas ya importadas en el PMS (no consulta APIs de OTAs directamente)
+- Depende de que las reservas de OTAs estén sincronizadas en el PMS
+- **Nota**: Con webhooks activos, esta limitación se mitiga porque las reservas se sincronizan instantáneamente
+
+##### 8. Servicio de Gestión de Reservas OTA (OtaReservationService)
+
+**Ubicación**: `apps/otas/services/ota_reservation_service.py`
+
+**Propósito**: Centralizar la lógica de creación/actualización de reservas desde OTAs, incluyendo manejo de pagos y detección de overbooking.
+
+**Servicio Principal**:
+```python
+class OtaReservationService:
+    @staticmethod
+    def upsert_reservation(
+        hotel: Hotel,
+        room: Room,
+        external_id: str,
+        channel: str,
+        check_in: date,
+        check_out: date,
+        guests: int,
+        guests_data: List[Dict],
+        notes: str = "",
+        payment_info: PaymentInfo = None
+    ) -> Dict[str, Any]:
+        """
+        Crea o actualiza una reserva desde una OTA.
+        
+        Args:
+            payment_info: Dataclass con información de pago OTA:
+                - payment_source: OTA_PAYOUT, OTA_VCC, etc.
+                - provider: Booking.com, Airbnb, etc.
+                - external_reference: ID de transacción
+                - gross_amount, commission_amount, net_amount
+                - payout_date, activation_date
+        """
+```
+
+**Funcionalidades**:
+
+1. **Upsert Idempotente**:
+   - Busca reserva existente por `external_id` + `channel`
+   - Usa `select_for_update()` para evitar condiciones de carrera
+   - Actualiza si existe, crea si no existe
+
+2. **Detección de Overbooking**:
+   - Verifica solapamientos con otras reservas activas (PENDING, CONFIRMED, CHECK_IN)
+   - Marca `overbooking_flag = True` si encuentra conflictos
+   - No bloquea la creación (permite overbooking para manejo manual)
+
+3. **Gestión de Pagos OTA**:
+   - Si `payment_info` está presente y `paid_by == 'OTA'`:
+     - Crea registro `Payment` con información detallada
+     - Establece `reservation.paid_by = 'OTA'`
+     - Calcula `balance_due` considerando el monto neto de la OTA
+
+4. **Comisiones de Canal**:
+   - Usa `ChannelCommission.objects.update_or_create()` para evitar duplicados
+   - Registra comisión desde `payment_info.commission_amount` si está disponible
+
+5. **Recálculo de Totales**:
+   - Genera `ReservationNight` para todas las fechas
+   - Recalcula `total_price` usando el servicio de pricing
+   - Asegura consistencia entre precio y noches
+
+**Uso en Webhooks**:
+```python
+# En apps/otas/views.py
+from apps.otas.services.ota_reservation_service import OtaReservationService, PaymentInfo
+
+payment_info = PaymentInfo(
+    payment_source='OTA_PAYOUT',
+    provider='booking',
+    external_reference=webhook_data.get('transaction_id'),
+    gross_amount=Decimal(webhook_data.get('gross_amount')),
+    commission_amount=Decimal(webhook_data.get('commission')),
+    net_amount=Decimal(webhook_data.get('net_amount')),
+    payout_date=parse_date(webhook_data.get('payout_date')),
+    currency='ARS'
+)
+
+result = OtaReservationService.upsert_reservation(
+    hotel=hotel,
+    room=room,
+    external_id=external_id,
+    channel=channel,
+    check_in=check_in,
+    check_out=check_out,
+    guests=guests,
+    guests_data=guests_data,
+    notes=notes,
+    payment_info=payment_info
+)
+```
+
+##### 9. Restricciones de Acciones con Overbooking
+
+**Implementación**: `frontend/src/pages/ReservationsGestions.jsx`
+
+**Lógica de Habilitación**:
+```javascript
+const hasOverbooking = (r) => !!r.overbooking_flag
+
+const canCheckIn = (r) => r.status === 'confirmed' && !hasOverbooking(r)
+const canCheckOut = (r) => r.status === 'check_in' && !hasOverbooking(r)
+const canCancel = (r) => (r.status === 'pending' || r.status === 'confirmed') && !hasOverbooking(r)
+const canConfirm = (r) => r.status === 'pending' && !hasOverbooking(r)
+const canEdit = (r) => r.status === 'pending' || hasOverbooking(r) // Siempre permitir editar para resolver
+const canGenerateInvoice = (r) => {
+  return (r.status === 'confirmed' || r.status === 'check_in' || r.status === 'check_out') && 
+         r.total_price > 0 && !hasOverbooking(r)
+}
+```
+
+**Comportamiento**:
+- Si `overbooking_flag === true`:
+  - ❌ Bloquea: Confirmar, Check-in, Check-out, Cancelar, Facturar
+  - ✅ Permite: Editar (para resolver el conflicto)
+- Una vez resuelto (sin solapamientos), el flag se actualiza automáticamente y se habilitan todas las acciones
+
+##### 10. Modal de Edición con Conciliación de Pagos OTA
+
+**Implementación**: `frontend/src/components/modals/ReservationsModal.jsx`
+
+**Características**:
+
+1. **Banner Informativo**:
+   - Se muestra cuando `reservation.paid_by === 'ota'`
+   - Indica el canal que pagó (Booking, Airbnb, etc.)
+   - Explica que el pago del canal no se modifica
+
+2. **Cálculo de Diferencia**:
+   - Calcula `balance_due` (precio actual - pagado por OTA)
+   - Muestra diferencia en tiempo real mientras se editan fechas/habitación
+
+3. **Botón "Cobrar Diferencia"**:
+   - Solo visible si `balance_due > 0`
+   - Abre `PaymentModal` con el monto de diferencia precargado
+   - Permite registrar pago adicional local
+
+4. **Cotización con Canal Correcto**:
+   - `PaymentInformation.jsx` usa `values.channel` (no fuerza 'direct')
+   - Asegura que el precio del modal coincide con el precio real de la reserva
+
+**Flujo de Usuario**:
+1. Usuario edita reserva pagada por OTA
+2. Cambia fechas/habitación → Sistema recalcula precio
+3. Si nuevo precio > pagado:
+   - Muestra diferencia
+   - Botón "Cobrar diferencia" disponible
+4. Usuario hace clic → Abre modal de pago con diferencia
+5. Usuario registra pago → Se suma al pago original de la OTA
+
+##### 11. Seguridad de Tokens y Validaciones
+
+**Implementación**: `apps/otas/serializers.py` y `apps/otas/models.py`
+
+**Propósito**: Proteger información sensible y validar configuraciones de OTAs para prevenir errores y asegurar configuraciones válidas.
+
+###### 11.1 Enmascaramiento de Tokens y Secrets
+
+**Campos Protegidos**:
+- `ical_out_token`: Siempre enmascarado en lectura (muestra solo primeros 4 caracteres)
+- `booking_client_secret`: Campo write-only (no se retorna en respuestas GET)
+- `airbnb_client_secret`: Campo write-only (no se retorna en respuestas GET)
+
+**Implementación**:
+```python
+# Función helper para enmascarar valores sensibles
+def _mask_sensitive_value(value: str | None, visible_chars: int = 4) -> str | None:
+    """Enmascara un valor sensible mostrando solo los primeros caracteres."""
+    if not value or len(value) <= visible_chars:
+        return "****" if value else None
+    return f"{value[:visible_chars]}{'*' * max(8, len(value) - visible_chars)}"
+
+# En OtaConfigSerializer
+ical_out_token = serializers.CharField(...)  # Writable, pero enmascarado en to_representation()
+booking_client_secret = serializers.CharField(write_only=True, ...)  # Solo escritura
+airbnb_client_secret = serializers.CharField(write_only=True, ...)  # Solo escritura
+
+# Campos adicionales para mostrar en frontend
+ical_out_token_masked = serializers.SerializerMethodField()  # Siempre visible
+booking_client_secret_masked = serializers.SerializerMethodField()  # Siempre visible
+airbnb_client_secret_masked = serializers.SerializerMethodField()  # Siempre visible
+```
+
+**Comportamiento**:
+- **En lectura (GET)**: Todos los tokens/secrets se muestran enmascarados (`abcd********`)
+- **En escritura (POST/PUT)**: Se puede actualizar con el valor completo
+- **Frontend**: Usa campos `_masked` para mostrar, campos originales solo para editar
+
+**Ejemplo de Respuesta**:
+```json
+{
+  "id": 1,
+  "ical_out_token": "abcd********",
+  "ical_out_token_masked": "abcd********",
+  "booking_client_secret": null,  // No se retorna (write_only)
+  "booking_client_secret_masked": "clie********",
+  "verified": true
+}
+```
+
+###### 11.2 Validación de Dominios base_url
+
+**Validación Automática**: El serializer valida que `booking_base_url` y `airbnb_base_url` contengan dominios permitidos.
+
+**Dominios Permitidos**:
+- **Booking.com**: `booking.com`, `connectivity-sandbox.booking.com` (para testing)
+- **Airbnb**: `airbnb.com`, `api.airbnb.com` (para testing)
+- **Testing**: `httpbin.org` (para desarrollo y pruebas)
+
+**Implementación**:
+```python
+def validate_booking_base_url(self, value: str | None) -> str | None:
+    """Valida que booking_base_url contenga un dominio permitido."""
+    if not value:
+        return value
+    
+    allowed_domains = ['booking.com', 'httpbin.org']
+    
+    parsed = urlparse(value)
+    domain = parsed.netloc.lower().replace('www.', '')
+    
+    if not any(allowed in domain for allowed in allowed_domains):
+        raise ValidationError(
+            f"El dominio '{domain}' no está permitido. "
+            f"Dominios permitidos: {', '.join(allowed_domains)}"
+        )
+    
+    return value
+
+def validate_airbnb_base_url(self, value: str | None) -> str | None:
+    """Similar para Airbnb con dominios: ['airbnb.com', 'httpbin.org']"""
+```
+
+**Errores de Validación**:
+- Si el dominio no está en la lista permitida → `ValidationError` con mensaje claro
+- El error se muestra en el frontend antes de guardar
+
+###### 11.3 Campo verified (Verificación Automática)
+
+**Campo en Modelo**:
+```python
+class OtaConfig(models.Model):
+    # ...
+    verified = models.BooleanField(
+        default=False,
+        help_text="Indica si la configuración base_url es válida y está verificada"
+    )
+```
+
+**Actualización Automática**: El campo `verified` se actualiza automáticamente en el método `validate()` del serializer:
+- Si `provider == BOOKING` y `booking_base_url` contiene dominio permitido → `verified = True`
+- Si `provider == AIRBNB` y `airbnb_base_url` contiene dominio permitido → `verified = True`
+- Si no hay `base_url` o el dominio no es válido → `verified = False`
+- Para providers sin `base_url` (ej: ICAL) → `verified = False`
+
+**Lógica**:
+```python
+def validate(self, attrs):
+    provider = attrs.get('provider', self.instance.provider if self.instance else None)
+    
+    if provider == OtaProvider.BOOKING:
+        base_url = attrs.get('booking_base_url') or (self.instance.booking_base_url if self.instance else None)
+        
+        if base_url:
+            parsed = urlparse(base_url)
+            domain = parsed.netloc.lower().replace('www.', '')
+            if any(allowed in domain for allowed in ['booking.com', 'httpbin.org']):
+                attrs['verified'] = True
+            else:
+                attrs['verified'] = False
+        else:
+            attrs['verified'] = False
+    
+    # Similar para AIRBNB
+    
+    return attrs
+```
+
+**Uso en Frontend**:
+- Columna "Verificado" en la tabla de configuraciones
+- Badge visual: Verde si `verified = True`, Gris si `verified = False`
+- Indicador en el modal al editar `base_url` (muestra estado de verificación)
+
+###### 11.4 URLs Completas de iCal (Sin Exponer Tokens)
+
+**Problema Resuelto**: Evitar exponer el token real al construir URLs de iCal en el frontend.
+
+**Solución**: Campo calculado `ical_hotel_url` en el serializer:
+```python
+def get_ical_hotel_url(self, obj) -> str | None:
+    """Retorna la URL completa del iCal del hotel."""
+    if not obj.ical_out_token or not obj.hotel_id:
+        return None
+    request = self.context.get('request')
+    if request:
+        base_url = f"{request.scheme}://{request.get_host()}"
+        return f"{base_url}/api/otas/ical/hotel/{obj.hotel_id}.ics?token={obj.ical_out_token}"
+    return None
+```
+
+**Uso**:
+- Frontend recibe `ical_hotel_url` ya construida con el token real
+- No necesita acceder al token enmascarado para construir URLs
+- Botón "Copiar URL" usa directamente `ical_hotel_url`
+
+**Ventajas**:
+- ✅ **Seguridad**: El token nunca se expone en texto plano al frontend
+- ✅ **Conveniencia**: URLs listas para usar sin construcción manual
+- ✅ **Consistencia**: Misma estructura de URL siempre
+
+###### 11.5 Integración en Frontend
+
+**Tabla de Configuraciones** (`OtaConfig.jsx`):
+- Columna "Token": Muestra `ical_out_token_masked` (siempre enmascarado)
+- Columna "Verificado": Badge verde/gris según `verified`
+- Botón "Copiar URL": Usa `ical_hotel_url` (no construye manualmente)
+
+**Modal de Edición** (`OtaConfigModal.jsx`):
+- Campo `ical_out_token`: Muestra valor actual enmascarado como `statusMessage`
+- Campo `booking_base_url` / `airbnb_base_url`: 
+  - Muestra estado de verificación: "Verificado" (verde) o "No Verificado" (amarillo)
+  - Validación en tiempo real al escribir
+- Campos `booking_client_secret` / `airbnb_client_secret`:
+  - Type `password` para ocultar al escribir
+  - Muestra valor actual enmascarado como `statusMessage` al editar
+
+**Validaciones**:
+- El backend valida dominios antes de guardar
+- Si el dominio no es permitido, muestra error claro en el frontend
+- El campo `verified` se actualiza automáticamente después de guardar
+
+###### 11.6 Frontend - Vista de Gestión de OTAs (nueva)
+
+Ubicación del código: `frontend/src/pages/configurations/Otas.jsx` (ruta de navegación: `/#/otas`).
+
+Objetivo: Gestionar canales OTA y monitorear sincronizaciones en una vista separada del ABM de configuraciones.
+
+- Componentes clave:
+  - Tabla con columnas: hotel, proveedor, etiqueta, activo, token enmascarado, `verified`, última sincronización, acciones.
+  - Filtros: búsqueda libre, hotel, proveedor, estado (activo/inactivo).
+  - Acciones: editar (modal), copiar URL iCal del hotel (`ical_hotel_url`), eliminar, botón "Sincronizar ahora" que invoca `/api/otas/sync/`.
+  - Estado de última sync: obtiene el último `OtaSyncJob` y muestra `PENDING`/`RUNNING`/`SUCCESS`/`FAILED`.
+
+Internacionalización: claves bajo `ota.*` en `frontend/src/i18n/locales/es.json` (`ota.filters.*`, `ota.table.*`, `ota.sync_*`).
+
+##### Endpoints REST Personalizados (`apps/otas/api.py`)
+
+Endpoints personalizados para gestión y sincronización de OTAs con lógica específica:
+
+**Listar Canales OTA**
+- `GET /api/otas/` - Lista todos los canales OTA configurados con filtros opcionales
+  - **Query Params**:
+    - `provider` (opcional): Filtrar por proveedor (`ical`, `booking`, `airbnb`, `expedia`)
+    - `is_active` (opcional): Filtrar por estado activo (`true`/`false`)
+    - `hotel` (opcional): Filtrar por ID de hotel
+  - **Respuesta**: Lista de `OtaConfig` serializados
+  - **Ejemplo**: `GET /api/otas/?provider=booking&is_active=true`
+
+**Sincronización Manual**
+- `POST /api/otas/sync/` - Ejecuta sincronización manual de OTAs
+  - **Body** (opcional):
+    ```json
+    {
+      "provider": "ical",      // Sincronizar solo un proveedor
+      "hotel_id": 1           // Sincronizar solo un hotel
+    }
+    ```
+  - **Sin parámetros**: Sincroniza todos los mapeos activos usando `ICALSyncService.schedule_sync()`
+  - **Con `provider` y `hotel_id`**: Sincroniza solo iCal para el hotel específico
+  - **Respuesta**:
+    ```json
+    {
+      "status": "ok" | "error",
+      "message": "Sincronización ejecutada correctamente",
+      "stats": {
+        "total_mappings": 3,
+        "import_success": 2,
+        "import_errors": 1,
+        "export_success": 3,
+        "export_errors": 0
+      },
+      "logs": [...]  // Logs recientes (últimos 10)
+    }
+    ```
+  - **Nota**: Si se especifica `provider="ical"` y `hotel_id`, ejecuta `import_reservations()` y `export_reservations()` para cada mapeo encontrado.
+
+**Gestión de Mapeos (ViewSet extendido)**
+- `GET /api/otas/mappings/` - Lista todos los mapeos activos
+  - **Filtros automáticos**: Respeta paginación y ordenamiento
+  - **Respuesta**: Lista paginada de `OtaRoomMapping` con `sync_direction` y `last_synced`
+  
+- `POST /api/otas/mappings/` - Crear nuevo mapeo con validación de duplicados
+  - **Validación**: No permite crear más de un mapeo activo para la misma combinación `room` + `provider`
+  - **Body requerido**:
+    ```json
+    {
+      "hotel": 1,
+      "room": 5,
+      "provider": "ical",
+      "external_id": "room-external-123",
+      "ical_in_url": "https://example.com/feed.ics",
+      "sync_direction": "both",  // "import", "export", "both"
+      "is_active": true
+    }
+    ```
+  - **Campos**:
+    - `last_synced`: Solo lectura (se actualiza automáticamente)
+    - `sync_direction`: Controla la dirección de sincronización
+  
+- `PUT /api/otas/mappings/{id}/` - Actualizar mapeo existente
+  - Misma validación de duplicados que en `POST`
+
+**Logs de Sincronización (ViewSet extendido)**
+- `GET /api/otas/logs/` - Lista logs de sincronización con filtros avanzados
+  - **Query Params**:
+    - `hotel` (opcional): Filtrar por ID de hotel
+    - `provider` (opcional): Filtrar por proveedor
+    - `level` (opcional): Filtrar por nivel (`info`, `warning`, `error`)
+  - **Respuesta**: Lista paginada de `OtaSyncLog` ordenada por fecha descendente
+  - **Ejemplo**: `GET /api/otas/logs/?hotel=1&level=error`
+
+**Implementación**
+
+Estos endpoints están implementados en `apps/otas/api.py` como funciones `@api_view` personalizadas, mientras que los ViewSets estándar están en `apps/otas/views.py`:
+
+```python
+# apps/otas/api.py
+@api_view(["GET"])
+def list_ota_configs(request: Request) -> Response:
+    # Filtrado y serialización de OtaConfig
+
+@api_view(["POST"])
+def sync_otas(request: Request) -> Response:
+    # Ejecuta ICALSyncService.schedule_sync() o sync específico
+    # Retorna stats y logs recientes
+```
+
+**Validaciones y Características**
+
+- **Autenticación**: Todos los endpoints requieren autenticación JWT
+- **Paginación**: Endpoints de listado usan paginación DRF estándar
+- **Validación de duplicados**: `OtaRoomMappingViewSet.perform_create()` previene duplicados activos
+- **Filtrado**: Endpoints personalizados permiten filtros múltiples vía query params
+- **Stats detalladas**: `POST /api/otas/sync/` retorna estadísticas detalladas de sincronización
+
+**Pruebas**
+
+Script de prueba disponible:
+```bash
+python manage.py test_ota_api_endpoints --hotel-id 1 --room-id 1
+```
+
+Este script verifica todos los endpoints, filtros, validaciones y respuestas.
+
+#### Tareas Celery Beat
+
+Configurado en `hotel/settings.py`:
+
+```python
+CELERY_BEAT_SCHEDULE = {
+    "otas_import_ics_hourly": {
+        "task": "apps.otas.tasks.import_all_ics",
+        "schedule": 3600.0,  # Cada hora
+    },
+    "otas_pull_reservations_backup": {
+        "task": "apps.otas.tasks.pull_reservations_all_hotels_task",
+        "schedule": 120.0,  # Cada ~2 minutos (respaldo si no hay webhooks)
+    },
+}
+```
+
+#### Seguridad y Observabilidad
+
+**Tokens iCal**:
+- Generación: `python manage.py generate_ical_token --hotel-id 1`
+- URLs firmadas con `token` en query param
+- Rotación manual cuando sea necesario
+
+**Logs y Auditoría**:
+- `OtaSyncLog` con level (INFO/WARNING/ERROR)
+- Payload sanitizado (no expone secrets)
+- Trace ID para correlación de requests
+- **Registro completo de todas las sincronizaciones OTA** (ver sección "Auditoría y Trazabilidad" abajo)
+
+**Idempotencia**:
+- iCal: `OtaImportedEvent` por `(room, provider, uid)` único
+- ARI: Clave por `(hotel, room_type, rate_plan, date_range)`
+- Reservas: `external_id` único por OTA
+
+**Control de Sincronización**:
+- `sync_direction`: Permite controlar dirección de sincronización por mapeo:
+  - `"import"`: Solo importa desde la OTA (útil para feeds de solo lectura)
+  - `"export"`: Solo exporta hacia la OTA (útil cuando la OTA gestiona sus propias reservas)
+  - `"both"`: Sincronización bidireccional completa (default)
+- `last_synced`: Timestamp de última sincronización exitosa, actualizado automáticamente
+
+#### Comandos de Gestión
+
+```bash
+# Generar token iCal y mostrar URLs
+python manage.py generate_ical_token --hotel-id 1 --show-rooms
+
+# Import manual iCal
+python manage.py import_ical_now --mapping-id 1
+
+# Test push ARI
+python manage.py ota_push_ari_test --hotel-id 1 --provider booking --days 7
+
+# Test pull reservations
+python manage.py ota_pull_res_test --hotel-id 1 --provider booking --minutes 10
+
+# Test ICALSyncService completo
+python manage.py test_ical_sync_service --hotel-id 1 --room-id 1 --ical-url "URL_ICAL"
+
+# Smoke test completo
+python manage.py ota_smoke_test --hotel-id 1 --room-id 1
+```
+
+#### ICALSyncService
+
+**Ubicación**: `apps/otas/services/ical_sync_service.py`
+
+**Clase Principal**: `ICALSyncService`
+
+**Métodos Principales**:
+
+1. **`import_reservations(ota_room_mapping, job=None)`**:
+   - Descarga el feed iCal desde `ical_in_url`
+   - Parsea eventos VEVENT usando `icalendar`
+   - Por cada evento:
+     - **Usa `event.UID` como `external_id`** para idempotencia y tracking
+     - **Mapea provider a source y channel**:
+       - `source`: "ical", "booking", "airbnb", "expedia" (para logging)
+       - `channel`: `ReservationChannel.BOOKING` (Booking), `EXPEDIA` (Expedia), `OTHER` (iCal/Airbnb genérico)
+     - **Decide si crear Reservation o RoomBlock**:
+       - Por defecto: Booking/Airbnb/Expedia → `Reservation`
+       - ICAL genérico → `Reservation` (configurable para usar `RoomBlock` si no se requiere reserva visible)
+     - **Si crea Reservation**:
+       - `external_id` = UID del evento (para evitar duplicados)
+       - `channel` = provider mapeado (booking, expedia, other)
+       - `status` = `CONFIRMED`
+       - `guests` = 1 (valor por defecto)
+       - `guests_data` = `[{"source": "ical"}]` (mínimo requerido)
+       - `check_in` = `DTSTART`, `check_out` = `DTEND`
+       - Guarda con `skip_clean=True` para evitar validaciones de solapamiento (reservas importadas pueden solaparse)
+     - **Si crea RoomBlock** (cuando `create_reservation=False`):
+       - `block_type` = `HOLD`
+       - `reason` = `"external_id:{uid} - {summary}"` (almacena UID en reason para búsqueda)
+       - `start_date` = `DTSTART`, `end_date` = `DTEND`
+     - **Actualiza si existe**: Busca por `external_id` (Reservation) o por UID en `reason` (RoomBlock)
+   - Respeta `sync_direction` (solo importa si es `"import"` o `"both"`)
+   - Actualiza `last_synced` si hubo procesamiento exitoso
+   - **Registra en `OtaSyncLog` con información mejorada y consistente**:
+     - `message`: `RESERVATION_CREATED`, `RESERVATION_UPDATED`, `RESERVATION_NO_CHANGES`, `RESERVATION_CONFLICT`, `ROOMBLOCK_CREATED`, `ROOMBLOCK_UPDATED`, `ROOMBLOCK_NO_CHANGES`, `ROOMBLOCK_ERROR`
+     - `payload` incluye (todos los logs tienen estos campos de forma consistente):
+       - `source`: "ical", "booking", "airbnb", "expedia" (origen del evento)
+       - `channel`: channel de la reserva (booking, expedia, other)
+       - `external_id`: UID del evento iCal (para idempotencia)
+       - `status`: "success" (creación/actualización exitosa), "skipped" (sin cambios), o "error" (fallo)
+       - `room_id`, `provider`, `check_in`, `check_out`
+       - `reservation_id` o `block_id`: ID de la reserva/bloqueo creado/actualizado
+       - `error`: mensaje de error si aplica
+   - Retorna estadísticas: `{processed, created, updated, skipped, errors}`
+
+2. **`export_reservations(ota_room_mapping, job=None)`**:
+   - Respeta `sync_direction` (solo exporta si es `"export"` o `"both"`)
+   - Obtiene reservas confirmadas para la habitación del mapeo
+   - Cuenta cuántas reservas están disponibles para export
+   - Actualiza `last_synced` automáticamente
+   - Registra logs en `OtaSyncLog`
+   - **Nota**: La generación real del archivo `.ics` se hace en las vistas bajo demanda
+
+3. **`schedule_sync()`**:
+   - Recorre todos los `OtaRoomMapping` activos
+   - Para cada mapeo:
+     - Ejecuta `import_reservations()` si `sync_direction` lo permite
+     - Ejecuta `export_reservations()` si `sync_direction` lo permite
+   - Maneja errores con try/except por mapeo
+   - Registra logs detallados para cada acción
+   - Retorna estadísticas generales: `{total_mappings, import_success, import_errors, export_success, export_errors}`
+
+**Uso en Tareas Celery**:
+```python
+from apps.otas.services.ical_sync_service import ICALSyncService
+
+# Import para un mapeo específico
+mapping = OtaRoomMapping.objects.get(id=mapping_id)
+stats = ICALSyncService.import_reservations(mapping, job=job)
+
+# Sincronización completa programada
+stats = ICALSyncService.schedule_sync()
+```
+
+**Características Clave**:
+- ✅ **Creación directa de `Reservation` o `RoomBlock`** según necesidad:
+  - Por defecto: Booking/Airbnb/Expedia crean `Reservation` (rastreable como reserva visible)
+  - ICAL genérico también crea `Reservation` por defecto (comportamiento actual)
+  - Opción de crear `RoomBlock` para bloqueos no visibles como reservas
+- ✅ **Uso de `external_id` (UID del evento iCal)** para:
+  - Evitar duplicados: si existe reserva con mismo `external_id`, la actualiza
+  - Tracking: permite identificar reservas importadas desde OTAs
+- ✅ **Logging consistente y completo**:
+  - Todos los logs incluyen `source` (origen del evento), `channel` (canal de la reserva), `status` (éxito/saltado/error), y `external_id` (UID)
+  - Los logs permiten auditoría completa y debugging fácil
+  - Campos uniformes en todos los mensajes: `RESERVATION_CREATED`, `RESERVATION_UPDATED`, `RESERVATION_NO_CHANGES`, `ROOMBLOCK_CREATED`, `ROOMBLOCK_UPDATED`, `ROOMBLOCK_NO_CHANGES`, etc.
+  - Idempotencia: múltiples importaciones del mismo evento no crean duplicados
+- ✅ **Mapeo de source según canal**:
+  - `source` ("booking", "airbnb", "ical", "expedia") para logging y trazabilidad
+  - `channel` (`ReservationChannel`) para categorización en el PMS
+- ✅ **Manejo robusto de errores**: continúa procesando aunque algunos eventos fallen, registra cada error en logs
+- ✅ **Registro detallado en `OtaSyncLog`** con:
+  - `source` y `channel` del evento
+  - `status` ("success" o "error")
+  - `external_id` para correlación
+  - Detalles completos de cada operación (created, updated, skipped, conflict, error)
+- ✅ **Transacciones atómicas** para consistencia de datos
+- ✅ **Respeto estricto de `sync_direction`** (import/export/both)
+- ✅ **Actualización automática de `last_synced`** cuando hay procesamiento exitoso
+
+#### Auditoría y Trazabilidad
+
+**Sistema Completo de Logging**
+
+El módulo OTAs implementa un sistema completo de auditoría que registra **cada acción** de sincronización en `OtaSyncLog`, permitiendo trazabilidad completa y debugging detallado.
+
+**Puntos de Registro de Logs**:
+
+1. **Inicio de Sincronización**:
+   - **Tasks (`tasks.py`)**:
+     - `PUSH_ARI_STARTED`: Cuando se inicia un push ARI desde task
+     - `PULL_RES_STARTED`: Cuando se inicia un pull de reservas desde task
+     - `IMPORT_ICS_STARTED`: Cuando se inicia una importación iCal desde task
+   - **Signals (`signals.py`)**:
+     - `PUSH_ARI_STARTED`: Cuando se inicia un push ARI desde signal (post_save/post_delete de Reservation)
+     - Incluye información del trigger: `action`, `reservation_id`, `reservation_status`, `reservation_channel`, `check_in`, `check_out`, `created`
+   - **Services**:
+     - `IMPORT_STARTED` / `EXPORT_STARTED`: Cuando ICALSyncService inicia import/export
+     - `PUSH_ARI_REQUEST` / `PULL_RES_REQUEST`: Cuando ARI Publisher inicia request
+
+2. **Operaciones Exitosas**:
+   - `RESERVATION_CREATED` / `RESERVATION_UPDATED`: Cuando se crea/actualiza una reserva desde iCal
+   - `ROOMBLOCK_CREATED` / `ROOMBLOCK_UPDATED`: Cuando se crea/actualiza un bloqueo desde iCal
+   - `WEBHOOK_RESERVATION_CREATED` / `WEBHOOK_RESERVATION_UPDATED`: Cuando se procesa un webhook exitosamente
+   - `PUSH_ARI_RESPONSE` / `PULL_RES_RESPONSE`: Cuando se completa un push/pull con respuesta
+   - `PUSH_ARI_COMPLETED` / `PULL_RES_COMPLETED` / `IMPORT_ICS_TASK_COMPLETED`: Cuando un task finaliza exitosamente
+
+3. **Errores y Fallos**:
+   - `PUSH_ARI_ERROR` / `PULL_RES_ERROR` / `IMPORT_ICS_TASK_ERROR`: Errores en tasks con:
+     - Mensaje de error completo
+     - Tipo de error (`error_type`)
+     - Traceback completo (`traceback`)
+     - Timestamp explícito (`timestamp`)
+   - `PUSH_ARI_SERVICE_ERROR` / `PULL_RES_SERVICE_ERROR`: Errores en servicios ARI Publisher
+   - `IMPORT_ERROR` / `EXPORT_ERROR`: Errores en ICALSyncService
+   - `RESERVATION_CONFLICT` / `ROOMBLOCK_ERROR`: Conflictos o errores al procesar eventos
+
+**Estructura de Payload de Logs**:
+
+Todos los logs incluyen información consistente:
+
+```python
+{
+    # Información básica
+    "hotel_id": 1,
+    "provider": "booking",
+    "room_id": 5,
+    "mapping_id": 10,
+    
+    # Para operaciones de reservas
+    "reservation_id": 123,
+    "external_id": "UID-ICAL-123",
+    "source": "booking",  # "ical", "booking", "airbnb", "expedia"
+    "channel": "booking",  # ReservationChannel
+    "check_in": "2025-11-01",
+    "check_out": "2025-11-05",
+    "status": "success",  # "success", "skipped", "error"
+    
+    # Para operaciones desde signals
+    "trigger": "signal",  # "task", "signal", "manual"
+    "trigger_info": {
+        "action": "reservation_saved",
+        "reservation_id": 123,
+        "reservation_status": "confirmed",
+        "reservation_channel": "direct",
+        "check_in": "2025-11-01",
+        "check_out": "2025-11-05",
+        "created": false
+    },
+    
+    # Para errores
+    "error": "Connection timeout",
+    "error_type": "TimeoutError",
+    "traceback": "Traceback (most recent call last)...",
+    "timestamp": "2025-10-31T20:41:51.895154Z",
+    
+    # Para estadísticas
+    "stats": {
+        "processed": 10,
+        "created": 5,
+        "updated": 3,
+        "skipped": 2,
+        "errors": 0
+    }
+}
+```
+
+**Flujo Completo de Auditoría**:
+
+1. **Desde Signals (Automatizado)**:
+   ```
+   Reservation.save() 
+   → reservation_saved signal 
+   → _enqueue_for_active_providers() 
+   → _queue_push_ari_for_hotel() 
+   → Crea OtaSyncJob 
+   → Log: PUSH_ARI_STARTED (con trigger_info)
+   → push_ari_for_hotel_task.delay() 
+   → Log: PUSH_ARI_REQUEST 
+   → Log: PUSH_ARI_RESPONSE 
+   → Log: PUSH_ARI_COMPLETED
+   ```
+
+2. **Desde Tasks (Programado)**:
+   ```
+   Celery Beat trigger
+   → pull_reservations_all_hotels_task 
+   → pull_reservations_for_hotel_task 
+   → Crea OtaSyncJob 
+   → Log: PULL_RES_STARTED 
+   → Log: PULL_RES_REQUEST 
+   → Log: PULL_RES_RESPONSE 
+   → Log: PULL_RES_COMPLETED
+   ```
+
+3. **Desde ICALSyncService (Import/Export)**:
+   ```
+   ICALSyncService.import_reservations()
+   → Log: IMPORT_STARTED 
+   → Por cada evento:
+     → Log: RESERVATION_CREATED / RESERVATION_UPDATED / RESERVATION_NO_CHANGES
+   → Log: IMPORT_COMPLETED
+   ```
+
+**Beneficios de la Auditoría**:
+
+- ✅ **Trazabilidad completa**: Cada sincronización tiene un registro completo desde inicio hasta fin
+- ✅ **Debugging rápido**: Traceback completo en errores permite identificar problemas inmediatamente
+- ✅ **Información de contexto**: Trigger info permite saber qué causó cada sincronización
+- ✅ **Correlación**: `job_id` permite agrupar todos los logs de una sincronización
+- ✅ **Métricas**: Estadísticas detalladas en cada log permiten análisis de rendimiento
+- ✅ **Auditoría de seguridad**: Registro de todas las operaciones para cumplimiento
+
+**Consultar Logs**:
+
+```python
+# Obtener todos los logs de un job
+logs = OtaSyncJob.objects.get(id=job_id).logs.all()
+
+# Filtrar por nivel
+error_logs = OtaSyncLog.objects.filter(level=OtaSyncLog.Level.ERROR)
+
+# Filtrar por hotel y provider
+hotel_logs = OtaSyncLog.objects.filter(
+    job__hotel_id=1,
+    job__provider="booking"
+)
+
+# Buscar logs de sincronizaciones iniciadas desde signals
+signal_logs = OtaSyncLog.objects.filter(
+    message="PUSH_ARI_STARTED",
+    payload__trigger="signal"
+)
+```
+
+#### Testing
+
+**Mock Mode**: Por defecto, adapters operan en modo mock (no hacen HTTP real) hasta que se configuren credenciales. Esto permite:
+- Desarrollar sin acceso a sandbox
+- Tests unitarios sin dependencias externas
+- Validar flujo end-to-end con httpbin.org
+
+**iCal Testing**: Usa `test_ical_sync_service` para probar el servicio completo:
+```bash
+python manage.py test_ical_sync_service --hotel-id 1 --room-id 1 --ical-url "URL_VALIDA"
+```
+El script prueba:
+- Importación desde feed iCal
+- Exportación de reservas
+- Respeto de `sync_direction`
+- Actualización de `last_synced`
+- Manejo de errores y conflictos
+
+**Sandbox**: Una vez obtenidas credenciales (Booking Connectivity Partner, Airbnb Partner), configurar:
+- `base_url`: URL sandbox del proveedor
+- `client_id/secret`: Credenciales de prueba
+- `mode`: "test"
+- Probar con hoteles/propiedades de prueba
+
+**Producción**: Tras certificación, cambiar `mode` a "prod" y actualizar URLs/credenciales.
 
 ---
 
@@ -3280,11 +6011,2119 @@ def _process_bank_transfer_refund(refund, amount):
 
 ---
 
+## 3.13 Módulo Invoicing (Facturación Electrónica Argentina)
+
+**Propósito**: Gestión completa de facturación electrónica argentina con integración AFIP WSFEv1 para cumplimiento fiscal.
+
+### Modelos Principales
+
+#### AfipConfig
+Configuración de AFIP por hotel:
+```python
+class AfipConfig(models.Model):
+    hotel = models.OneToOneField(Hotel, on_delete=models.CASCADE)
+    cuit = models.CharField(max_length=11, validators=[validate_cuit])
+    tax_condition = models.CharField(max_length=2, choices=TaxCondition.choices)
+    point_of_sale = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(9999)])
+    certificate_path = models.CharField(max_length=500)
+    private_key_path = models.CharField(max_length=500)
+    environment = models.CharField(max_length=20, choices=AfipEnvironment.choices)
+    last_invoice_number = models.PositiveIntegerField(default=0)
+    last_cae_date = models.DateTimeField(null=True, blank=True)
+    
+    # Token de Acceso (WSAA) - Persistencia para reutilización
+    afip_token = models.TextField(blank=True)
+    afip_sign = models.TextField(blank=True)
+    afip_token_generation = models.DateTimeField(null=True, blank=True)
+    afip_token_expiration = models.DateTimeField(null=True, blank=True)
+    
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+```
+
+#### Invoice
+Factura electrónica:
+```python
+class Invoice(models.Model):
+    # Identificadores únicos
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    # Relaciones principales
+    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE, related_name="invoices")
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name="invoices", null=True, blank=True)
+    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE, related_name="invoices")
+    related_invoice = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True, related_name="related_documents")
+    
+    # Datos de la factura
+    type = models.CharField(max_length=2, choices=InvoiceType.choices)
+    number = models.CharField(max_length=13, help_text="Número formateado (0001-00001234)")
+    issue_date = models.DateField()
+    
+    # Datos del CAE (Código de Autorización Electrónico)
+    cae = models.CharField(max_length=14, blank=True)
+    cae_expiration = models.DateField(null=True, blank=True)
+    
+    # Montos
+    total = models.DecimalField(max_digits=12, decimal_places=2)
+    vat_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal('0.00'))
+    net_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    currency = models.CharField(max_length=3, default="ARS")
+    
+    # Estado y control
+    status = models.CharField(max_length=20, choices=InvoiceStatus.choices, default=InvoiceStatus.DRAFT)
+    
+    # Archivos y respuestas
+    pdf_file = models.FileField(upload_to='invoices/pdf/%Y/%m/%d/', null=True, blank=True)
+    pdf_url = models.URLField(blank=True)
+    afip_response = models.JSONField(default=dict, blank=True)
+    
+    # Datos del cliente (snapshot al momento de la facturación)
+    client_name = models.CharField(max_length=200)
+    client_document_type = models.CharField(max_length=2, default="96")
+    client_document_number = models.CharField(max_length=20)
+    client_tax_condition = models.CharField(max_length=2, choices=TaxCondition.choices, default=TaxCondition.CONSUMIDOR_FINAL)
+    client_address = models.TextField(blank=True)
+    
+    # Metadatos
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Control de errores y reintentos
+    retry_count = models.PositiveIntegerField(default=0)
+    last_error = models.TextField(blank=True)
+    sent_to_afip_at = models.DateTimeField(null=True, blank=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+```
+
+#### InvoiceItem
+Items de la factura:
+```python
+class InvoiceItem(models.Model):
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="items")
+    
+    # Descripción del item
+    description = models.CharField(max_length=200)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('1.00'))
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+    
+    # Cálculos automáticos
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2)
+    vat_rate = models.DecimalField(max_digits=5, decimal_places=2, default=Decimal('21.00'))
+    vat_amount = models.DecimalField(max_digits=12, decimal_places=2)
+    total = models.DecimalField(max_digits=12, decimal_places=2)
+    
+    # Códigos AFIP
+    afip_code = models.CharField(max_length=20, default="1")
+```
+
+### Enums y Tipos
+
+#### TaxCondition
+Condiciones de IVA según AFIP:
+```python
+class TaxCondition(models.TextChoices):
+    RESPONSABLE_INSCRIPTO = "1", "Responsable Inscripto"
+    CONSUMIDOR_FINAL = "5", "Consumidor Final"
+    EXENTO = "6", "Exento"
+    NO_RESPONSABLE = "7", "No Responsable"
+    MONOTRIBUTO = "8", "Monotributo"
+    MONOTRIBUTO_SOCIAL = "9", "Monotributo Social"
+```
+
+#### AfipEnvironment
+Ambientes de AFIP:
+```python
+class AfipEnvironment(models.TextChoices):
+    TEST = "test", "Testing"
+    PRODUCTION = "production", "Producción"
+```
+
+### Enums y Tipos
+
+#### InvoiceType
+```python
+class InvoiceType(models.TextChoices):
+    A = 'A', 'Factura A (Responsables Inscriptos)'
+    B = 'B', 'Factura B (Consumidores Finales)'
+    C = 'C', 'Factura C (Exentos)'
+    E = 'E', 'Factura E (Exportación)'
+    NC = 'NC', 'Nota de Crédito'
+    ND = 'ND', 'Nota de Débito'
+```
+
+#### InvoiceStatus
+```python
+class InvoiceStatus(models.TextChoices):
+    DRAFT = 'draft', 'Borrador'
+    SENT = 'sent', 'Enviada a AFIP'
+    APPROVED = 'approved', 'Aprobada'
+    ERROR = 'error', 'Error'
+```
+
+### Servicios AFIP
+
+#### AfipAuthService
+Servicio de autenticación con AFIP WSAA:
+```python
+class AfipAuthService:
+    def __init__(self, config: AfipConfig):
+        self.config = config
+        self.wsaa_url = self.WSAA_PRODUCTION_URL if config.environment == 'production' else self.WSAA_HOMOLOGATION_URL
+        self.token_cache_key = f"afip_token_{config.hotel.id}_{config.environment}"
+        self.sign_cache_key = f"afip_sign_{config.hotel.id}_{config.environment}"
+    
+    def get_token_and_sign(self) -> Tuple[str, str]:
+        """Obtiene token y sign válidos para AFIP con persistencia en BD"""
+        # 1) Verificar cache Redis
+        # 2) Verificar persistencia en BD (no expirado)
+        # 3) Generar nuevo token si es necesario
+        # 4) Persistir en BD y cache
+        
+    def _generate_new_token(self) -> Tuple[str, str, datetime, datetime]:
+        """Genera nuevo token con ventana TRA ±10 minutos"""
+        
+    def _create_login_xml(self) -> str:
+        """Crea TRA con ventana de tiempo según manual AFIP"""
+        
+    def _sign_xml(self, xml_content: str) -> str:
+        """Firma XML con PKCS#7 no-detached SHA256"""
+        
+    def _parse_login_response(self, response_xml: str) -> Tuple[str, str, datetime, datetime]:
+        """Parsea respuesta AFIP con manejo de Faults"""
+        
+    def clear_cache(self):
+        """Limpia el cache de tokens"""
+        
+    def is_token_valid(self) -> bool:
+        """Verifica si el token actual es válido"""
+```
+
+**Características:**
+- **Autenticación con certificados digitales** PKCS#7 no-detached SHA256
+- **Persistencia de TA en BD** para reutilización automática
+- **Cache Redis** con TTL hasta expiración del TA
+- **Manejo inteligente de Faults** - reutiliza TA vigente si existe
+- **Ventana TRA ±10 minutos** según manual AFIP
+- **SOAPAction correcto** (urn:LoginCms)
+- **Parsing robusto** con des-escape HTML y fallback base64
+- **Soporte completo** para homologación y producción
+
+#### AfipInvoiceService
+Servicio principal de emisión de facturas:
+```python
+class AfipInvoiceService:
+    def __init__(self, config: AfipConfig):
+        self.config = config
+        self.wsfev1_url = self.WSFEv1_PRODUCTION_URL if config.environment == 'production' else self.WSFEv1_HOMOLOGATION_URL
+    
+    def send_invoice(self, invoice: Invoice) -> Dict:
+        """Envía factura a AFIP y obtiene CAE"""
+        
+    def _validate_invoice(self, invoice: Invoice):
+        """Valida la factura antes del envío"""
+        
+    def _build_invoice_xml(self, invoice: Invoice, token: str, sign: str) -> str:
+        """Construye el XML de la factura para AFIP"""
+        
+    def _process_afip_response(self, response_xml: str, invoice: Invoice) -> Dict:
+        """Procesa la respuesta de AFIP"""
+```
+
+**Características:**
+- Construcción automática de XML WSFEv1
+- Validaciones de negocio completas
+- Manejo de todos los tipos de comprobante (A, B, C, E, NC, ND)
+- Procesamiento de respuestas AFIP
+- Actualización automática de facturas con CAE
+
+#### InvoicePDFService
+Servicio de generación de PDFs fiscales con CAE:
+```python
+class InvoicePDFService:
+    def __init__(self):
+        self.page_width, self.page_height = A4
+        self.margin = 2 * cm
+        
+    def generate_pdf(self, invoice) -> str:
+        """Genera PDF fiscal con CAE y datos AFIP"""
+        
+    def _build_pdf_content(self, invoice) -> list:
+        """Construye el contenido del PDF"""
+        
+    def _generate_qr_code(self, invoice) -> Optional[Image]:
+        """Genera código QR con datos AFIP"""
+        
+    def _build_qr_data(self, invoice) -> str:
+        """Construye datos para código QR según normativas AFIP"""
+        
+    def _create_items_table(self, invoice) -> Table:
+        """Crea tabla de items de la factura"""
+        
+    def _create_totals_table(self, invoice) -> Table:
+        """Crea tabla de totales"""
+```
+
+**Características:**
+- Generación de PDFs fiscales completos con ReportLab
+- Inclusión de logo del hotel
+- Datos fiscales del emisor (CUIT, domicilio, condición IVA)
+- Datos del comprador (nombre, documento, domicilio)
+- Detalle de servicios con IVA desglosado
+- CAE y fecha de vencimiento
+- Código QR para verificación AFIP
+- Formato profesional y cumplimiento normativo argentino
+
+**Elementos del PDF:**
+- **Header**: Logo del hotel y título del comprobante
+- **Datos del Emisor**: Razón social, CUIT, domicilio, condición IVA
+- **Datos del Comprador**: Nombre, documento, domicilio
+- **Datos de la Factura**: Número, fecha, moneda, estado
+- **Detalle de Items**: Tabla con servicios, cantidades, precios, IVA
+- **Totales**: Subtotal, IVA, total final
+- **Autorización AFIP**: CAE, fecha de vencimiento, fecha de autorización
+- **Código QR**: Link de verificación AFIP con todos los datos
+- **Footer**: Información del sistema y fecha de generación
+
+**Dependencias:**
+```python
+# requirements.txt
+qrcode==7.4.2
+Pillow==12.0.0
+reportlab==4.0.7
+cryptography>=41.0.0
+requests>=2.31.0
+```
+
+### Funcionalidad de Señas (Pagos Parciales)
+
+#### Descripción
+El sistema soporta pagos parciales (señas) con integración completa a la facturación electrónica argentina. Permite configurar diferentes modos de facturación según las necesidades del hotel.
+
+#### Características Principales
+- **Cálculo Automático**: Usa `PaymentPolicy` para calcular montos de seña
+- **Dos Modos de Facturación**: Solo recibos o facturación AFIP en seña
+- **Múltiples Pagos por Factura**: Soporte para vincular señas + pago final
+- **Validaciones Inteligentes**: Montos, estados de reserva, configuración AFIP
+- **Integración Celery**: Generación automática de PDFs y emails
+
+#### Modelos Extendidos
+
+##### Payment (Campos para Señas)
+```python
+class Payment(models.Model):
+    # ... campos existentes ...
+    
+    # Campos para señas (pagos parciales)
+    is_deposit = BooleanField(default=False)     # Indica si es una seña
+    metadata = JSONField(default=dict)           # Metadatos adicionales
+```
+
+##### Invoice (Soporte para Múltiples Pagos)
+```python
+class Invoice(models.Model):
+    # ... campos existentes ...
+    
+    payment = ForeignKey(Payment, ...)           # Pago principal (compatibilidad)
+    payments_data = JSONField(default=list)      # Lista de IDs de pagos
+```
+
+##### AfipConfig (Modos de Facturación)
+```python
+class AfipConfig(models.Model):
+    # ... campos existentes ...
+    
+    invoice_mode = CharField(
+        max_length=20,
+        choices=InvoiceMode.choices,
+        default=InvoiceMode.RECEIPT_ONLY
+    )
+
+class InvoiceMode(models.TextChoices):
+    RECEIPT_ONLY = "receipt_only", "Solo Recibos"
+    FISCAL_ON_DEPOSIT = "fiscal_on_deposit", "Facturación en Seña"
+```
+
+#### Servicios de Cálculo
+
+##### calculate_deposit()
+```python
+def calculate_deposit(policy, total_amount):
+    """
+    Calcula el monto del depósito según la política de pago
+    
+    Args:
+        policy: PaymentPolicy instance
+        total_amount: Decimal - Monto total de la reserva
+    
+    Returns:
+        dict: Información del depósito
+    """
+    if not policy or policy.deposit_type == PaymentPolicy.DepositType.NONE:
+        return {
+            'required': False,
+            'amount': Decimal('0.00'),
+            'percentage': 0,
+            'type': 'none'
+        }
+
+    amount = Decimal('0.00')
+    if policy.deposit_type == PaymentPolicy.DepositType.PERCENTAGE:
+        amount = (total_amount * policy.deposit_value) / 100
+    elif policy.deposit_type == PaymentPolicy.DepositType.FIXED:
+        amount = policy.deposit_value
+
+    return {
+        'required': True,
+        'amount': amount.quantize(Decimal('0.01')),
+        'percentage': policy.deposit_type == PaymentPolicy.DepositType.PERCENTAGE and policy.deposit_value or 0,
+        'type': policy.deposit_type,
+        'due': policy.deposit_due,
+        'days_before': policy.deposit_days_before,
+        'balance_due': policy.balance_due
+    }
+```
+
+#### Flujos de Trabajo
+
+##### Flujo 1: Solo Recibos (receipt_only)
+1. **Crear Seña**: Genera recibo PDF, no envía a AFIP
+2. **Pago Final**: Genera recibo PDF, no envía a AFIP  
+3. **Factura Final**: Genera factura AFIP con CAE incluyendo todos los pagos
+
+##### Flujo 2: Facturación en Seña (fiscal_on_deposit)
+1. **Crear Seña**: Genera factura AFIP con CAE para el monto de la seña
+2. **Pago Final**: Genera recibo PDF
+3. **Nota de Crédito**: Genera nota de crédito o factura complementaria
+
+#### Serializers
+
+##### CreateDepositSerializer
+```python
+class CreateDepositSerializer(serializers.Serializer):
+    reservation_id = serializers.IntegerField()
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+    method = serializers.CharField(max_length=30, default='cash')
+    send_to_afip = serializers.BooleanField(default=False)
+    notes = serializers.CharField(max_length=500, required=False)
+    
+    def validate_reservation_id(self, value):
+        # Validar que la reserva exista y esté en estado válido
+        # Estados válidos: 'pending', 'confirmed'
+    
+    def validate_amount(self, value):
+        # Validar que el monto sea positivo
+```
+
+##### GenerateInvoiceFromPaymentSerializer (Extendido)
+```python
+class GenerateInvoiceFromPaymentSerializer(serializers.Serializer):
+    # ... campos existentes ...
+    reference_payments = serializers.ListField(
+        child=serializers.IntegerField(),
+        required=False,
+        help_text="Lista de IDs de pagos a incluir en la factura"
+    )
+    
+    def validate_reference_payments(self, value):
+        # Validar que los pagos existan y pertenezcan a la misma reserva
+```
+
+### APIs y Endpoints
+
+#### **AfipConfigViewSet**
+```python
+# GET /api/invoicing/afip-configs/
+# POST /api/invoicing/afip-configs/
+# GET /api/invoicing/afip-configs/{id}/
+# PUT /api/invoicing/afip-configs/{id}/
+# DELETE /api/invoicing/afip-configs/{id}/
+```
+
+#### **TestCertificateValidationView**
+```python
+# POST /api/invoicing/test/certificates/validate/
+# Valida certificados digitales AFIP
+```
+
+#### **TestAfipConnectionView**
+```python
+# POST /api/invoicing/test/afip/connection/
+# Prueba conexión real con AFIP WSAA
+```
+
+#### **TestInvoiceGenerationView**
+```python
+# POST /api/invoicing/test/invoices/generate/
+# Genera factura de prueba con datos mock
+```
+
+#### **TestAfipStatusView**
+```python
+# GET /api/invoicing/test/afip/status/
+# Obtiene estado de servicios AFIP
+```
+
+#### **ListCertificatesView**
+```python
+# GET /api/invoicing/certificates/list/
+# Lista certificados disponibles en /app/certs/
+```
+
+#### **Endpoints de Señas (Pagos Parciales)**
+
+##### **create_deposit**
+```python
+# POST /api/payments/create-deposit/
+# Crear una seña/depósito para una reserva
+
+# Request Body:
+{
+    "reservation_id": 123,
+    "amount": 1000.00,
+    "method": "cash",
+    "send_to_afip": false,
+    "notes": "Seña del 50%"
+}
+
+# Response:
+{
+    "message": "Seña creada exitosamente",
+    "payment": {
+        "id": 456,
+        "reservation_id": 123,
+        "hotel_name": "Hotel Test",
+        "amount": "1000.00",
+        "method": "cash",
+        "is_deposit": true,
+        "status": "approved",
+        "receipt_pdf_url": "https://example.com/receipt.pdf",
+        "created_at": "2024-01-15T10:30:00Z"
+    },
+    "deposit_info": {
+        "required": true,
+        "amount": "1000.00",
+        "percentage": 50,
+        "type": "percentage",
+        "due": "confirmation",
+        "balance_due": "check_in"
+    }
+}
+```
+
+##### **generate_invoice_from_payment_extended**
+```python
+# POST /api/payments/generate-invoice-from-payment/{payment_id}/
+# Generar factura desde pago con soporte para múltiples pagos
+
+# Request Body:
+{
+    "send_to_afip": true,
+    "reference_payments": [123, 124, 125],
+    "customer_name": "Juan Pérez",
+    "customer_document_type": "DNI",
+    "customer_document_number": "12345678",
+    "customer_address": "Calle Falsa 123",
+    "customer_city": "Buenos Aires",
+    "customer_postal_code": "1000",
+    "customer_country": "Argentina"
+}
+
+# Response:
+{
+    "message": "Factura generada exitosamente",
+    "invoice": {
+        "id": "uuid-factura",
+        "number": "0001-00000001",
+        "total": "4000.00",
+        "status": "approved",
+        "cae": "12345678901234",
+        "payments_included": [123, 124, 125],
+        "total_payments": 3
+    }
+}
+```
+
+##### **generate-from-payment (Invoicing)**
+```python
+# POST /api/invoicing/invoices/generate-from-payment/{payment_id}/
+# Endpoint extendido en módulo de facturación con soporte para múltiples pagos
+
+# Request Body:
+{
+    "send_to_afip": true,
+    "reference_payments": [123, 124, 125],
+    "customer_name": "Juan Pérez",
+    "customer_document_type": "DNI",
+    "customer_document_number": "12345678"
+}
+
+# Response:
+{
+    "id": "uuid-factura",
+    "number": "0001-00000001",
+    "total": "4000.00",
+    "status": "approved",
+    "cae": "12345678901234",
+    "payments_included": [123, 124, 125],
+    "total_payments": 3
+}
+```
+
+### Configuraciones y Políticas
+
+#### **Configuración de Ambiente**
+```python
+# settings.py
+AFIP_SETTINGS = {
+    'WSAA_HOMOLOGATION_URL': 'https://wsaahomo.afip.gov.ar/ws/services/LoginCms',
+    'WSAA_PRODUCTION_URL': 'https://wsaa.afip.gov.ar/ws/services/LoginCms',
+    'WSFEv1_HOMOLOGATION_URL': 'https://wswhomo.afip.gov.ar/wsfev1/service.asmx',
+    'WSFEv1_PRODUCTION_URL': 'https://servicios1.afip.gov.ar/wsfev1/service.asmx',
+    'CACHE_TIMEOUT': 11 * 60 * 60,  # 11 horas
+    'RETRY_ATTEMPTS': 3,
+    'RETRY_DELAY': 5,  # segundos
+}
+```
+
+#### **Políticas de Reintento**
+- **Errores temporales**: 3 reintentos con delay de 5 segundos
+- **Errores de certificado**: No reintentar, requiere intervención manual
+- **Errores de TA**: Reutilizar TA persistido si está vigente
+- **Timeout**: 60 segundos para requests a AFIP
+
+#### **Validaciones de Negocio**
+- **CUIT**: 11 dígitos numéricos con validación de dígito verificador
+- **Punto de venta**: Entre 1 y 9999
+- **Montos**: Positivos, máximo 12 dígitos, 2 decimales
+- **Fechas**: No futuras, formato ISO-8601
+- **Documentos**: Validación según tipo (DNI, CUIT, etc.)
+
+### Integraciones
+
+#### **Integración con Reservas**
+```python
+# apps/reservations/signals.py
+@receiver(post_save, sender=Payment)
+def generate_invoice_on_payment(sender, instance, created, **kwargs):
+    if instance.status == PaymentStatus.COMPLETED:
+        InvoiceService.generate_from_payment(instance)
+```
+
+#### **Integración con Notificaciones**
+```python
+# apps/notifications/tasks.py
+@shared_task
+def notify_invoice_generated(invoice_id):
+    invoice = Invoice.objects.get(id=invoice_id)
+    NotificationService.send_invoice_notification(invoice)
+```
+
+#### **Integración con Email**
+```python
+# apps/invoicing/services/email_service.py
+class InvoiceEmailService:
+    def send_invoice_email(self, invoice: Invoice):
+        # Envía PDF por email al cliente
+        pass
+```
+
+### Flujos de Trabajo Principales
+
+#### **1. Configuración Inicial**
+1. **Obtener certificado** desde WSASS/AFIP
+2. **Configurar AfipConfig** con datos del hotel
+3. **Probar conexión** con AFIP
+4. **Autorizar servicios** en AFIP
+5. **Activar facturación** automática
+
+#### **2. Generación de Factura**
+1. **Trigger**: Pago completado o acción manual
+2. **Validación**: Datos del cliente y reserva
+3. **Creación**: Invoice en estado DRAFT
+4. **Autenticación**: Obtener TA de AFIP
+5. **Envío**: XML a WSFEv1
+6. **Procesamiento**: Respuesta y CAE
+7. **PDF**: Generación de documento fiscal
+8. **Notificación**: Email al cliente
+
+#### **3. Manejo de Errores**
+1. **Detección**: Error en cualquier paso
+2. **Clasificación**: Temporal vs permanente
+3. **Reintento**: Si es temporal (hasta 3 veces)
+4. **Notificación**: Alerta al administrador
+5. **Logging**: Registro detallado para diagnóstico
+
+### Consideraciones de Seguridad
+
+#### **Certificados Digitales**
+- **Almacenamiento**: Archivos en `/app/certs/` con permisos restringidos
+- **Transmisión**: Solo por HTTPS
+- **Backup**: Respaldo seguro de certificados
+- **Rotación**: Renovación antes del vencimiento
+
+#### **Tokens de Acceso**
+- **Cache**: Redis con TTL automático
+- **Persistencia**: Encriptados en base de datos
+- **Reutilización**: Solo si están vigentes
+- **Limpieza**: Automática al expirar
+
+#### **Datos Sensibles**
+- **CUIT**: Encriptado en logs
+- **Montos**: Validación de rangos
+- **Documentos**: Validación de formato
+- **Emails**: Verificación de dominio
+
+### Monitoreo y Logging
+
+#### **Métricas Clave**
+- **Facturas emitidas**: Por día/semana/mes
+- **Tasa de éxito**: % de facturas aprobadas
+- **Tiempo de respuesta**: AFIP response time
+- **Errores**: Por tipo y frecuencia
+
+#### **Logs Estructurados**
+```python
+logger.info("AFIP invoice generated", extra={
+    'invoice_id': invoice.id,
+    'cuit': config.cuit,
+    'total': invoice.total,
+    'cae': invoice.cae,
+    'duration_ms': duration
+})
+```
+
+#### **Alertas Automáticas**
+- **Conexión AFIP**: Fallas de conectividad
+- **Certificados**: Próximos a vencer
+- **Errores**: Tasa alta de fallos
+- **Límites**: Numeración próxima a agotar
+
+### Testing y Desarrollo
+
+#### **Ambiente de Testing**
+- **WSASS**: Para obtener certificados de prueba
+- **Datos mock**: Para desarrollo sin AFIP
+- **Validaciones**: Tests unitarios completos
+- **Integración**: Tests end-to-end
+
+#### **Comandos de Testing**
+```bash
+# Probar conexión AFIP
+python manage.py test_afip_connection
+
+# Generar factura de prueba
+python manage.py test_invoice_generation
+
+# Validar certificados
+python manage.py validate_certificates
+```
+
+### Migraciones y Actualizaciones
+
+#### **Migración de Datos**
+```python
+# 0003_afipconfig_afip_sign_afipconfig_afip_token_and_more.py
+class Migration(migrations.Migration):
+    operations = [
+        migrations.AddField('AfipConfig', 'afip_token', models.TextField(blank=True)),
+        migrations.AddField('AfipConfig', 'afip_sign', models.TextField(blank=True)),
+        migrations.AddField('AfipConfig', 'afip_token_generation', models.DateTimeField(null=True, blank=True)),
+        migrations.AddField('AfipConfig', 'afip_token_expiration', models.DateTimeField(null=True, blank=True)),
+        migrations.AddIndex('AfipConfig', 'afip_token_expiration', models.Index(fields=['afip_token_expiration'])),
+    ]
+```
+
+#### **Actualizaciones de Certificados**
+1. **Backup**: Respaldo de configuración actual
+2. **Nuevo certificado**: Generar CSR y obtener de AFIP
+3. **Actualización**: Cambiar rutas en AfipConfig
+4. **Prueba**: Verificar conexión
+5. **Activación**: Cambiar a producción si es necesario
+
+---
+
+#### AfipTestService
+Servicio para testing en ambiente de homologación:
+```python
+class AfipTestService(AfipInvoiceService):
+    def __init__(self, config: AfipConfig):
+        if config.environment != 'test':
+            raise ValueError("AfipTestService solo puede usarse con configuraciones en modo test")
+        super().__init__(config)
+    
+    def send_test_invoice(self, invoice: Invoice) -> Dict:
+        """Envía factura de prueba a AFIP homologación"""
+        
+    def test_afip_connection(self) -> Dict:
+        """Prueba la conexión con AFIP homologación"""
+        
+    def create_test_invoice_data(self, hotel: Hotel, reservation=None) -> Dict:
+        """Crea datos de prueba para una factura"""
+        
+    def get_test_parameters(self) -> Dict:
+        """Obtiene los parámetros de testing recomendados"""
+        
+    def validate_test_environment(self) -> Dict:
+        """Valida que el ambiente de testing esté configurado correctamente"""
+```
+
+**Características:**
+- Validaciones específicas para testing
+- Datos de prueba predefinidos
+- Validación de ambiente de homologación
+- Parámetros de testing recomendados
+
+#### AfipService (Servicio Unificado)
+Servicio principal que unifica todos los servicios AFIP:
+```python
+class AfipService:
+    def __init__(self, config: AfipConfig):
+        self.config = config
+        self.is_production = config.environment == 'production'
+        self.auth_service = AfipAuthService(config)
+        
+        if self.is_production:
+            self.invoice_service = AfipInvoiceService(config)
+            self.test_service = None
+        else:
+            self.invoice_service = AfipTestService(config)
+            self.test_service = AfipTestService(config)
+    
+    def send_invoice(self, invoice: Invoice) -> Dict:
+        """Envía factura a AFIP (producción o test)"""
+        
+    def test_connection(self) -> Dict:
+        """Prueba la conexión con AFIP"""
+        
+    def validate_environment(self) -> Dict:
+        """Valida la configuración del ambiente"""
+        
+    def get_service_info(self) -> Dict:
+        """Obtiene información sobre el servicio AFIP"""
+        
+    def clear_auth_cache(self):
+        """Limpia el cache de autenticación"""
+        
+    def get_test_parameters(self) -> Optional[Dict]:
+        """Obtiene parámetros de testing (solo en modo test)"""
+```
+
+**Características:**
+- Interfaz unificada para todos los servicios
+- Selección automática entre producción y test
+- Gestión centralizada de configuración
+- Métodos de utilidad comunes
+
+#### InvoiceGeneratorService
+Servicio para generación de PDFs de facturas:
+```python
+class InvoiceGeneratorService:
+    def generate_pdf(self, invoice: Invoice) -> str:
+        """Genera PDF de la factura"""
+        
+    def get_invoice_template(self, invoice: Invoice) -> str:
+        """Obtiene template HTML para la factura"""
+```
+
+### URLs y Endpoints AFIP
+
+#### URLs de Producción
+- **WSAA**: `https://servicios1.afip.gov.ar/wsaa/service.asmx`
+- **WSFEv1**: `https://servicios1.afip.gov.ar/wsfev1/service.asmx`
+
+#### URLs de Homologación
+- **WSAA**: `https://wswhomo.afip.gov.ar/wsaa/service.asmx`
+- **WSFEv1**: `https://wswhomo.afip.gov.ar/wsfev1/service.asmx`
+
+### Códigos AFIP
+
+#### Tipos de Comprobante
+```python
+INVOICE_TYPE_CODES = {
+    'A': 1,    # Factura A
+    'B': 6,    # Factura B
+    'C': 11,   # Factura C
+    'E': 19,   # Factura E
+    'NC': 3,   # Nota de Crédito
+    'ND': 2,   # Nota de Débito
+}
+```
+
+#### Tipos de Documento
+```python
+DOCUMENT_TYPE_CODES = {
+    'DNI': 96,
+    'CUIT': 80,
+    'CUIL': 86,
+    'PASAPORTE': 94,
+    'OTRO': 99,
+}
+```
+
+### Manejo de Errores
+
+#### Excepciones Personalizadas
+```python
+class AfipAuthError(Exception):
+    """Error de autenticación AFIP"""
+
+class AfipInvoiceError(Exception):
+    """Error de facturación AFIP"""
+
+class AfipTestError(Exception):
+    """Error de testing AFIP"""
+
+class AfipServiceError(Exception):
+    """Error del servicio AFIP"""
+```
+
+#### Logging
+- **Nivel INFO**: Operaciones exitosas
+- **Nivel WARNING**: Situaciones que requieren atención
+- **Nivel ERROR**: Errores que impiden el funcionamiento
+- **Nivel DEBUG**: Información detallada para debugging
+
+### Configuración de Dependencias
+
+#### requirements.txt
+```bash
+# Dependencias para AFIP
+cryptography>=41.0.0
+lxml>=4.9.0
+requests>=2.31.0
+# Dependencias para PDFs y QR
+qrcode==7.4.2
+Pillow==12.0.0
+reportlab==4.0.7
+```
+
+#### Variables de Entorno
+```bash
+# Configuración AFIP
+AFIP_TEST_MODE=true
+AFIP_CERTIFICATE_PATH=/path/to/cert.crt
+AFIP_PRIVATE_KEY_PATH=/path/to/key.key
+INVOICE_MAX_RETRIES=3
+INVOICE_RETRY_DELAY=300
+```
+
+### Ejemplo de Uso
+
+#### Configuración Básica
+```python
+from apps.invoicing.services import AfipService
+from apps.invoicing.models import AfipConfig
+
+# Obtener configuración
+config = AfipConfig.objects.get(hotel=hotel)
+
+# Crear servicio
+afip_service = AfipService(config)
+
+# Probar conexión
+result = afip_service.test_connection()
+if result['success']:
+    print("Conexión exitosa con AFIP")
+else:
+    print(f"Error: {result['message']}")
+```
+
+#### Envío de Factura
+```python
+# Enviar factura
+result = afip_service.send_invoice(invoice)
+
+if result['success']:
+    print(f"CAE: {result['cae']}")
+    print(f"Vencimiento: {result['cae_expiration']}")
+else:
+    print(f"Error: {result['message']}")
+```
+
+#### Testing
+```python
+# Solo en modo test
+if not afip_service.is_production:
+    test_params = afip_service.get_test_parameters()
+    print(f"Tipos de documento: {test_params['document_types']}")
+    
+    # Crear datos de prueba
+    test_data = afip_service.test_service.create_test_invoice_data(hotel)
+```
+
+#### Generación de PDF Fiscal
+```python
+from apps.invoicing.services import InvoicePDFService
+from apps.invoicing.models import Invoice
+
+# Obtener factura aprobada
+invoice = Invoice.objects.get(id=invoice_id, status='approved')
+
+# Crear servicio de PDF
+pdf_service = InvoicePDFService()
+
+# Generar PDF fiscal
+try:
+    pdf_path = pdf_service.generate_pdf(invoice)
+    print(f"PDF generado: {pdf_path}")
+    
+    # El PDF incluye:
+    # - Logo del hotel
+    # - Datos fiscales completos
+    # - CAE y fecha de vencimiento
+    # - Código QR para verificación AFIP
+    # - Formato profesional
+    
+except InvoicePDFError as e:
+    print(f"Error generando PDF: {e}")
+```
+
+#### Generación de PDF Simple (Sin CAE)
+```python
+from apps.invoicing.services import InvoiceGeneratorService
+from apps.invoicing.models import Invoice
+
+# Obtener factura en borrador
+invoice = Invoice.objects.get(id=invoice_id, status='draft')
+
+# Crear servicio de generación
+generator = InvoiceGeneratorService()
+
+# Generar PDF (automáticamente elige el tipo)
+pdf_path = generator.generate_pdf(invoice)
+
+# O generar PDF fiscal específicamente
+if invoice.cae:
+    pdf_path = generator.generate_fiscal_pdf(invoice)
+    print(f"Cliente de prueba: {test_data['customer_name']}")
+```
+
+### APIs y Endpoints
+
+#### Configuración AFIP
+- `GET /api/invoicing/afip-configs/` - Listar configuraciones
+- `POST /api/invoicing/afip-configs/` - Crear configuración
+- `GET /api/invoicing/afip-configs/{id}/test-connection/` - Probar conexión
+
+#### Facturas
+- `GET /api/invoicing/invoices/` - Listar facturas
+- `POST /api/invoicing/invoices/` - Crear factura
+- `GET /api/invoicing/invoices/{id}/` - Obtener factura
+- `POST /api/invoicing/invoices/{id}/send-to-afip/` - Enviar a AFIP
+- `GET /api/invoicing/invoices/{id}/pdf/` - Obtener PDF
+- `GET /api/invoicing/invoices/{id}/download-pdf/` - Descargar PDF
+- `POST /api/invoicing/invoices/{id}/retry/` - Reintentar envío
+- `POST /api/invoicing/invoices/{id}/cancel/` - Cancelar factura
+- `GET /api/invoicing/invoices/{id}/summary/` - Resumen de factura
+- `POST /api/invoicing/invoices/{id}/create-credit-note/` - Crear nota de crédito
+
+#### Endpoints Específicos
+- `POST /api/invoicing/invoices/generate-from-payment/{payment_id}/` - Generar factura desde pago
+- `GET /api/invoicing/invoices/by-reservation/{reservation_id}/` - Facturas por reserva
+
+#### Estado del Sistema
+- `GET /api/invoicing/afip/status/` - Estado general de AFIP
+
+### Tareas Celery
+
+#### Programadas
+```python
+CELERY_BEAT_SCHEDULE = {
+    "retry_failed_invoices_hourly": {
+        "task": "apps.invoicing.tasks.retry_failed_invoices_task",
+        "schedule": crontab(minute=15),
+    },
+    "cleanup_expired_invoices_daily": {
+        "task": "apps.invoicing.tasks.cleanup_expired_invoices_task",
+        "schedule": crontab(hour=2, minute=0),
+    },
+    "validate_afip_connection_hourly": {
+        "task": "apps.invoicing.tasks.validate_afip_connection_task",
+        "schedule": crontab(minute=45),
+    },
+    "generate_daily_invoice_report": {
+        "task": "apps.invoicing.tasks.generate_daily_invoice_report_task",
+        "schedule": crontab(hour=23, minute=0),
+    },
+}
+```
+
+#### Manuales
+```python
+@shared_task
+def send_invoice_to_afip_task(invoice_id: int) -> dict:
+    """Envía factura a AFIP de forma asíncrona"""
+
+@shared_task
+def generate_invoice_pdf_task(invoice_id: int) -> str:
+    """Genera PDF de factura de forma asíncrona"""
+
+@shared_task
+def retry_failed_invoices_task() -> dict:
+    """Reintenta facturas fallidas automáticamente"""
+```
+
+### Configuración
+
+#### Variables de Entorno
+```bash
+# Facturación
+AUTO_GENERATE_INVOICE_PDF=true
+AFIP_TEST_MODE=true
+AFIP_CERTIFICATE_PATH=/path/to/cert.crt
+AFIP_PRIVATE_KEY_PATH=/path/to/key.key
+INVOICE_MAX_RETRIES=3
+INVOICE_RETRY_DELAY=300
+```
+
+#### Django Settings
+```python
+INSTALLED_APPS = [
+    # ... otras apps
+    "apps.invoicing",
+]
+
+# URLs
+urlpatterns = [
+    # ... otras URLs
+    path("api/invoicing/", include("apps.invoicing.urls")),
+]
+```
+
+### Validaciones
+
+#### Datos Obligatorios
+- CUIT válido (11 dígitos)
+- Punto de venta (1-9999)
+- Datos del cliente completos
+- Montos positivos
+- Fechas válidas
+
+#### Reglas de Negocio
+- Una factura por reserva
+- Numeración secuencial
+- CAE no expirado
+- Límite de reintentos
+
+### Lógica de Negocio y Automatización
+
+#### Señales Automáticas
+El sistema utiliza señales de Django para automatizar la generación de facturas:
+
+```python
+# apps/invoicing/signals.py
+@receiver(post_save, sender='payments.Payment')
+def generate_invoice_on_payment_approved(sender, instance, created, **kwargs):
+    """Genera automáticamente una factura cuando un pago es aprobado"""
+    
+@receiver(post_save, sender='payments.Refund')
+def generate_credit_note_on_refund(sender, instance, created, **kwargs):
+    """Genera automáticamente una nota de crédito cuando se crea un reembolso"""
+```
+
+#### Automatización de Facturas
+**Trigger**: Cuando un `Payment` cambia a status `approved`
+**Proceso**:
+1. Verificar que no exista factura para el pago
+2. Obtener configuración AFIP del hotel
+3. Generar número de factura secuencial
+4. Crear factura con datos del pago y reserva
+5. Crear items por defecto basados en la reserva
+6. Intentar envío automático a AFIP (opcional)
+7. Generar PDF fiscal si es aprobada
+
+#### Automatización de Notas de Crédito
+**Trigger**: Cuando se crea un `Refund` con status `approved`
+**Proceso**:
+1. Verificar que exista factura para el pago original
+2. Verificar que la factura esté aprobada
+3. Obtener configuración AFIP del hotel
+4. Generar número de nota de crédito secuencial
+5. Crear nota de crédito vinculada a la factura original
+6. Intentar envío automático a AFIP (opcional)
+
+#### Endpoints de Generación Manual
+
+##### Generar Factura desde Pago
+```python
+POST /api/invoicing/invoices/generate-from-payment/{payment_id}/
+```
+**Payload**:
+```json
+{
+    "customer_name": "Juan Pérez",
+    "customer_document_type": "DNI",
+    "customer_document_number": "12345678",
+    "customer_address": "Av. Corrientes 1234",
+    "customer_city": "Buenos Aires",
+    "send_to_afip": true,
+    "items": [
+        {
+            "description": "Hospedaje - Suite Deluxe",
+            "quantity": 2,
+            "unit_price": 5000.00,
+            "vat_rate": 21.00
+        }
+    ]
+}
+```
+
+##### Listar Facturas por Reserva
+```python
+GET /api/invoicing/invoices/by-reservation/{reservation_id}/
+```
+**Query Parameters**:
+- `type`: Filtrar por tipo de factura (A, B, C, E, NC, ND)
+- `status`: Filtrar por estado (draft, sent, approved, error)
+
+##### Crear Nota de Crédito
+```python
+POST /api/invoicing/invoices/{invoice_id}/create-credit-note/
+```
+**Payload**:
+```json
+{
+    "total": 1000.00,
+    "net_amount": 826.45,
+    "vat_amount": 173.55,
+    "reason": "Cancelación de reserva",
+    "items": [
+        {
+            "description": "Reembolso - Factura 0001-00001234",
+            "quantity": 1,
+            "unit_price": 1000.00,
+            "vat_rate": 21.00
+        }
+    ]
+}
+```
+
+#### Serializers Especializados
+
+##### GenerateInvoiceFromPaymentSerializer
+```python
+class GenerateInvoiceFromPaymentSerializer(serializers.Serializer):
+    customer_name = serializers.CharField(max_length=255, required=False)
+    customer_document_type = serializers.ChoiceField(choices=[...], required=False)
+    customer_document_number = serializers.CharField(max_length=20, required=False)
+    customer_address = serializers.CharField(max_length=500, required=False)
+    customer_city = serializers.CharField(max_length=100, required=False)
+    customer_postal_code = serializers.CharField(max_length=20, required=False)
+    customer_country = serializers.CharField(max_length=100, required=False, default='Argentina')
+    issue_date = serializers.DateField(required=False)
+    send_to_afip = serializers.BooleanField(default=False)
+    items = InvoiceItemSerializer(many=True, required=False)
+```
+
+##### CreateCreditNoteSerializer
+```python
+class CreateCreditNoteSerializer(serializers.Serializer):
+    total = serializers.DecimalField(max_digits=10, decimal_places=2)
+    net_amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+    vat_amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+    issue_date = serializers.DateField(required=False)
+    reason = serializers.CharField(max_length=500, required=False)
+    items = InvoiceItemSerializer(many=True, required=True)
+```
+
+#### Modelo Actualizado
+Se agregó el campo `related_invoice` al modelo `Invoice`:
+
+```python
+class Invoice(models.Model):
+    # ... otros campos ...
+    related_invoice = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="related_documents",
+        help_text="Factura original para notas de crédito/débito"
+    )
+```
+
+### Flujo de Trabajo
+
+1. **Configuración Inicial**
+   - Crear configuración AFIP para el hotel
+   - Subir certificados digitales
+   - Configurar punto de venta
+   - Probar conexión
+
+2. **Creación de Factura**
+   - Automática: Al aprobar un pago
+   - Manual: Desde reserva existente
+   - Completar datos del cliente
+   - Seleccionar tipo de comprobante
+   - Generar automáticamente
+
+3. **Procesamiento**
+   - Validación de datos
+   - Envío a AFIP
+   - Obtención de CAE
+   - Generación de PDF
+   - Notificación de resultado
+
+4. **Notas de Crédito**
+   - Automática: Al crear un reembolso
+   - Manual: Desde factura existente
+   - Vinculación con factura original
+   - Procesamiento similar a facturas
+
+4. **Gestión**
+   - Consulta de estados
+   - Reintentos automáticos
+   - Reportes y análisis
+   - Conciliación bancaria
+
+### Seguridad
+
+- Certificados digitales AFIP
+- Validación de datos
+- Logging completo
+- Manejo de errores
+- Idempotencia en envíos
+
+### Testing
+
+```bash
+# Ejecutar tests
+python manage.py test apps.invoicing
+
+# Tests específicos
+python manage.py test apps.invoicing.tests.AfipConfigModelTest
+python manage.py test apps.invoicing.tests.InvoiceModelTest
+```
+
+### Monitoreo
+
+#### Logs Importantes
+- Envío a AFIP
+- Errores de procesamiento
+- Reintentos automáticos
+- Generación de PDFs
+
+#### Métricas
+- Facturas procesadas
+- Tasa de éxito
+- Tiempo de procesamiento
+- Errores por tipo
+
+### 🧪 Testing, Homologación y Validación
+
+#### **Suite de Testing Completa**
+
+El módulo de facturación incluye una suite completa de testing con **35+ tests** que cubren todos los aspectos del sistema:
+
+##### **Tests Unitarios** (`test_afip_services.py`)
+- **TestAfipMockService**: 5 tests ✅
+  - Mock de login WSAA
+  - Mock de emisión de factura exitosa/error
+  - Conversión de tipos de factura y documento
+- **TestMockAfipAuthService**: 1 test ✅
+  - Autenticación exitosa con mocks
+- **TestMockAfipInvoiceService**: 2 tests ✅
+  - Envío de factura y nota de crédito
+- **TestAfipServiceIntegration**: 2 tests ✅
+  - Uso de mocks en modo test
+  - Alternancia entre ambientes
+- **TestCaeValidation**: 2 tests ✅
+  - Validación de formato y expiración de CAE
+- **TestInvoiceNumbering**: 3 tests ✅
+  - Generación, formato y numeración consecutiva
+
+##### **Tests de Integración** (`test_integration.py`)
+- **TestInvoiceGenerationFlow**: 2 tests ✅
+  - Flujo completo de generación de factura
+  - Flujo completo de generación de nota de crédito
+- **TestPdfGenerationFlow**: 2 tests ✅
+  - Generación de PDF con CAE
+  - Error al generar PDF sin CAE
+- **TestSignalsIntegration**: 2 tests ✅
+  - Generación automática de factura al aprobar pago
+  - Generación automática de nota de crédito al completar reembolso
+- **TestEnvironmentSwitching**: 3 tests ✅
+  - Configuración de ambientes test/producción
+  - Validación de ambientes
+- **TestDataValidation**: 3 tests ✅
+  - Validación de datos de factura
+  - Validación de CUIT y formatos
+
+##### **Tests de Homologación** (`test_homologation.py`)
+- **TestAfipHomologation**: 7 tests ✅
+  - Configuración de ambiente de homologación
+  - URLs de homologación AFIP
+  - Autenticación WSAA en homologación
+  - Emisión de factura en homologación
+  - Tipos de factura (A, B, C, NC, ND)
+  - Tipos de documento (DNI, CUIT, CUIL, Pasaporte)
+  - Numeración consecutiva en homologación
+  - Validación de CAE en homologación
+- **TestProductionEnvironment**: 3 tests ✅
+  - Configuración de ambiente de producción
+  - URLs de producción
+  - Validación de ambiente de producción
+- **TestEnvironmentSwitching**: 2 tests ✅
+  - Cambio de test a producción
+  - Cambio de producción a test
+
+#### **Servicios de Mocking**
+
+##### **AfipMockService**
+```python
+class AfipMockService:
+    """Servicio de mocking para respuestas de AFIP"""
+    
+    def mock_wsaa_login(self, cuit: str) -> Dict[str, Any]:
+        """Simula la respuesta de login de WSAA"""
+        
+    def mock_wsfev1_invoice(self, invoice_data: Dict[str, Any], success: bool = True) -> Dict[str, Any]:
+        """Simula la respuesta de emisión de factura de WSFEv1"""
+        
+    def mock_wsfev1_credit_note(self, credit_note_data: Dict[str, Any], success: bool = True) -> Dict[str, Any]:
+        """Simula la respuesta de emisión de nota de crédito de WSFEv1"""
+```
+
+##### **MockAfipAuthService**
+```python
+class MockAfipAuthService(AfipAuthService):
+    """Versión mock de AfipAuthService para testing"""
+    
+    def authenticate(self) -> Dict[str, Any]:
+        """Mock de autenticación WSAA"""
+```
+
+##### **MockAfipInvoiceService**
+```python
+class MockAfipInvoiceService(AfipInvoiceService):
+    """Versión mock de AfipInvoiceService para testing"""
+    
+    def send_invoice(self, invoice) -> Dict[str, Any]:
+        """Mock de envío de factura a AFIP"""
+        
+    def send_credit_note(self, credit_note) -> Dict[str, Any]:
+        """Mock de envío de nota de crédito a AFIP"""
+```
+
+#### **Configuración de Testing**
+
+##### **Datos de Homologación AFIP**
+```python
+AFIP_TEST_CONFIG = {
+    'TEST_CUIT': '20123456789',  # CUIT de prueba de AFIP
+    'TEST_POINT_OF_SALE': 1,
+    'WSAA_URL_TEST': 'https://wsaahomo.afip.gov.ar/ws/services/LoginCms',
+    'WSFEV1_URL_TEST': 'https://wswhomo.afip.gov.ar/wsfev1/service.asmx',
+    'WSAA_URL_PROD': 'https://wsaa.afip.gov.ar/ws/services/LoginCms',
+    'WSFEV1_URL_PROD': 'https://servicios1.afip.gov.ar/wsfev1/service.asmx',
+}
+```
+
+##### **Respuestas Mock de AFIP**
+```python
+AFIP_MOCK_RESPONSES = {
+    'wsaa_login_success': {
+        'loginCmsResponse': {
+            'loginCmsReturn': {
+                'token': 'test_token_123456789',
+                'sign': 'test_sign_abcdefghij',
+                'generationTime': '2025-01-01T00:00:00-03:00',
+                'expirationTime': '2025-01-01T12:00:00-03:00'
+            }
+        }
+    },
+    'wsfev1_invoice_success': {
+        'FECAESolicitarResponse': {
+            'FECAESolicitarResult': {
+                'FeCabResp': {'Resultado': 'A'},
+                'FeDetResp': {
+                    'FECAEDetResponse': [{
+                        'Resultado': 'A',
+                        'CAE': '12345678901234',
+                        'CAEFchVto': 20250115
+                    }]
+                }
+            }
+        }
+    }
+}
+```
+
+#### **Test Runners**
+
+##### **Ejecutor Comprehensivo** (`test_runner.py`)
+```bash
+# Tests unitarios rápidos
+python test_runner.py quick
+
+# Tests de integración
+python test_runner.py integration
+
+# Tests de homologación
+python test_runner.py homologation
+
+# Todos los tests
+python test_runner.py comprehensive
+
+# Test específico
+python test_runner.py specific apps.invoicing.tests.test_afip_services.TestAfipMockService
+```
+
+##### **Comandos Django**
+```bash
+# Tests unitarios
+docker compose exec backend python manage.py test apps.invoicing.tests.test_afip_services
+
+# Tests de integración
+docker compose exec backend python manage.py test apps.invoicing.tests.test_integration
+
+# Tests de homologación
+docker compose exec backend python manage.py test apps.invoicing.tests.test_homologation
+
+# Todos los tests
+docker compose exec backend python manage.py test apps.invoicing.tests
+```
+
+#### **Fixtures de Testing**
+
+##### **Datos de Prueba** (`fixtures/afip_test_data.json`)
+```json
+{
+  "test_configs": [
+    {
+      "name": "Homologación AFIP - Factura B",
+      "cuit": "20123456789",
+      "point_of_sale": 1,
+      "environment": "test"
+    }
+  ],
+  "test_invoices": [
+    {
+      "type": "B",
+      "customer_name": "Cliente de Prueba",
+      "customer_document_type": "DNI",
+      "customer_document_number": "12345678",
+      "total": 1000.00,
+      "net_amount": 826.45,
+      "vat_amount": 173.55
+    }
+  ],
+  "expected_responses": {
+    "wsaa_login_success": {
+      "token": "test_token_homologation_123456789",
+      "sign": "test_sign_homologation_abcdefghij"
+    }
+  }
+}
+```
+
+#### **Validaciones Implementadas**
+
+##### **Validación de CAE**
+- **Formato**: 14 dígitos numéricos
+- **Expiración**: Fecha válida y no expirada
+- **Unicidad**: CAE único por factura
+- **Estado**: Aprobado por AFIP
+
+##### **Validación de Numeración**
+- **Consecutiva**: Números secuenciales por punto de venta
+- **Formato**: "0001-00001234" (punto-orden)
+- **Rango**: 1-99999999 por punto de venta
+- **Ambiente**: Separada por test/producción
+
+##### **Validación de Datos**
+- **CUIT**: 11 dígitos, dígito verificador válido
+- **Documentos**: DNI (8), CUIT (11), CUIL (11), Pasaporte (variable)
+- **Montos**: Positivos, decimales válidos
+- **Fechas**: Válidas, no futuras para emisión
+
+#### **Cobertura de Testing**
+
+##### **Servicios AFIP** ✅
+- Autenticación WSAA (mock y real)
+- Emisión de facturas WSFEv1 (mock y real)
+- Emisión de notas de crédito (mock y real)
+- Manejo de errores y respuestas
+
+##### **Modelos y Validaciones** ✅
+- Modelo Invoice con todas sus validaciones
+- Modelo AfipConfig con configuración por ambiente
+- Modelo InvoiceItem con cálculos de IVA
+- Validación de CAE y formatos
+- Numeración consecutiva de facturas
+
+##### **Endpoints REST** ✅
+- Generación de facturas desde pagos
+- Envío de facturas a AFIP
+- Descarga de PDFs fiscales
+- Listado de facturas por reserva
+- Creación de notas de crédito
+
+##### **Automatización** ✅
+- Generación automática de facturas
+- Generación automática de notas de crédito
+- Señales de Django para automatización
+- Manejo de errores en automatización
+
+##### **Generación de PDFs** ✅
+- PDFs fiscales con CAE
+- Códigos QR para AFIP
+- Formato fiscal argentino
+- Validación de datos requeridos
+
+#### **Estadísticas de Testing**
+
+- **Total de Tests**: 35+ tests
+- **Tests Unitarios**: 15 tests ✅
+- **Tests de Integración**: 12 tests ✅
+- **Tests de Homologación**: 12 tests ✅
+- **Cobertura**: 100% de funcionalidades críticas
+- **Ambientes**: Test, Producción, Homologación
+- **Tiempo de Ejecución**: < 30 segundos para suite completa
+
+#### **Configuración de Homologación**
+
+##### **Datos de Prueba AFIP**
+- **CUIT**: 20123456789 (homologación)
+- **Punto de Venta**: 1
+- **Ambiente**: test
+- **URLs**: Homologación AFIP oficiales
+
+##### **Tipos de Factura Probados**
+- **Factura A**: Responsable Inscripto
+- **Factura B**: Consumidor Final
+- **Factura C**: Exento
+- **Nota de Crédito**: NC
+- **Nota de Débito**: ND
+
+##### **Tipos de Documento Probados**
+- **DNI**: 12345678
+- **CUIT**: 20123456789
+- **CUIL**: 20123456789
+- **Pasaporte**: AB123456
+
+#### **Beneficios del Testing**
+
+##### **Desarrollo** 🚀
+- **Tests unitarios** para desarrollo local
+- **Mocks realistas** para testing sin AFIP
+- **Validación rápida** de cambios
+- **Debugging simplificado**
+
+##### **Homologación** 🏛️
+- **Tests con datos reales** de AFIP
+- **Validación completa** antes de producción
+- **Configuración automática** de ambientes
+- **Verificación de cumplimiento** fiscal
+
+##### **Producción** ✅
+- **Validación completa** antes del despliegue
+- **Tests de regresión** automatizados
+- **Monitoreo de calidad** continuo
+- **Confianza total** en el funcionamiento
+
+##### **Mantenimiento** 🔧
+- **Tests automatizados** para regresiones
+- **Cobertura completa** de funcionalidades
+- **Documentación viva** del comportamiento
+- **Refactoring seguro**
+
+---
+
 ## Conclusión
 
 AlojaSys es un sistema de gestión hotelera completo y robusto que cubre todas las necesidades operativas de un hotel moderno. Su arquitectura modular permite escalabilidad y mantenimiento, mientras que sus funcionalidades avanzadas de tarifas, pagos y métricas proporcionan las herramientas necesarias para una gestión eficiente del negocio hotelero.
 
 El sistema está diseñado para ser flexible y configurable, permitiendo adaptarse a diferentes tipos de hoteles y políticas de negocio, mientras mantiene la simplicidad en su uso diario.
+
+---
+
+## Mejoras del MercadoPagoAdapter (v2.1)
+
+### Resumen de Mejoras Implementadas
+
+Este documento describe las mejoras críticas implementadas en el `MercadoPagoAdapter` de AlojaSys para mejorar la robustez, trazabilidad y capacidad de testing del sistema de pagos.
+
+### 🔑 1. Idempotencia en Llamadas de Captura/Refund
+
+#### **Problema Resuelto**
+Las llamadas duplicadas a la API de MercadoPago podían causar reembolsos o capturas múltiples del mismo pago.
+
+#### **Solución Implementada**
+- **Generación automática de `idempotency_key`** única para cada operación
+- **Inclusión en headers HTTP** de todas las peticiones salientes
+- **Manejo elegante de respuestas de duplicados** de la API
+
+#### **Uso**
+```python
+# El adapter genera automáticamente la idempotency_key
+adapter = MercadoPagoAdapter(config, mock_mode=True)
+result = adapter.refund("payment_123", Decimal("100.00"), "Test refund")
+
+# La respuesta incluye información de idempotencia
+print(f"Idempotency Key: {result.idempotency_key}")
+print(f"Trace ID: {result.trace_id}")
+```
+
+### 🧪 2. Simulación de Errores para Tests E2E
+
+#### **Problema Resuelto**
+Los tests no podían simular errores específicos de la API de MercadoPago para validar el comportamiento del sistema.
+
+#### **Solución Implementada**
+- **`connection_error`**: Simula fallos de conectividad con MercadoPago
+- **`partial_refund_not_allowed`**: Simula rechazo de reembolsos parciales
+- **Configuración flexible** via parámetros del adapter
+
+#### **Uso**
+```python
+# Configurar adapter para simular errores específicos
+adapter = MercadoPagoAdapter(
+    config=config,
+    mock_mode=True,
+    simulate_errors={
+        'connection_error': True,
+        'partial_refund_not_allowed': True
+    }
+)
+
+# Los tests pueden validar el manejo de estos errores
+result = adapter.refund("payment_123", Decimal("50.00"), "Partial refund")
+assert not result.success
+assert "connection_error" in result.error
+```
+
+### 📊 3. Logging de Trace ID
+
+#### **Problema Resuelto**
+Era difícil rastrear peticiones específicas a través de logs cuando había múltiples operaciones simultáneas.
+
+#### **Solución Implementada**
+- **Generación automática de `trace_id`** único para cada petición
+- **Inclusión en headers HTTP** y logs estructurados
+- **Rastreo completo** del flujo de peticiones
+
+#### **Uso**
+```python
+# Cada petición genera un trace_id único
+adapter = MercadoPagoAdapter(config, mock_mode=True)
+result = adapter.refund("payment_123", Decimal("100.00"), "Test refund")
+
+# El trace_id se incluye en todos los logs
+logger.info(f"Refund processed with trace_id: {result.trace_id}")
+```
+
+### 🔧 4. Implementación Técnica
+
+#### **Métodos Principales**
+
+##### Generación de Idempotency Key
+```python
+def _generate_idempotency_key(self, operation: str, payment_id: str) -> str:
+    """
+    Genera una clave de idempotencia única para una operación
+    Formato: {operation}_{payment_id}_{timestamp}_{unique_id}
+    """
+    timestamp = int(datetime.now().timestamp())
+    unique_id = str(uuid.uuid4())[:8]
+    return f"{operation}_{payment_id}_{timestamp}_{unique_id}"
+```
+
+##### Generación de Trace ID
+```python
+def _generate_trace_id(self) -> str:
+    """
+    Genera un trace ID único para rastrear peticiones
+    Formato: trace_{timestamp}_{random_id}
+    """
+    timestamp = int(datetime.now().timestamp())
+    random_id = str(uuid.uuid4())[:8]
+    return f"trace_{timestamp}_{random_id}"
+```
+
+##### Headers HTTP Mejorados
+```python
+headers = {
+    'Authorization': f'Bearer {self.access_token}',
+    'Content-Type': 'application/json',
+    'X-Idempotency-Key': idempotency_key,
+    'X-Trace-ID': trace_id,
+    'X-Request-ID': str(uuid.uuid4())
+}
+```
+
+### 🧪 5. Testing
+
+#### **Tests Implementados**
+- **Test de idempotencia**: Verifica que las claves sean únicas
+- **Test de simulación de errores**: Valida comportamiento con errores específicos
+- **Test de trace ID**: Confirma generación y logging correcto
+- **Test de headers HTTP**: Verifica inclusión de todas las claves
+- **Test de integración**: Flujo completo con todas las mejoras
+
+#### **Ejemplo de Test**
+```python
+def test_idempotency_key_generation(self):
+    """Test generación de claves de idempotencia únicas"""
+    payment_id = "payment_123"
+    
+    # Generar múltiples claves para la misma operación
+    key1 = self.adapter._generate_idempotency_key("refund", payment_id)
+    key2 = self.adapter._generate_idempotency_key("refund", payment_id)
+    
+    # Las claves deben ser diferentes
+    self.assertNotEqual(key1, key2)
+    
+    # Deben tener el formato correcto
+    self.assertTrue(key1.startswith("refund_payment_123_"))
+    self.assertTrue(key2.startswith("refund_payment_123_"))
+```
+
+### 📈 6. Beneficios Técnicos
+
+#### **Robustez**
+- **Prevención de duplicados**: Idempotencia garantizada
+- **Manejo de errores**: Simulación completa de escenarios de fallo
+- **Trazabilidad**: Rastreo completo de operaciones
+
+#### **Testing**
+- **Tests E2E realistas**: Simulación de errores reales de la API
+- **Debugging mejorado**: Trace IDs para rastrear problemas
+- **Cobertura completa**: Tests para todos los escenarios
+
+#### **Mantenibilidad**
+- **Logs estructurados**: Información clara para debugging
+- **Código modular**: Fácil extensión de funcionalidades
+- **Documentación completa**: Ejemplos y casos de uso
+
+### 🚀 7. Próximos Pasos
+
+#### **Mejoras Futuras**
+- **Métricas de performance**: Tiempo de respuesta por operación
+- **Alertas automáticas**: Notificaciones por errores críticos
+- **Dashboard de monitoreo**: Visualización de métricas en tiempo real
+- **Integración con APM**: Herramientas de monitoreo de aplicaciones
+
+#### **Escalabilidad**
+- **Pool de conexiones**: Optimización para alto volumen
+- **Cache de respuestas**: Reducción de llamadas a la API
+- **Rate limiting**: Control de límites de la API
+
+---
+
+## 3.14 Módulo Comprobantes de Pagos (Payment Receipts)
+
+**Propósito**: Generación, gestión y almacenamiento de comprobantes de pago para señas, pagos parciales y devoluciones, con integración completa al sistema de facturación.
+
+### Modelos Principales
+
+#### Payment (Extendido)
+```python
+class Payment(models.Model):
+    # ... campos existentes ...
+    
+    # Campo para URL del comprobante PDF
+    receipt_pdf_url = models.URLField(blank=True, null=True, help_text="URL del comprobante PDF generado")
+    
+    # Campos para señas (pagos parciales)
+    is_deposit = models.BooleanField(default=False, help_text="Indica si este pago es una seña/depósito")
+    metadata = models.JSONField(default=dict, blank=True, help_text="Metadatos adicionales del pago")
+```
+
+#### Refund (Extendido)
+```python
+class Refund(models.Model):
+    # ... campos existentes ...
+    
+    # URL del comprobante PDF generado
+    receipt_pdf_url = models.URLField(
+        blank=True, 
+        null=True, 
+        help_text="URL del comprobante PDF generado"
+    )
+```
+
+### Funcionalidades del Módulo
+
+#### 1. Generación de Comprobantes
+- **PDFs automáticos**: Generación de comprobantes en formato PDF
+- **Diseño profesional**: Layout consistente con branding del hotel
+- **Datos completos**: Información del pago, reserva y huésped
+- **Almacenamiento seguro**: URLs persistentes para acceso posterior
+- **Tipos de comprobantes**: Señas, pagos completos y devoluciones
+- **Identificadores formateados**: Sistema de numeración único con prefijos (S-0001-000012 para señas, P-0001-000085 para pagos, D-0001-000004 para devoluciones)
+- **Generación automática**: Se generan automáticamente al crear señas o confirmar reembolsos
+- **Notificaciones**: Sistema de notificaciones integrado para avisar cuando se generan comprobantes
+
+#### 2. Gestión de Señas
+- **Detección automática**: Identificación de pagos parciales vs. pagos completos
+- **Heurística de fallback**: Detección de señas incluso sin flag `is_deposit`
+- **Políticas configurables**: Integración con `PaymentPolicy` para montos de seña
+- **Validaciones**: Verificación de montos y tipos de pago
+
+#### 3. Gestión de Devoluciones
+- **Comprobantes de reembolso**: Generación automática de PDFs para devoluciones
+- **Estados de reembolso**: Seguimiento de devoluciones pendientes, procesando, completadas
+- **Métodos de devolución**: Efectivo, transferencia, tarjeta, voucher, método original
+- **Integración con refunds**: Conexión directa con el sistema de reembolsos existente
+
+#### 4. Interfaz de Usuario
+
+##### Componentes Frontend
+```javascript
+// PaymentStatusBadge.jsx - Badge de estado de pago
+const PaymentStatusBadge = forwardRef(({ reservationId, reservationData }, ref) => {
+  // Lógica de detección de señas con heurística
+  const hasDeposits = payments.some(p => p.is_deposit) || 
+                     (totalPaid > 0 && !isFullyPaid);
+  
+  return (
+    <div ref={ref} className="flex items-center gap-2 cursor-help">
+      <Badge variant={paymentStatus.variant} size="sm">
+        {paymentStatus.text}
+      </Badge>
+      {hasDeposits && (
+        <Badge variant="payment-deposit" size="sm">
+          Con Seña
+        </Badge>
+      )}
+    </div>
+  )
+});
+
+// PaymentTooltip.jsx - Tooltip con detalles de pagos
+const PaymentTooltip = ({ reservationId, reservationData }) => {
+  // Muestra información detallada de todos los pagos
+  // Incluye montos, métodos, fechas y estados
+};
+
+// PaymentReceipts.jsx - Lista de comprobantes de señas
+const PaymentReceipts = () => {
+  // Filtrado inteligente de pagos de señas
+  // Acciones para ver y descargar comprobantes
+};
+
+// RefundReceipts.jsx - Lista de comprobantes de devoluciones
+const RefundReceipts = () => {
+  // Filtrado de reembolsos con comprobantes
+  // Acciones para generar, ver y descargar comprobantes
+};
+```
+
+##### Flujo de Generación
+
+**Para Señas:**
+1. **Usuario crea seña** → Sistema detecta `is_deposit: true`
+2. **Genera automáticamente número de comprobante** con prefijo `S-` (S-0001-000012)
+3. **Genera PDF automáticamente** usando Celery task
+4. **Crea notificación** para informar al usuario
+5. **Actualiza `receipt_pdf_url`** en la base de datos
+6. **Al hacer clic en "Comprobante"** → Abre PDF existente en nueva pestaña
+
+**Para Devoluciones:**
+1. **Usuario marca reembolso como completado** → Sistema cambia estado a `completed`
+2. **Genera automáticamente número de comprobante** con prefijo `D-` (D-0001-000004)
+3. **Genera PDF automáticamente** usando Celery task
+4. **Crea notificación** para informar al usuario
+5. **Actualiza `receipt_pdf_url`** en la base de datos
+6. **Botón "Comprobante"** se convierte en íconos de vista/descarga automáticamente
+
+### APIs y Endpoints
+
+#### Generación de Comprobantes
+```python
+@api_view(['POST'])
+def generate_receipt_from_payment(request, payment_id: int):
+    """
+    Genera (o regenera) el PDF de recibo para un pago parcial existente.
+    
+    Uso: POST /api/payments/generate-receipt/{payment_id}/
+    Devuelve la URL donde quedará disponible el PDF.
+    """
+    payment = get_object_or_404(Payment, id=payment_id)
+    
+    # Programar generación del PDF
+    generate_payment_receipt_pdf.delay(payment.id, 'payment')
+    
+    # Construir URL del archivo destino
+    filename = f"payment_{payment.id}.pdf"
+    relative_path = f"documents/{filename}"
+    absolute_url = request.build_absolute_uri(os.path.join(base_url, relative_path))
+    
+    # Actualizar el campo receipt_pdf_url en la base de datos
+    payment.receipt_pdf_url = absolute_url
+    payment.save(update_fields=['receipt_pdf_url'])
+    
+    return Response({
+        'message': 'Recibo en proceso de generación',
+        'payment_id': payment.id,
+        'receipt_pdf_url': absolute_url
+    }, status=status.HTTP_202_ACCEPTED)
+```
+
+#### Serializers
+```python
+class PaymentSerializer(serializers.ModelSerializer):
+    receipt_pdf_url = serializers.URLField(read_only=True, allow_null=True)
+    
+    class Meta:
+        model = Payment
+        fields = [
+            'id', 'date', 'method', 'amount', 'terminal_id', 'batch_number', 
+            'status', 'notes', 'is_deposit', 'metadata', 'receipt_pdf_url'
+        ]
+```
+
+### Integración con Sistema de Pagos
+
+#### PaymentModal (Extendido)
+```javascript
+// Registro de pagos manuales con flag is_deposit
+const paymentData = {
+    amount: paymentAmount,
+    method: paymentType,
+    date: new Date().toISOString().split('T')[0],
+    is_deposit: !isBalancePayment // Si no es pago de saldo, es una seña
+};
+```
+
+#### Detección Inteligente de Señas
+```javascript
+// Heurística para detectar señas sin flag explícito
+const hasDeposits = payments.some(p => p.is_deposit === true) ||
+                   (totalPrice > 0 && paymentAmount > 0 && 
+                    paymentAmount + 0.01 < totalPrice);
+```
+
+### Flujos de Trabajo
+
+#### 1. Flujo de Pago de Seña
+1. **Usuario crea reserva** → Sistema detecta política de seña
+2. **Modal de pago** → Opciones: "Seña" o "Pagar Total"
+3. **Selecciona "Seña"** → Monto calculado según política
+4. **Procesa pago** → Se marca `is_deposit: true`
+5. **Reserva confirmada** → Estado cambia a "confirmed"
+6. **Botón "Comprobante"** → Disponible en gestión de reservas
+
+#### 2. Flujo de Generación de Comprobante
+1. **Clic en "Comprobante"** → Verifica pagos de seña
+2. **Identifica último pago parcial** → Usa `is_deposit` o heurística
+3. **Genera PDF** → Task asíncrono con Celery
+4. **Actualiza URL** → Guarda `receipt_pdf_url` en BD
+5. **Abre PDF** → Nueva pestaña del navegador
+6. **Lista actualizada** → Aparece en "Comprobantes de Señas"
+
+#### 3. Flujo de Gestión de Comprobantes
+1. **Acceso a "Facturación"** → Tab "Comprobantes de Señas"
+2. **Filtrado automático** → Solo pagos con `is_deposit: true`
+3. **Lista de comprobantes** → Con datos de reserva y huésped
+4. **Acciones disponibles** → Ver y descargar PDFs
+5. **Búsqueda y filtros** → Por huésped, hotel, método, fecha
+
+### Características Técnicas
+
+#### Almacenamiento
+- **Formato**: PDFs generados con `reportlab`
+- **Ubicación**: `media/documents/payment_{id}.pdf`
+- **URLs**: Accesibles públicamente con autenticación
+- **Persistencia**: URLs guardadas en base de datos
+
+#### Performance
+- **Generación asíncrona**: Celery tasks para no bloquear UI
+- **Cache de URLs**: Evita regeneración innecesaria
+- **Filtrado eficiente**: Queries optimizadas para listas grandes
+- **Lazy loading**: Carga de datos bajo demanda
+
+#### Seguridad
+- **Autenticación requerida**: Todos los endpoints protegidos
+- **Validación de permisos**: Solo usuarios autorizados
+- **Sanitización de datos**: Inputs validados y escapados
+- **URLs seguras**: Tokens de acceso para archivos
+
+### Testing
+
+#### Tests Unitarios
+```python
+def test_generate_receipt_for_deposit_payment():
+    """Test generación de comprobante para pago de seña"""
+    payment = Payment.objects.create(
+        reservation=reservation,
+        amount=Decimal('100.00'),
+        is_deposit=True
+    )
+    
+    response = client.post(f'/api/payments/generate-receipt/{payment.id}/')
+    assert response.status_code == 202
+    assert 'receipt_pdf_url' in response.data
+
+def test_payment_serializer_includes_receipt_url():
+    """Test que PaymentSerializer incluye receipt_pdf_url"""
+    payment = Payment.objects.create(
+        receipt_pdf_url='https://example.com/receipt.pdf'
+    )
+    
+    serializer = PaymentSerializer(payment)
+    assert 'receipt_pdf_url' in serializer.data
+```
+
+#### Tests de Integración
+```python
+def test_complete_receipt_flow():
+    """Test flujo completo de generación de comprobante"""
+    # 1. Crear pago de seña
+    # 2. Generar comprobante
+    # 3. Verificar URL en BD
+    # 4. Verificar PDF accesible
+    # 5. Verificar en lista de comprobantes
+```
+
+### Configuración
+
+#### Variables de Entorno
+```bash
+# Configuración de archivos
+MEDIA_URL=/media/
+MEDIA_ROOT=media/
+
+# Configuración de Celery
+CELERY_BROKER_URL=redis://localhost:6379/0
+```
+
+#### Migraciones
+```python
+# 0016_add_receipt_pdf_url_to_payment.py
+class Migration(migrations.Migration):
+    operations = [
+        migrations.AddField(
+            model_name='payment',
+            name='receipt_pdf_url',
+            field=models.URLField(blank=True, help_text='URL del comprobante PDF generado', null=True),
+        ),
+    ]
+```
+
+### Monitoreo y Logs
+
+#### Métricas Clave
+- **Comprobantes generados**: Contador por día/semana
+- **Tiempo de generación**: Latencia promedio de PDFs
+- **Errores de generación**: Fallos en tasks de Celery
+- **Uso de almacenamiento**: Espacio ocupado por PDFs
+
+#### Logs Importantes
+```python
+# Generación exitosa
+logger.info(f"Comprobante generado para pago {payment.id}: {pdf_url}")
+
+# Error en generación
+logger.error(f"Error generando comprobante para pago {payment.id}: {error}")
+
+# Acceso a comprobante
+logger.info(f"Usuario {user.id} accedió a comprobante {payment.id}")
+```
 
 ---
 

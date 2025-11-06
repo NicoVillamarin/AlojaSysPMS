@@ -140,10 +140,10 @@ const Roadmap: React.FC = () => {
           animate={isInView ? "visible" : "hidden"}
         >
           <h2 className="roadmap-title">
-            Nuestro <span className="roadmap-title-accent">Roadmap</span> de Desarrollo
+            Lo que hemos <span className="roadmap-title-accent">logrado</span>
           </h2>
           <p className="roadmap-subtitle">
-            Un vistazo a lo que hemos logrado y hacia dónde nos dirigimos, con total transparencia.
+            Un sistema completo y funcional, desarrollado con transparencia y compromiso
           </p>
         </motion.div>
 

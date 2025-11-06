@@ -32,7 +32,7 @@ const Header: React.FC = () => {
       setScrolled(window.scrollY > 50)
       
       // Detectar sección activa
-      const sections = ['inicio', 'integraciones', 'caracteristicas', 'modulos', 'casos', 'acerca', 'contacto']
+      const sections = ['inicio', 'integraciones', 'caracteristicas', 'roadmap', 'acerca', 'contacto']
       const scrollPosition = window.scrollY + 100
 
       for (const section of sections) {
@@ -139,12 +139,12 @@ const Header: React.FC = () => {
             Características
           </motion.button>
           <motion.button 
-            onClick={() => scrollToSection('modulos')}
-            className={`nav-link ${activeSection === 'modulos' ? 'active' : ''}`}
+            onClick={() => scrollToSection('roadmap')}
+            className={`nav-link ${activeSection === 'roadmap' ? 'active' : ''}`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            Módulos
+            Roadmap
           </motion.button>
           <motion.button 
             onClick={() => scrollToSection('acerca')}
@@ -202,22 +202,13 @@ const Header: React.FC = () => {
                 Características
               </motion.button>
               <motion.button 
-                onClick={() => scrollToSection('modulos')}
-                className={`nav-link ${activeSection === 'modulos' ? 'active' : ''}`}
+                onClick={() => scrollToSection('roadmap')}
+                className={`nav-link ${activeSection === 'roadmap' ? 'active' : ''}`}
                 variants={linkVariants}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                Módulos
-              </motion.button>
-              <motion.button 
-                onClick={() => scrollToSection('casos')}
-                className={`nav-link ${activeSection === 'casos' ? 'active' : ''}`}
-                variants={linkVariants}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Casos de uso
+                Roadmap
               </motion.button>
               <motion.button 
                 onClick={() => scrollToSection('acerca')}

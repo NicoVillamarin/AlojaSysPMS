@@ -2,9 +2,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Header from './components/Header'
 import Hero from './components/Hero'
 import ProblemSolution from './components/ProblemSolution'
-import Features from './components/Features'
-import Modules from './components/Modules'
 import Integrations from './components/Integrations'
+import Features from './components/Features'
 import Roadmap from './components/Roadmap'
 import About from './components/About'
 import Contact from './components/Contact'
@@ -20,10 +19,9 @@ function App() {
           <Route path="/" element={
             <>
               <Hero />
-              <Integrations />
               <ProblemSolution />
+              <Integrations />
               <Features />
-              <Modules />
               <Roadmap />
               <About />
               <Contact />

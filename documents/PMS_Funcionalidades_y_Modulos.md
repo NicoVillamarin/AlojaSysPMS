@@ -8,6 +8,9 @@
    - [3.2 Gestión de Habitaciones](#32-gestión-de-habitaciones)
    - [3.3 Gestión de Reservas](#33-gestión-de-reservas)
    - [3.4 Sistema de Pagos](#34-sistema-de-pagos)
+   - [3.4.1 Transferencias Bancarias con OCR](#341-transferencias-bancarias-con-ocr-v22)
+   - [3.4.2 Módulo de Cobros](#342-módulo-de-cobros-v22)
+   - [3.4.3 Conciliación Bancaria Automática](#343-conciliación-bancaria-automática-v23)
    - [3.5 Políticas de Cancelación](#35-políticas-de-cancelación)
    - [3.6 Políticas de Devolución](#36-políticas-de-devolución)
    - [3.7 Gestión de Tarifas](#37-gestión-de-tarifas)
@@ -17,6 +20,9 @@
    - [3.11 Gestión de Empresas](#311-gestión-de-empresas)
    - [3.12 Sistema de Notificaciones](#312-sistema-de-notificaciones)
    - [3.13 Procesamiento Automático de Reembolsos](#313-procesamiento-automático-de-reembolsos)
+   - [3.14 Facturación Electrónica Argentina](#314-facturación-electrónica-argentina)
+   - [3.15 Comprobantes de Señas y Pagos Parciales](#315-comprobantes-de-señas-y-pagos-parciales)
+   - [3.16 Integraciones con OTAs (Channel Manager)](#316-integraciones-con-otas-channel-manager)
 4. [Flujos de Trabajo del Día a Día](#flujos-de-trabajo-del-día-a-día)
 5. [Casos de Uso Reales](#casos-de-uso-reales)
 6. [Beneficios del Sistema](#beneficios-del-sistema)
@@ -31,7 +37,10 @@
 - 📅 **Administrar las reservas** desde la consulta hasta el check-out
 - 📆 **Visualizar reservas** en un calendario interactivo y elegante
 - 💰 **Procesar pagos** de manera segura y flexible
+- 💳 **Manejar señas** (pagos parciales) con facturación automática
+- 🧾 **Generar comprobantes** de señas automáticamente
 - 🤖 **Procesar reembolsos** automáticamente 24/7
+- 🏦 **Conciliar bancos** automáticamente con extractos
 - 📊 **Generar reportes** y métricas del negocio
 - 👥 **Gestionar usuarios** y permisos del personal
 - 🏢 **Administrar múltiples hoteles** desde una sola plataforma
@@ -80,6 +89,8 @@ Permite configurar y administrar la información básica de cada hotel en el sis
 - **Ubicación**: País, provincia, ciudad
 - **Horarios**: Hora de check-in y check-out
 - **Zona Horaria**: Para manejar reservas en diferentes zonas
+- **Auto Check-in**: Configuración para marcar automáticamente reservas como check-in al llegar la fecha de entrada
+- **Auto Check-out**: Configuración para hacer check-out automático cuando pasa la fecha de salida (habilitado por defecto)
 - **Auto No-Show**: Configuración para marcar automáticamente reservas como no-show
 
 #### Ejemplo Práctico
@@ -89,6 +100,8 @@ Dirección: "Av. Corrientes 1234, Buenos Aires"
 Check-in: 15:00 hs
 Check-out: 11:00 hs
 Zona horaria: America/Argentina/Buenos_Aires
+Auto check-in: Deshabilitado
+Auto check-out: Habilitado (por defecto)
 Auto no-show: Habilitado
 ```
 
@@ -97,7 +110,37 @@ Auto no-show: Habilitado
 - ✅ **Configuración flexible** de horarios
 - ✅ **Soporte multi-hotel** desde una sola plataforma
 - ✅ **Datos legales** para facturación
+- ✅ **Auto check-in configurable** por hotel
+- ✅ **Auto check-out configurable** por hotel (habilitado por defecto para mayor eficiencia)
 - ✅ **Auto no-show configurable** por hotel
+
+### Check-out Automático
+
+El sistema puede hacer check-out automático de las reservas cuando pasa la fecha de salida, liberando las habitaciones sin necesidad de intervención manual.
+
+#### ¿Cómo funciona?
+
+**Proceso Automático**:
+1. **Detección**: El sistema verifica cada hora si hay reservas que deben hacer check-out
+2. **Fecha Pasada**: Si la fecha de check-out ya pasó, se procesa inmediatamente
+3. **Fecha de Hoy**: Si es el día de check-out, espera hasta la hora configurada del hotel (ej: 11:00 AM)
+4. **Check-out**: Cambia el estado de la reserva a "Check-out" automáticamente
+5. **Liberación**: Marca la habitación como "Disponible" para nuevas reservas
+
+#### Configuración
+
+- **Habilitado por Defecto**: Todos los hoteles tienen check-out automático habilitado automáticamente
+- **Personalizable**: Puedes deshabilitarlo por hotel si prefieres hacer check-outs manualmente
+- **Zona Horaria**: Respeta la zona horaria del hotel para cálculos precisos
+- **Hora Configurada**: Usa la hora de check-out configurada del hotel (ej: 11:00 AM)
+
+#### Beneficios del Check-out Automático
+
+- ✅ **Menos Trabajo Manual**: No necesitas recordar hacer check-outs manualmente
+- ✅ **Habitaciones Disponibles**: Las habitaciones se liberan automáticamente para nuevas reservas
+- ✅ **Sin Olvidos**: Las reservas con fecha de salida pasada se procesan automáticamente
+- ✅ **Eficiencia**: El sistema funciona 24/7 sin necesidad de supervisión
+- ✅ **Configurable**: Puedes habilitarlo o deshabilitarlo según tus necesidades
 
 ---
 
@@ -200,6 +243,7 @@ Datos de la reserva:
 - **Fechas**: Check-in debe ser anterior al check-out
 - **Restricciones**: Respeta CTA (cerrado a llegadas) y CTD (cerrado a salidas)
 - **Estadía mínima/máxima**: Valida según las reglas del hotel
+- **🛡️ Verificación con OTAs**: Antes de confirmar una reserva, el sistema verifica automáticamente si la habitación está ocupada en Booking.com o Airbnb para evitar overbooking (ver detalles más abajo)
 
 ### Beneficios
 - ✅ **Reservas sin errores** gracias a las validaciones
@@ -212,7 +256,625 @@ Datos de la reserva:
 ## 3.4 Sistema de Pagos
 
 ### ¿Qué hace?
-Procesa pagos de manera segura y flexible, con políticas configurables.
+Procesa pagos de manera segura y flexible, con políticas configurables y validaciones inteligentes.
+
+### ¿Cómo funciona?
+
+#### Configuración de Pasarelas de Pago
+- **Mercado Pago**: Integración completa con tarjetas de crédito/débito
+- **Configuración por Hotel**: Cada hotel puede tener su propia configuración
+- **Modo Prueba/Producción**: Configuración separada para testing y producción
+- **Validaciones Inteligentes**: El sistema previene errores comunes de configuración
+- **Rotación Segura de Tokens**: Endpoint dedicado para actualizar claves de forma segura
+- **Webhooks**: Confirmación automática de pagos
+- **Múltiples Monedas**: Soporte para diferentes monedas por país
+- **Idempotencia**: Prevención automática de pagos duplicados
+- **Trazabilidad Completa**: Rastreo de todas las operaciones de pago
+- **Simulación de Errores**: Testing seguro sin costos reales
+
+#### Validaciones de Seguridad
+- **Prevención de Errores**: No permite mezclar claves de prueba con producción
+- **Detección Automática**: Identifica si las claves son de test o producción
+- **Mensajes Claros**: Explica exactamente qué está mal y cómo corregirlo
+- **Validación en Tiempo Real**: Verifica la configuración antes de guardar
+
+#### Rotación de Tokens
+- **Endpoint Seguro**: API dedicada para rotar claves de acceso
+- **Validación Automática**: Aplica las mismas validaciones de seguridad
+- **Rollback Automático**: Si algo falla, se revierten los cambios
+- **Auditoría Completa**: Registra todas las rotaciones para seguimiento
+
+#### Métodos de Pago Disponibles
+- **Tarjetas de Crédito/Débito**: A través de Mercado Pago
+- **Efectivo**: Registro manual por el personal
+- **Transferencia Bancaria**: Registro manual
+- **POS**: Terminal punto de venta
+- **Vouchers de Crédito**: Sistema de vouchers reutilizables
+
+#### Políticas de Pago Configurables
+- **Sin Adelanto**: Pago completo al confirmar
+- **Porcentaje**: Adelanto del X% del total
+- **Monto Fijo**: Adelanto de $X fijo
+- **Fechas de Vencimiento**: Al confirmar, días antes, al check-in
+- **Saldo Pendiente**: Al check-in o al check-out
+
+### 💰 Señas y Pagos Parciales (v2.4)
+
+#### ¿Qué son las señas?
+Las señas son pagos parciales que el huésped realiza antes del check-in para asegurar su reserva. El sistema calcula automáticamente el monto según la política configurada.
+
+#### ¿Cómo funciona?
+
+##### 1. Configuración de Políticas
+- **Porcentaje**: "Seña del 50% del total"
+- **Monto Fijo**: "Seña de $2000 fijo"
+- **Sin Seña**: "Pago completo al confirmar"
+- **Fechas de Vencimiento**: Al confirmar, días antes del check-in
+
+##### 2. Cálculo Automático
+- **El sistema calcula** el monto de seña según la política
+- **Valida** que el monto no exceda el permitido
+- **Muestra** información clara al usuario sobre la seña requerida
+
+##### 3. Dos Modos de Facturación
+
+###### Modo "Solo Recibos"
+- **Seña**: Genera recibo PDF (no envía a AFIP)
+- **Pago Final**: Genera recibo PDF (no envía a AFIP)
+- **Factura Final**: Genera factura AFIP con CAE incluyendo todos los pagos
+
+###### Modo "Facturación en Seña"
+- **Seña**: Genera factura AFIP con CAE para el monto de la seña
+- **Pago Final**: Genera recibo PDF
+- **Nota de Crédito**: Genera nota de crédito o factura complementaria
+
+##### 4. Proceso Completo
+1. **Cliente hace reserva** → Sistema calcula seña requerida
+2. **Cliente paga seña** → Se genera recibo/factura según configuración
+3. **Cliente paga saldo** → Se genera recibo/factura según configuración
+4. **Sistema genera factura final** → Incluye todos los pagos realizados
+
+#### Características Principales
+- **Cálculo Automático**: Usa la política de pago para calcular montos
+- **Validaciones Inteligentes**: Previene errores de montos y estados
+- **Múltiples Pagos por Factura**: Vincula señas + pago final en una factura
+- **Integración AFIP**: Soporte completo para facturación electrónica argentina
+- **PDFs Automáticos**: Genera recibos y facturas automáticamente
+- **Emails Automáticos**: Envía comprobantes por email al huésped
+
+#### Ejemplo Práctico
+```
+Reserva: $10,000 por 3 noches
+Política: Seña del 50% al confirmar
+
+1. Cliente confirma → Paga $5,000 (seña)
+   - Sistema genera: Recibo PDF + Email
+   - Si modo fiscal: Factura AFIP con CAE
+
+2. Cliente llega al hotel → Paga $5,000 (saldo)
+   - Sistema genera: Recibo PDF + Email
+
+3. Sistema genera factura final
+   - Incluye: Seña $5,000 + Saldo $5,000 = $10,000
+   - Envía a AFIP y obtiene CAE
+   - Genera PDF fiscal con código QR
+```
+
+#### Beneficios para el Hotel
+- **Mayor Seguridad**: Reservas aseguradas con señas
+- **Mejor Flujo de Caja**: Ingresos anticipados
+- **Menos No-Shows**: Clientes comprometidos con el pago
+- **Facturación Flexible**: Adaptable a necesidades contables
+- **Automatización Completa**: Menos trabajo manual
+
+#### Beneficios para el Huésped
+- **Reserva Asegurada**: Su lugar está garantizado
+- **Pago Flexible**: Puede pagar en cuotas
+- **Comprobantes Claros**: Recibe todos los documentos
+- **Transparencia Total**: Ve exactamente qué está pagando
+
+### Mejoras de Seguridad Implementadas
+
+#### Validaciones Inteligentes
+- **Detección Automática**: El sistema identifica si las claves son de prueba o producción
+- **Prevención de Errores**: No permite mezclar configuraciones de test con producción
+- **Mensajes Claros**: Explica exactamente qué está mal y cómo corregirlo
+- **Validación en Tiempo Real**: Verifica la configuración antes de guardar
+
+#### Ejemplo de Validación
+```
+❌ Error detectado:
+"No se puede marcar como producción si is_test=True"
+
+✅ Solución:
+- Desmarcar "is_test" si quieres usar en producción
+- O usar claves de prueba si quieres mantener "is_test=True"
+```
+
+#### Rotación Segura de Tokens
+- **Endpoint Dedicado**: API especializada para actualizar claves de acceso
+- **Validación Automática**: Aplica las mismas validaciones de seguridad
+- **Rollback Automático**: Si algo falla, se revierten los cambios automáticamente
+- **Auditoría Completa**: Registra todas las rotaciones para seguimiento
+
+#### Proceso de Rotación
+1. **Acceso al endpoint** de rotación de tokens
+2. **Ingreso de nuevas claves** (access_token y public_key)
+3. **Validación automática** de las nuevas claves
+4. **Actualización segura** si todo está correcto
+5. **Registro de auditoría** de la operación
+
+### Beneficios
+- ✅ **Procesamiento seguro** de pagos
+- ✅ **Configuración flexible** por hotel
+- ✅ **Validaciones automáticas** que previenen errores
+- ✅ **Rotación segura** de claves de acceso
+- ✅ **Múltiples métodos** de pago
+- ✅ **Integración completa** con Mercado Pago
+- ✅ **Auditoría completa** de todas las operaciones
+- ✅ **Prevención de errores** de configuración
+- ✅ **Mensajes claros** para resolución de problemas
+- ✅ **Prevención de duplicados** automática
+- ✅ **Rastreo completo** de operaciones
+- ✅ **Testing seguro** sin costos reales
+
+### 💳 Transferencias Bancarias con OCR (v2.2)
+
+#### ¿Qué son las transferencias bancarias?
+Es un método de pago donde el cliente realiza una transferencia bancaria y sube el comprobante para confirmar el pago.
+
+#### ¿Cómo funciona?
+
+##### 1. Subida de Comprobante
+- **Cliente selecciona transferencia** como método de pago
+- **Sube comprobante** (PDF, JPG, PNG) con datos:
+  - Monto de la transferencia
+  - Fecha de la transferencia
+  - CBU/IBAN del destinatario
+  - Nombre del banco
+- **Sistema procesa archivo** automáticamente
+
+##### 2. Confirmación Automática
+- **Confirmación inmediata**: La reserva se confirma automáticamente
+- **Sin aprobación manual**: No requiere intervención del personal
+- **Validación inteligente**: El sistema valida los datos ingresados
+- **Registro completo**: Se guarda toda la información del pago
+
+##### 3. Almacenamiento Híbrido
+- **Desarrollo**: Archivos guardados localmente
+- **Producción**: Archivos subidos a Cloudinary (nube)
+- **Acceso universal**: Los archivos están disponibles desde cualquier lugar
+- **Seguridad garantizada**: Almacenamiento seguro y confiable
+
+##### 4. Procesamiento OCR (Opcional)
+- **Extracción automática**: El sistema lee datos del comprobante
+- **Validación cruzada**: Compara datos extraídos vs. datos ingresados
+- **Revisión manual**: Solo si hay discrepancias importantes
+- **Confirmación inteligente**: Aprovecha la tecnología para agilizar el proceso
+
+#### Beneficios para el Cliente
+- ✅ **Pago inmediato**: Confirmación instantánea de la reserva
+- ✅ **Sin esperas**: No necesita aprobación manual
+- ✅ **Fácil de usar**: Solo subir el comprobante
+- ✅ **Seguro**: Almacenamiento protegido de comprobantes
+
+#### Beneficios para el Hotel
+- ✅ **Procesamiento automático**: Sin intervención manual necesaria
+- ✅ **Trazabilidad completa**: Registro detallado de todas las transferencias
+- ✅ **Archivos organizados**: Comprobantes guardados y accesibles
+- ✅ **Validación inteligente**: OCR para verificar datos automáticamente
+
+### 📊 Módulo de Cobros (v2.2)
+
+#### ¿Qué es el módulo de Cobros?
+Es un historial unificado que muestra todos los pagos y cobros del hotel en un solo lugar, con herramientas avanzadas de análisis y exportación.
+
+#### ¿Qué incluye?
+
+##### 1. Historial Completo
+- **Pagos Manuales**: Efectivo, tarjeta, POS registrados por el personal
+- **Pagos Online**: Mercado Pago y otras pasarelas de pago
+- **Transferencias Bancarias**: Con comprobantes y validación
+- **Reservas Pendientes**: Reservas que aún no han sido confirmadas
+
+##### 2. Filtros Avanzados
+- **Por Fecha**: Ver pagos de un período específico
+- **Por Tipo**: Manual, Online, Transferencia, Pendiente
+- **Por Método**: Efectivo, Tarjeta, Transferencia, Mercado Pago
+- **Por Estado**: Aprobado, Pendiente, Rechazado, Cancelado
+- **Por Monto**: Rango de montos específico
+- **Por Huésped**: Buscar pagos de un huésped específico
+
+##### 3. Estadísticas y Métricas
+- **Resumen General**: Total de pagos, monto total, promedio
+- **Distribución por Tipo**: Cuántos pagos de cada tipo
+- **Distribución por Método**: Cuántos pagos de cada método
+- **Evolución Temporal**: Cómo cambian los cobros en el tiempo
+- **Tendencias**: Patrones de pago del hotel
+
+##### 4. Exportación de Datos
+- **Formato CSV**: Datos listos para Excel o sistemas contables
+- **Filtros Aplicados**: Solo exporta los datos que necesitas
+- **Descarga Directa**: Sin necesidad de procesamiento adicional
+- **Datos Completos**: Todos los campos relevantes incluidos
+
+##### 5. Archivos Adjuntos
+- **Comprobantes**: Acceso directo a comprobantes de transferencias
+- **Visualización**: Ver archivos sin descargarlos
+- **Descarga**: Descargar archivos individuales
+- **Organización**: Archivos organizados por pago
+
+#### Beneficios para la Gestión
+
+##### Para el Personal
+- ✅ **Vista Unificada**: Todos los pagos en un solo lugar
+- ✅ **Búsqueda Rápida**: Encuentra cualquier pago fácilmente
+- ✅ **Filtros Intuitivos**: Reduce la información a lo que necesitas
+- ✅ **Acceso a Archivos**: Ve comprobantes sin buscarlos
+
+##### Para la Contabilidad
+- ✅ **Exportación Fácil**: Datos listos para importar
+- ✅ **Filtros Precisos**: Solo los datos que necesitas
+- ✅ **Formato Estándar**: Compatible con cualquier sistema
+- ✅ **Auditoría Completa**: Registro detallado de todo
+
+##### Para el Análisis
+- ✅ **Métricas Visuales**: Gráficos y estadísticas claras
+- ✅ **Tendencias**: Ve cómo evoluciona el negocio
+- ✅ **Comparaciones**: Compara diferentes períodos
+- ✅ **Insights**: Descubre patrones en los pagos
+
+### 🏦 Conciliación Bancaria Automática (v2.3)
+
+#### ¿Qué es la Conciliación Bancaria?
+Es una funcionalidad que automáticamente compara los movimientos de tu cuenta bancaria con los pagos registrados en el sistema, confirmando automáticamente las transferencias que coinciden.
+
+#### ¿Cómo funciona?
+
+##### 1. Subida de Extracto Bancario
+- **Formato CSV**: Subes el extracto de tu banco en formato CSV
+- **Detección Automática**: El sistema detecta automáticamente el formato y encoding
+- **Validación**: Verifica que el archivo tenga la estructura correcta
+
+##### 2. Matching Inteligente
+- **Coincidencia Exacta**: Busca pagos con monto y fecha exactos
+- **Coincidencia Aproximada**: Encuentra pagos con pequeñas diferencias de monto o fecha
+- **Coincidencia Parcial**: Identifica pagos que podrían coincidir con tolerancias más amplias
+- **Aprobación Manual**: Para casos dudosos, permite revisión manual
+
+##### 3. Confirmación Automática
+- **Alta Confianza (≥90%)**: Se confirman automáticamente
+- **Confianza Media (70-89%)**: Requieren revisión manual
+- **Baja Confianza (<70%)**: Se marcan para revisión
+
+#### ¿Qué incluye?
+
+##### 1. Algoritmos de Matching
+- **Exact Match**: Monto exacto + fecha ±1 día
+- **Fuzzy Match**: Monto ±0.5% + fecha ±2 días
+- **Partial Match**: Monto ±1% + fecha ±3 días
+- **Manual Match**: Aprobación manual de matches dudosos
+
+##### 2. Configuración Flexible
+- **Tolerancias Ajustables**: Configuración por hotel
+- **Múltiples Monedas**: Conversión automática de tipos de cambio
+- **Umbrales de Confianza**: Configuración de auto-confirmación
+- **Notificaciones**: Alertas por email y sistema
+
+##### 3. Procesamiento Automático
+- **Job Nocturno**: Procesamiento automático todas las noches
+- **Actualización de Tipos de Cambio**: Conversión automática de monedas
+- **Notificaciones**: Alertas cuando hay problemas o resultados
+
+##### 4. Logs de Auditoría
+- **Registro Completo**: Todas las operaciones quedan registradas
+- **Trazabilidad**: Seguimiento completo de cada match
+- **Historial**: Acceso al historial de todas las conciliaciones
+
+#### Formato CSV Esperado
+```csv
+fecha,descripcion,importe,moneda,referencia
+2025-01-15,"Transferencia Juan Perez",25000.00,"ARS","CBU 28500109...1234"
+2025-01-16,"Transferencia Maria Garcia",18000.00,"ARS","CBU 28500109...5678"
+```
+
+#### Beneficios para la Gestión
+
+##### Para el Personal
+- ✅ **Ahorro de Tiempo**: No más conciliación manual
+- ✅ **Precisión Alta**: Algoritmos inteligentes de matching
+- ✅ **Interfaz Intuitiva**: Subida de CSV con drag & drop
+- ✅ **Revisión Manual**: Solo para casos que lo requieren
+
+##### Para la Contabilidad
+- ✅ **Automatización Total**: Conciliación sin intervención manual
+- ✅ **Trazabilidad Completa**: Logs detallados de todas las operaciones
+- ✅ **Exportación**: Datos listos para sistemas contables
+- ✅ **Auditoría**: Registro completo de todas las operaciones
+
+##### Para el Negocio
+- ✅ **Eficiencia**: Procesamiento automático 24/7
+- ✅ **Reducción de Errores**: Algoritmos precisos de matching
+- ✅ **Escalabilidad**: Maneja grandes volúmenes de transacciones
+- ✅ **Flexibilidad**: Configuración por hotel y moneda
+
+#### 🎯 Mejoras Implementadas (v2.3)
+
+##### Flujo de Transferencias Mejorado
+- **Problema Resuelto**: Antes, cuando un huésped subía un comprobante de transferencia, la reserva se confirmaba inmediatamente, sin verificar que el dinero realmente llegara al banco
+- **Nueva Solución**: 
+  - ✅ **Mayor Seguridad**: Las transferencias ahora quedan en "Pendiente de Confirmación"
+  - ✅ **Verificación Real**: Solo se confirman cuando el dinero aparece en el extracto bancario
+  - ✅ **Proceso Automático**: La conciliación bancaria confirma automáticamente las reservas
+
+##### Matching Inteligente Expandido
+- **Nuevo**: Ahora el sistema puede encontrar reservas pendientes directamente
+- **Criterios Mejorados**:
+  - ✅ **Monto Exacto**: Busca reservas con el mismo monto
+  - ✅ **Fechas Coincidentes**: Compara fechas de transacción con fechas de reserva
+  - ✅ **Nombres de Huéspedes**: Identifica transferencias por nombre en la descripción
+- **Tipos de Confianza**:
+  - 🟢 **Exacto (100%)**: Monto y fecha coinciden perfectamente
+  - 🟡 **Aproximado (70-99%)**: Pequeñas diferencias pero muy probable
+  - 🟠 **Parcial (50-69%)**: Posible coincidencia, requiere revisión
+
+##### Interfaz Mejorada
+- **Estados Visuales**: Los colores de los badges ahora funcionan correctamente
+  - 🟡 **Pendiente**: Amarillo para procesos en espera
+  - 🔵 **Procesando**: Azul para operaciones en curso
+  - 🟢 **Completada**: Verde para operaciones exitosas
+  - 🔴 **Fallida**: Rojo para errores
+- **Notificaciones Unificadas**: Mensajes de éxito y error consistentes en toda la aplicación
+
+### 🚀 Mejoras del Sistema de Pagos (v2.1)
+
+#### ¿Qué son las mejoras?
+Son funcionalidades avanzadas que hacen que el sistema de pagos sea más robusto, confiable y fácil de mantener.
+
+#### ¿Por qué son importantes?
+- **Evitan errores costosos**: Prevención de pagos duplicados
+- **Facilitan el debugging**: Rastreo completo de operaciones
+- **Permiten testing seguro**: Simulación de errores sin costos reales
+
+### 🔒 Sistema de Webhooks Mejorado (v2.0)
+
+#### ¿Qué es un webhook?
+Un webhook es como un "mensajero automático" que Mercado Pago envía a nuestro sistema cuando ocurre algo importante con un pago (aprobado, rechazado, etc.).
+
+#### ¿Por qué es importante?
+- **Confirmación automática**: Los pagos se confirman sin intervención manual
+- **Seguridad garantizada**: Solo Mercado Pago puede enviar notificaciones válidas
+- **Prevención de duplicados**: El sistema evita procesar la misma notificación dos veces
+- **Procesamiento rápido**: Las notificaciones se procesan en segundos
+
+#### ¿Cómo funciona?
+
+##### 1. Seguridad Avanzada
+- **Verificación de identidad**: Cada notificación viene con una "firma digital" que solo Mercado Pago puede generar
+- **Validación automática**: El sistema verifica que la notificación sea realmente de Mercado Pago
+- **Rechazo de falsificaciones**: Cualquier notificación sin firma válida es rechazada automáticamente
+
+##### 2. Prevención de Duplicados
+- **Control inteligente**: El sistema recuerda qué notificaciones ya procesó
+- **Evita reprocesamiento**: Si llega la misma notificación dos veces, solo se procesa una vez
+- **Ahorro de recursos**: No se desperdician recursos procesando lo mismo repetidamente
+
+##### 3. Procesamiento Atómico
+- **Todo o nada**: Si algo falla durante el procesamiento, se revierte todo automáticamente
+- **Consistencia garantizada**: Los datos siempre quedan en un estado válido
+- **Sin pérdida de información**: Si hay un error, no se pierden datos importantes
+
+##### 4. Post-procesamiento Inteligente
+- **Notificaciones automáticas**: El sistema notifica a usuarios y personal sobre cambios importantes
+- **Auditoría completa**: Se registra todo lo que pasa para futuras consultas
+- **Procesamiento en segundo plano**: Las tareas pesadas no bloquean la confirmación del pago
+
+#### Beneficios para el Hotel
+
+##### Seguridad
+- **Protección contra fraudes**: Solo notificaciones auténticas de Mercado Pago son procesadas
+- **Auditoría completa**: Registro detallado de todas las operaciones para cumplimiento
+- **Prevención de errores**: El sistema evita procesar la misma notificación múltiples veces
+
+##### Eficiencia
+- **Confirmación automática**: Los pagos se confirman sin intervención manual
+- **Procesamiento rápido**: Las notificaciones se procesan en segundos
+- **Notificaciones automáticas**: El personal recibe alertas inmediatas sobre pagos importantes
+
+##### Confiabilidad
+- **Manejo de errores**: Si algo falla, el sistema se recupera automáticamente
+- **Consistencia de datos**: Los datos siempre quedan en un estado válido
+- **Monitoreo continuo**: El sistema registra todo para facilitar el debugging
+
+#### Beneficios para el Personal
+
+##### Visibilidad
+- **Notificaciones inmediatas**: Reciben alertas en tiempo real sobre pagos procesados
+- **Información detallada**: Cada notificación incluye todos los detalles relevantes
+- **Historial completo**: Pueden consultar el historial de todas las operaciones
+
+##### Simplicidad
+- **Procesamiento automático**: No necesitan intervenir manualmente en la mayoría de casos
+- **Interfaz clara**: Las notificaciones son fáciles de entender y actuar
+- **Resolución rápida**: Si hay problemas, el sistema proporciona información clara para resolverlos
+
+#### Beneficios para los Huéspedes
+
+##### Experiencia Mejorada
+- **Confirmación inmediata**: Sus pagos se confirman automáticamente
+- **Notificaciones claras**: Reciben información clara sobre el estado de sus pagos
+- **Procesamiento confiable**: Pueden confiar en que sus pagos se procesarán correctamente
+
+##### Transparencia
+- **Estado actualizado**: Siempre saben el estado actual de sus pagos
+- **Información detallada**: Reciben todos los detalles relevantes sobre sus transacciones
+- **Soporte eficiente**: Si hay problemas, el personal puede resolverlos rápidamente
+
+#### Casos de Uso Reales
+
+##### Caso 1: Pago Aprobado
+```
+1. Huésped completa pago con tarjeta
+2. Mercado Pago procesa el pago exitosamente
+3. Mercado Pago envía webhook a AlojaSys
+4. AlojaSys verifica la firma del webhook
+5. AlojaSys confirma que no es duplicado
+6. AlojaSys actualiza el estado del pago
+7. AlojaSys notifica al personal y huésped
+8. La reserva se confirma automáticamente
+```
+
+##### Caso 2: Pago Rechazado
+```
+1. Huésped intenta pagar con tarjeta
+2. Mercado Pago rechaza el pago
+3. Mercado Pago envía webhook a AlojaSys
+4. AlojaSys verifica la firma del webhook
+5. AlojaSys actualiza el estado del pago
+6. AlojaSys notifica al personal sobre el rechazo
+7. El personal puede contactar al huésped para resolver
+```
+
+##### Caso 3: Notificación Duplicada
+```
+1. Mercado Pago envía webhook por pago aprobado
+2. AlojaSys procesa la notificación exitosamente
+3. Mercado Pago envía la misma notificación otra vez
+4. AlojaSys detecta que ya fue procesada
+5. AlojaSys responde "ya procesada" sin hacer nada más
+6. Se evita procesamiento duplicado y errores
+```
+
+#### Configuración Técnica
+
+##### Variables de Entorno
+```bash
+# Secreto para verificar webhooks de Mercado Pago
+MERCADO_PAGO_WEBHOOK_SECRET=tu_secreto_aqui
+
+# Token de acceso de Mercado Pago
+MERCADO_PAGO_ACCESS_TOKEN=tu_token_aqui
+
+# URL de Redis para control de duplicados
+REDIS_URL=redis://localhost:6379/0
+```
+
+##### Configuración por Hotel
+- **Webhook Secret**: Cada hotel puede tener su propio secreto
+- **Modo Producción**: Configuración separada para producción
+- **Validaciones**: El sistema valida la configuración automáticamente
+
+#### Monitoreo y Alertas
+
+##### Eventos Registrados
+- **Webhook recibido**: Cada vez que llega una notificación
+- **Firma verificada**: Cuando se valida la autenticidad
+- **Duplicado detectado**: Cuando se evita procesamiento duplicado
+- **Pago procesado**: Cuando se actualiza el estado del pago
+- **Error detectado**: Cuando algo falla en el procesamiento
+
+##### Métricas Importantes
+- **Tiempo de procesamiento**: Qué tan rápido se procesan las notificaciones
+- **Tasa de éxito**: Qué porcentaje de webhooks se procesan correctamente
+- **Tasa de duplicados**: Qué porcentaje de notificaciones son duplicadas
+- **Tasa de errores**: Qué porcentaje de webhooks fallan
+
+#### Resolución de Problemas
+
+##### Problema: Webhook no se procesa
+**Posibles causas:**
+- Firma HMAC inválida
+- Configuración incorrecta del webhook secret
+- Error en la configuración de Mercado Pago
+
+**Solución:**
+1. Verificar la configuración del webhook secret
+2. Revisar los logs del sistema para ver el error específico
+3. Contactar a Mercado Pago si el problema persiste
+
+##### Problema: Pago duplicado
+**Posibles causas:**
+- Mercado Pago envió la notificación múltiples veces
+- Error en la configuración de Redis
+
+**Solución:**
+1. El sistema ya previene esto automáticamente
+2. Verificar que Redis esté funcionando correctamente
+3. Revisar los logs para confirmar que se detectó el duplicado
+
+##### Problema: Notificación no llega
+**Posibles causas:**
+- Problema de conectividad con Mercado Pago
+- Configuración incorrecta de la URL del webhook
+- Firewall bloqueando las notificaciones
+
+**Solución:**
+1. Verificar la conectividad con Mercado Pago
+2. Revisar la configuración de la URL del webhook
+3. Verificar que el firewall permita las notificaciones
+
+#### ¿Cómo funcionan?
+
+##### 🔑 Prevención de Duplicados (Idempotencia)
+```
+Problema: Si hay un error de red, el sistema podría enviar el mismo pago dos veces
+Solución: Cada operación tiene una "huella digital" única
+Resultado: Nunca se procesa el mismo pago dos veces
+```
+
+##### 📊 Rastreo Completo (Trace ID)
+```
+Problema: Es difícil saber qué pasó con una operación específica
+Solución: Cada operación tiene un "número de seguimiento" único
+Resultado: Puedes rastrear cualquier operación desde el inicio hasta el final
+```
+
+##### 🧪 Testing Seguro
+```
+Problema: Probar errores reales cuesta dinero y puede causar problemas
+Solución: El sistema puede simular errores sin hacer operaciones reales
+Resultado: Puedes probar todos los escenarios sin riesgo
+```
+
+#### Beneficios para tu Hotel
+
+##### Para el Personal
+- **Menos errores**: El sistema previene pagos duplicados automáticamente
+- **Debugging fácil**: Si algo falla, puedes rastrear exactamente qué pasó
+- **Testing seguro**: Puedes probar el sistema sin hacer operaciones reales
+
+##### Para el Negocio
+- **Ahorro de dinero**: No hay pagos duplicados accidentales
+- **Mayor confianza**: El sistema es más confiable y predecible
+- **Menos problemas**: Menos tiempo perdido resolviendo errores
+
+##### Para el Desarrollo
+- **Mantenimiento fácil**: Los logs son claros y organizados
+- **Testing completo**: Se pueden probar todos los escenarios
+- **Escalabilidad**: El sistema puede manejar más operaciones simultáneas
+
+#### Ejemplos Prácticos
+
+##### Caso 1: Error de Red
+```
+Situación: Se pierde la conexión justo después de enviar un pago
+Sin mejoras: Podría procesarse dos veces el mismo pago
+Con mejoras: El sistema detecta que ya se procesó y no lo repite
+```
+
+##### Caso 2: Debugging de Problemas
+```
+Situación: Un huésped dice que se le cobró dos veces
+Sin mejoras: Es difícil encontrar qué pasó
+Con mejoras: Puedes buscar por "trace_id" y ver toda la historia
+```
+
+##### Caso 3: Testing de Nuevas Funcionalidades
+```
+Situación: Quieres probar qué pasa si MercadoPago falla
+Sin mejoras: Tendrías que hacer operaciones reales que fallan
+Con mejoras: Simulas el error sin hacer operaciones reales
+```
 
 ----
 
@@ -369,6 +1031,189 @@ Mensaje: "Su voucher de crédito estará listo en 24 horas"
 ```
 
 ---
+
+### Sistema de Recibos Automáticos
+
+#### ¿Qué hace?
+Genera automáticamente recibos profesionales en PDF y los envía por email a los huéspedes cada vez que se procesa un pago o reembolso.
+
+#### ¿Cómo funciona?
+
+##### Generación Automática
+- **Sin intervención manual**: Los recibos se generan automáticamente
+- **Diseño profesional**: Incluye logo del hotel y información completa
+- **Envío inmediato**: El huésped recibe el recibo por email al instante
+- **Formato PDF**: Fácil de imprimir y guardar digitalmente
+
+##### Cuándo se Generan Recibos
+- ✅ **Pagos en efectivo**: Al confirmar una reserva
+- ✅ **Pagos con tarjeta**: Al procesar el pago
+- ✅ **Transferencias**: Al registrar el pago manual
+- ✅ **Reembolsos**: Al procesar cualquier devolución
+- ✅ **Vouchers**: Al generar vouchers de crédito
+
+##### Información Incluida en el Recibo
+- **Logo del hotel** (si está configurado)
+- **Datos del hotel**: Nombre, dirección, teléfono, email, RUT
+- **Fecha y hora de emisión** automática
+- **Código de reserva** único
+- **Monto del pago/reembolso**
+- **Método de pago** utilizado
+- **Datos del huésped** principal
+- **Sello fiscal interno** de AlojaSys
+
+#### Configuración para el Hotel
+
+##### Logo del Hotel
+- **Subir logo**: En la configuración del hotel
+- **Formatos soportados**: JPG, PNG, GIF
+- **Tamaño recomendado**: 200x200 píxeles
+- **Ubicación**: Aparece en el encabezado del recibo
+
+##### Información del Hotel
+- **Datos obligatorios**: Nombre, email
+- **Datos opcionales**: Dirección, teléfono, RUT/CUIT
+- **Configuración**: Se completa en "Gestión de Hoteles"
+
+##### Configuración de Email
+- **Proveedor recomendado**: Resend (configuración automática)
+- **Email de envío**: AlojaSys (global)
+- **Reply-to**: Email específico del hotel
+- **Configuración**: Se hace una sola vez por hotel
+
+#### Ejemplo de Recibo Generado
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    [LOGO HOTEL]                        │
+│                 RECIBO DE PAGO                         │
+│                                                         │
+│ Hotel Plaza Central                                     │
+│ Av. Corrientes 1234, Buenos Aires                      │
+│ Tel: +54 11 1234-5678                                  │
+│ Email: info@hotelplaza.com                             │
+│ RUT: 30-12345678-9                                     │
+│                                                         │
+│ Fecha de emisión: 22/10/2025 a las 15:30:45           │
+│ ─────────────────────────────────────────────────────── │
+│                                                         │
+│ INFORMACIÓN DEL PAGO                                    │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ Código de Reserva:    RES-12345                    │ │
+│ │ ID de Pago:           67                           │ │
+│ │ Monto:                $45,000.00                   │ │
+│ │ Método de Pago:       Efectivo                     │ │
+│ │ Fecha:                22/10/2025 15:30:45         │ │
+│ │ Huésped:              Juan Pérez                   │ │
+│ │ Email:                juan.perez@email.com         │ │
+│ └─────────────────────────────────────────────────────┘ │
+│                                                         │
+│ ─────────────────────────────────────────────────────── │
+│                                                         │
+│ Recibo generado automáticamente por AlojaSys           │
+│ (sin validez fiscal)                                   │
+│                                                         │
+│ AlojaSys                    Generado el: 22/10/2025   │
+│ Sistema de Gestión Hotelera   15:30:45                 │
+└─────────────────────────────────────────────────────────┘
+```
+
+#### Beneficios para el Hotel
+
+##### Automatización Completa
+- **Sin trabajo manual**: Los recibos se generan solos
+- **Consistencia**: Todos los recibos tienen el mismo formato profesional
+- **Velocidad**: El huésped recibe el recibo al instante
+- **Profesionalismo**: Imagen corporativa mejorada
+
+##### Ahorro de Tiempo
+- **No imprimir**: Los huéspedes reciben el recibo por email
+- **No archivar**: Los PDFs se guardan automáticamente
+- **No buscar**: Historial digital completo de todos los recibos
+
+##### Mejor Experiencia del Huésped
+- **Recibo inmediato**: No hay que esperar ni pedir
+- **Formato digital**: Fácil de guardar y compartir
+- **Información completa**: Todos los datos necesarios
+- **Profesional**: Diseño limpio y claro
+
+#### Configuración Técnica (Para Administradores)
+
+##### Variables de Entorno
+```bash
+# Archivo: backend/.env
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.resend.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=resend
+EMAIL_HOST_PASSWORD=TU_API_KEY_DE_RESEND
+DEFAULT_FROM_EMAIL=AlojaSys <noreply@aloja.com>
+```
+
+##### Pasos de Configuración
+1. **Crear cuenta en Resend**: Obtener API key
+2. **Configurar variables**: Agregar al archivo .env
+3. **Subir logo**: En configuración del hotel
+4. **Completar datos**: Información del hotel
+5. **Probar sistema**: Hacer un pago de prueba
+
+##### Monitoreo del Sistema
+- **Logs automáticos**: Se registran todos los envíos
+- **Alertas de error**: Si algo falla, se notifica
+- **Estadísticas**: Cantidad de recibos generados
+- **Historial**: Todos los PDFs se guardan en /media/receipts/
+
+#### Casos de Uso Reales
+
+##### Caso 1: Check-in con Pago en Efectivo
+```
+1. Huésped llega al hotel
+2. Personal registra pago en efectivo
+3. Sistema genera PDF automáticamente
+4. Huésped recibe recibo por email
+5. Recibo se guarda en sistema
+```
+
+##### Caso 2: Cancelación con Reembolso
+```
+1. Huésped cancela reserva
+2. Sistema procesa reembolso
+3. PDF de reembolso se genera
+4. Huésped recibe comprobante por email
+5. Hotel tiene registro completo
+```
+
+##### Caso 3: Pago con Tarjeta
+```
+1. Huésped paga con tarjeta online
+2. Mercado Pago confirma pago
+3. Sistema genera recibo automáticamente
+4. Email se envía al huésped
+5. Recibo queda registrado
+```
+
+#### Solución de Problemas Comunes
+
+##### El huésped no recibe el email
+- **Verificar email**: Revisar que el email esté correcto en la reserva
+- **Revisar spam**: El email puede estar en carpeta de spam
+- **Verificar configuración**: Revisar variables de email
+- **Reintentar**: El sistema reintenta automáticamente
+
+##### El PDF no se genera
+- **Verificar logs**: Revisar logs de Celery
+- **Verificar permisos**: Revisar permisos de escritura en /media/
+- **Verificar datos**: Revisar que todos los datos estén completos
+- **Reiniciar servicios**: Reiniciar Celery si es necesario
+
+##### El logo no aparece
+- **Verificar archivo**: Revisar que el logo esté subido
+- **Verificar formato**: Usar JPG, PNG o GIF
+- **Verificar tamaño**: Máximo 2MB
+- **Verificar permisos**: Revisar permisos de lectura
+
+----
 
 ## 3.5 Políticas de Cancelación
 
@@ -2782,6 +3627,14 @@ Imagina que tienes que procesar 50 reembolsos al día. ¿Cómo manejas:
 
 #### Check-outs del Día
 ```
+Opción 1: Check-out Automático (si está habilitado)
+1. Sistema verifica cada hora si hay reservas que deben hacer check-out
+2. Si la fecha de check-out pasó, procesa automáticamente
+3. Si es el día de check-out, espera hasta la hora configurada del hotel
+4. Cambia estado a "Check-out" y libera habitación automáticamente
+5. Habitación aparece como "Disponible" en el calendario sin intervención manual
+
+Opción 2: Check-out Manual
 1. Recepcionista abre el sistema
 2. Abre el calendario en vista diaria
 3. Ve los check-outs programados visualmente
@@ -3650,6 +4503,1117 @@ Política de Reembolso NO_SHOW:
 - **Grupos de usuarios**: Diferentes notificaciones por rol
 - **Escalación automática**: Notificar a supervisores si no se atiende
 
+## 3.13 Facturación Electrónica Argentina
+
+### ¿Qué hace?
+
+El módulo de **Facturación Electrónica Argentina** permite generar y gestionar facturas electrónicas que cumplen con las normativas de AFIP (Administración Federal de Ingresos Públicos) de Argentina. Es como tener un contador digital que se encarga automáticamente de toda la documentación fiscal.
+
+### ¿Cómo funciona?
+
+#### Configuración Inicial
+1. **Configuración AFIP**: Se configura el CUIT del hotel, punto de venta y certificados digitales
+2. **Tipos de Factura**: El sistema soporta todos los tipos de comprobantes argentinos:
+   - **Factura A**: Para responsables inscriptos
+   - **Factura B**: Para consumidores finales
+   - **Factura C**: Para exentos de IVA
+   - **Factura E**: Para exportaciones
+   - **Nota de Crédito**: Para devoluciones
+   - **Nota de Débito**: Para ajustes
+
+#### Proceso Automático
+1. **Detección de Pago**: Cuando se procesa un pago, el sistema detecta automáticamente si necesita factura
+2. **Generación Automática**: Se crea la factura con todos los datos del huésped y la reserva
+3. **Envío a AFIP**: La factura se envía automáticamente a AFIP para obtener el CAE (Código de Autorización Electrónica)
+4. **Generación de PDF**: Se crea un PDF profesional de la factura
+5. **Notificación**: Se notifica al huésped con la factura adjunta
+
+#### Ejemplo Práctico
+**Escenario**: Un huésped se hospeda en el hotel y paga con tarjeta de crédito.
+
+1. **Pago Procesado**: El sistema detecta que el pago fue exitoso
+2. **Datos del Cliente**: El sistema obtiene automáticamente:
+   - Nombre y apellido del huésped
+   - CUIT/DNI del cliente
+   - Dirección de facturación
+   - Detalles de la reserva (noches, habitación, servicios)
+
+3. **Creación de Factura**: Se genera automáticamente:
+   - Número de factura secuencial (ej: 0001-00001234)
+   - Fecha de emisión
+   - Detalle de servicios (alojamiento, desayuno, etc.)
+   - Cálculo de IVA
+   - Total a pagar
+
+4. **Envío a AFIP**: La factura se envía a AFIP y se obtiene el CAE
+5. **PDF Fiscal Generado**: Se crea un PDF profesional que incluye:
+   - Logo del hotel y datos fiscales
+   - Información completa del cliente
+   - Detalle de servicios con IVA
+   - CAE y fecha de vencimiento
+   - Código QR para verificación AFIP
+6. **Email al Cliente**: Se envía automáticamente la factura por email
+
+### Características Principales
+
+#### 🧾 **Tipos de Comprobantes**
+- **Factura A**: Para empresas responsables inscriptas
+- **Factura B**: Para consumidores finales
+- **Factura C**: Para exentos de IVA
+- **Factura E**: Para exportaciones
+- **Nota de Crédito**: Para devoluciones y cancelaciones
+- **Nota de Débito**: Para ajustes y recargos
+
+#### 🔧 **Funcionalidades Automáticas**
+- ✅ **Generación automática** desde reservas
+- ✅ **Envío automático a AFIP** con autenticación segura
+- ✅ **Obtención de CAE** automática y validación
+- ✅ **Generación de PDFs** profesionales con logo del hotel
+- ✅ **Email automático** al cliente con factura adjunta
+- ✅ **Código QR** para verificación AFIP en cada factura
+- ✅ **Numeración secuencial** automática (formato: 0001-00001234)
+- ✅ **Cálculo de IVA** automático según normativas
+- ✅ **Reintentos automáticos** en caso de error
+- ✅ **Validación de datos** antes del envío
+- ✅ **Cache de autenticación** para mayor eficiencia
+- ✅ **Notas de crédito automáticas** al procesar reembolsos
+- ✅ **Vinculación de documentos** (facturas con sus notas de crédito)
+- ✅ **Manejo de errores** inteligente y notificaciones
+
+#### 📊 **Gestión y Control**
+- **Dashboard de Facturas**: Vista general de todas las facturas
+- **Estados de Factura**: Borrador, Enviada, Aprobada, Error
+- **Búsqueda Avanzada**: Por fecha, cliente, número, estado
+- **Reportes**: Facturas emitidas, ingresos, errores
+- **Conciliación**: Con pagos y reservas
+
+#### 🔄 **Automatización Inteligente**
+
+##### **Generación Automática de Facturas**
+El sistema genera facturas automáticamente cuando:
+- ✅ Un pago es **aprobado** exitosamente
+- ✅ Se completa una **reserva** con pago
+- ✅ Se procesa un **check-in** con pago pendiente
+
+**Proceso Automático**:
+1. **Detección**: El sistema detecta el pago aprobado
+2. **Validación**: Verifica que no exista factura previa
+3. **Configuración**: Obtiene la configuración AFIP del hotel
+4. **Generación**: Crea la factura con datos del pago y reserva
+5. **Envío**: Envía automáticamente a AFIP (opcional)
+6. **PDF**: Genera el PDF fiscal con CAE
+7. **Email**: Envía la factura al cliente
+
+##### **Generación Automática de Notas de Crédito**
+El sistema genera notas de crédito automáticamente cuando:
+- ✅ Se procesa un **reembolso** aprobado
+- ✅ Se cancela una **reserva** con factura existente
+- ✅ Se requiere un **ajuste** de factura
+
+**Proceso Automático**:
+1. **Detección**: El sistema detecta el reembolso aprobado
+2. **Vinculación**: Busca la factura original del pago
+3. **Validación**: Verifica que la factura esté aprobada
+4. **Generación**: Crea la nota de crédito vinculada
+5. **Envío**: Envía automáticamente a AFIP (opcional)
+6. **PDF**: Genera el PDF fiscal con CAE
+7. **Email**: Envía la nota de crédito al cliente
+
+#### 🌐 **APIs y Endpoints Disponibles**
+
+##### **Endpoints Principales**
+- **`POST /api/invoices/generate-from-payment/{id}/`**
+  - Genera factura automáticamente desde un pago
+  - Incluye datos del cliente y items personalizados
+  - Opción de envío automático a AFIP
+
+- **`GET /api/invoices/by-reservation/{id}/`**
+  - Lista todas las facturas de una reserva
+  - Filtros por tipo y estado
+  - Incluye notas de crédito relacionadas
+
+- **`POST /api/invoices/{id}/create-credit-note/`**
+  - Crea nota de crédito desde factura existente
+  - Vinculación automática con factura original
+  - Validación de totales y datos
+
+##### **Endpoints de Gestión**
+- **`GET /api/invoices/{id}/pdf/`** - Obtener PDF de factura
+- **`GET /api/invoices/{id}/download-pdf/`** - Descargar PDF
+- **`POST /api/invoices/{id}/send-to-afip/`** - Enviar a AFIP
+- **`POST /api/invoices/{id}/retry/`** - Reintentar envío
+- **`GET /api/invoices/{id}/summary/`** - Resumen de factura
+
+##### **Endpoints de Estado**
+- **`GET /api/afip/status/`** - Estado general de AFIP
+- **`GET /api/afip-configs/{id}/test-connection/`** - Probar conexión
+
+#### 🔗 **Integración con Otros Módulos**
+
+##### **Módulo de Pagos**
+- **Trigger**: Pago aprobado → Factura generada
+- **Datos**: Monto, cliente, método de pago
+- **Estado**: Sincronización automática
+
+##### **Módulo de Reservas**
+- **Trigger**: Check-in → Factura generada
+- **Datos**: Habitación, fechas, servicios
+- **Estado**: Vinculación automática
+
+##### **Módulo de Reembolsos**
+- **Trigger**: Reembolso aprobado → Nota de crédito
+- **Datos**: Monto, motivo, factura original
+- **Estado**: Vinculación automática
+
+#### 📱 **Interfaz de Usuario**
+
+##### **Panel de Facturas**
+- **Vista General**: Lista de todas las facturas
+- **Filtros**: Por hotel, fecha, tipo, estado
+- **Acciones**: Generar, enviar, descargar, cancelar
+- **Estados**: Visualización clara del estado de cada factura
+
+##### **Panel de Notas de Crédito**
+- **Vista General**: Lista de notas de crédito
+- **Vinculación**: Factura original visible
+- **Filtros**: Por factura original, fecha, estado
+- **Acciones**: Generar, enviar, descargar
+
+##### **Dashboard de AFIP**
+- **Estado de Conexión**: Disponibilidad de AFIP
+- **Configuración**: Gestión de certificados
+- **Estadísticas**: Facturas enviadas, aprobadas, errores
+- **Alertas**: CAE próximos a vencer, errores críticos
+
+### Beneficios para el Hotel
+
+#### 🏨 **Cumplimiento Fiscal**
+- **Automático**: No hay que recordar generar facturas
+- **Completo**: Cumple con todas las normativas AFIP
+- **Auditable**: Historial completo de todas las facturas
+- **Seguro**: Certificados digitales para máxima seguridad
+
+#### 💰 **Eficiencia Operativa**
+- **Tiempo Ahorrado**: No más facturación manual
+- **Menos Errores**: Cálculos automáticos precisos
+- **Mejor Organización**: Todo centralizado en el sistema
+- **Cliente Satisfecho**: Recibe factura inmediatamente
+
+#### 📈 **Control del Negocio**
+- **Reportes Detallados**: Ingresos por período, tipo de cliente
+- **Análisis de Ventas**: Qué servicios se facturan más
+- **Control de Errores**: Facturas que fallaron y por qué
+- **Conciliación**: Coincidencia entre pagos y facturas
+
+### Casos de Uso Reales
+
+#### Caso 1: Hotel Boutique (20 habitaciones)
+**Problema**: Facturación manual consume mucho tiempo del personal
+**Solución**: 
+- Configuración AFIP en 30 minutos
+- Facturación automática desde el primer día
+- Ahorro de 2 horas diarias en facturación
+- Clientes reciben factura por email automáticamente
+
+#### Caso 2: Hotel de Negocios (100 habitaciones)
+**Problema**: Muchas facturas A para empresas, gestión compleja
+**Solución**:
+- Detección automática de tipo de cliente
+- Generación automática de Factura A o B según corresponda
+- Integración con datos de empresas
+- Reportes detallados por tipo de cliente
+
+#### Caso 3: Hotel Resort (200 habitaciones)
+**Problema**: Servicios adicionales (spa, restaurante) requieren facturación separada
+**Solución**:
+- Facturación por servicio o consolidada
+- Múltiples puntos de venta
+- Gestión de exenciones (turismo)
+- Reportes por área del hotel
+
+### Servicios AFIP Integrados
+
+#### 🔐 **Autenticación Automática**
+El sistema maneja automáticamente la autenticación con AFIP:
+- **Certificados Digitales**: Se usan para firmar las solicitudes
+- **Tokens de Acceso**: Se generan automáticamente y duran 12 horas
+- **Cache Inteligente**: Evita autenticaciones innecesarias
+- **Renovación Automática**: Los tokens se renuevan antes de vencer
+
+#### 📤 **Envío de Facturas**
+Proceso completamente automatizado:
+- **Validación Previa**: Verifica todos los datos antes del envío
+- **Construcción XML**: Genera el formato requerido por AFIP
+- **Envío Seguro**: Usa HTTPS y certificados digitales
+- **Procesamiento de Respuesta**: Extrae CAE y datos de AFIP
+- **Actualización Automática**: Guarda los resultados en la base de datos
+
+#### 📄 **Generación de PDFs Fiscales**
+El sistema genera PDFs profesionales que cumplen con todas las normativas argentinas:
+
+**Elementos del PDF:**
+- **Logo del Hotel**: Imagen corporativa en la parte superior
+- **Datos Fiscales Completos**: 
+  - Razón social del hotel
+  - CUIT y domicilio fiscal
+  - Condición ante IVA
+  - Punto de venta
+- **Datos del Cliente**:
+  - Nombre completo o razón social
+  - Tipo y número de documento
+  - Domicilio completo
+- **Información de la Factura**:
+  - Número de comprobante (formato: 0001-00001234)
+  - Fecha de emisión
+  - Tipo de comprobante (A, B, C, E, NC, ND)
+  - Moneda y totales
+- **Detalle de Servicios**:
+  - Tabla profesional con servicios
+  - Cantidades y precios unitarios
+  - Cálculo de IVA desglosado
+  - Totales por línea
+- **Autorización AFIP**:
+  - CAE (Código de Autorización Electrónica)
+  - Fecha de vencimiento del CAE
+  - Fecha y hora de autorización
+- **Código QR**:
+  - Link directo a AFIP para verificación
+  - Contiene todos los datos fiscales
+  - Escaneable desde cualquier dispositivo
+- **Pie de Página**:
+  - Información del sistema
+  - Fecha de generación del PDF
+  - Datos de contacto del hotel
+
+**Características Técnicas:**
+- **Formato Profesional**: Diseño limpio y fácil de leer
+- **Cumplimiento Normativo**: Sigue todas las reglas de AFIP
+- **Alta Calidad**: Generado con ReportLab para máxima calidad
+- **Tamaño Optimizado**: PDFs ligeros para envío por email
+- **Escalable**: Funciona con cualquier cantidad de items
+
+#### 🧪 **Modo de Pruebas**
+Para testing y homologación:
+- **Ambiente Separado**: No afecta la producción
+- **Datos de Prueba**: Incluye clientes y montos de ejemplo
+- **Validación de Configuración**: Verifica que todo esté correcto
+- **Parámetros Recomendados**: Sugiere valores para testing
+
+#### Modo Mock de AFIP (Desarrollo)
+Este modo permite validar el flujo completo de facturación (CAE simulado, PDF, notificaciones) sin conectarse a AFIP.
+
+- Qué hace: simula WSAA y WSFEv1, devuelve CAE y fecha de vencimiento válidos (CAE de 14 dígitos, `CAEFchVto` en formato `YYYYMMDD`).
+- Cuándo usarlo: desarrollo local o cuando homologación de AFIP no publica opcionales requeridos (p.ej., RG 5616) y bloquea pruebas.
+- Cómo activarlo:
+  1) En `.env` (raíz del proyecto o `backend/.env`, según despliegue):
+  ```bash
+  AFIP_USE_MOCK=true
+  AFIP_TEST_MODE=true
+  ```
+  2) En la configuración del hotel (`AfipConfig`): `environment = test`.
+  3) Reiniciar el backend.
+- Señales en logs: “AfipService inicializado … modo test (mock)” y “Enviando factura … a AFIP (mock)”.
+- Limitaciones: no valida contra AFIP real; usar homologación/producción para validaciones fiscales definitivas.
+
+#### Diagnóstico RG 5616 – Condición IVA del receptor (Homologación AFIP)
+A partir de RG 5616, AFIP exige informar la condición IVA del receptor mediante un opcional específico en WSFEv1.
+
+- Síntoma: Rechazo 10246 “Campo Condición Frente al IVA del receptor es obligatorio…”.
+- Causa habitual: en homologación, el CUIT/Punto de Venta no publica todavía el opcional requerido; por eso, aunque el XML incluya `<Opcionales>`, AFIP lo ignora y rechaza.
+- Cómo verificar: llamar a `FEParamGetTiposOpcional` y listar Id:Desc habilitados. Si no aparece un Id con descripción alusiva a “Condición IVA del receptor”, no se puede enviar esa data (2101 es FCE CBU, no corresponde).
+- Estado del sistema:
+  - XML generado en orden WSDL (importes e Iva, luego `Opcionales`).
+  - En test real, el sistema busca dinámicamente el Id correcto del opcional por descripción; si no existe, se registra en logs y se omite.
+  - En desarrollo, activar “modo mock” para poder completar el flujo sin bloqueo.
+- Qué pedir a AFIP: habilitar el opcional de “Condición frente al IVA del receptor” para el CUIT y Punto de Venta de homologación. Adjuntar el log de `FEParamGetTiposOpcional` y el rechazo 10246.
+
+#### Variables de entorno relevantes (AFIP)
+- `AFIP_USE_MOCK` (bool): usa servicios mock en modo test (no producción). Default: `false`.
+- `AFIP_TEST_MODE` (bool): activa parámetros de test. Default: `true`.
+Ubicación: `.env` raíz (si Docker/Compose lo monta) o `backend/.env` (leído por Django `decouple`). Reiniciar el backend tras cambios.
+
+#### Cambios técnicos implementados (para desarrolladores)
+- `AfipService`: enruta a `MockAfipAuthService` y `MockAfipInvoiceService` cuando `AFIP_USE_MOCK=true` y `environment!=production`.
+- Mock:
+  - CAE simulado de 14 dígitos; `CAEFchVto` como string `YYYYMMDD`.
+  - Lectura robusta de campos desde `Invoice` con `getattr` y defaults.
+- WSFEv1 real:
+  - Orden de elementos en `FECAEDetRequest` alineado al WSDL (ImpTotConc → ImpNeto → ImpOpEx → ImpIVA → ImpTrib → ImpTotal, luego Iva/Tributos/Opcionales).
+  - `Concepto`=2 por defecto (servicios) y fechas de servicio/pago incluidas.
+  - Diagnóstico en logs: parámetros críticos, previews masked del XML y respuesta, lista de `TiposOpcional`.
+  - Búsqueda dinámica del Id del opcional de Cond. IVA del receptor; si no está publicado, se loguea y se omite.
+
+---
+
+### Guía Rápida (Cliente) – Probar Facturación con Modo Mock
+
+1) Configurar variables en `.env` y reiniciar:
+```bash
+AFIP_USE_MOCK=true
+AFIP_TEST_MODE=true
+```
+2) Asegurarse que el hotel tenga `AfipConfig.environment = test`.
+3) Generar factura desde una reserva y “Enviar a AFIP”.
+4) Verás estado “Aprobada” con CAE simulado y PDF disponible.
+5) Para volver a entorno real de homologación/producción: poner `AFIP_USE_MOCK=false` (y `environment=production` cuando corresponda).
+
+Notas:
+- El modo mock no contacta AFIP: sirve para validar fin a fin (números, PDF, emails, notificaciones).
+- Si homologación rechaza con 10246, es por publicación pendiente del opcional RG 5616 en AFIP; continuar pruebas con mock y tramitar habilitación con AFIP.
+
+### Configuración Paso a Paso
+
+#### 1. **Configuración AFIP**
+```
+1. Ir a Configuración → Facturación
+2. Completar datos del hotel:
+   - CUIT del hotel (11 dígitos)
+   - Punto de venta (1-9999)
+   - Condición de IVA
+   - Ambiente (Test o Producción)
+3. Subir certificados digitales:
+   - Certificado (.crt)
+   - Clave privada (.key)
+4. Probar conexión con AFIP
+5. Verificar que la autenticación funcione
+```
+
+#### 2. **Configuración de Facturación**
+```
+1. Activar facturación automática
+2. Configurar tipos de comprobante por defecto:
+   - Factura A: Para empresas
+   - Factura B: Para consumidores finales
+3. Configurar plantillas de email
+4. Configurar numeración inicial
+5. Establecer reintentos automáticos
+```
+
+#### 3. **Primera Factura**
+```
+1. Procesar un pago de prueba
+2. El sistema genera automáticamente la factura
+3. Se autentica con AFIP automáticamente
+4. Se envía la factura y se obtiene CAE
+5. Se genera PDF y se envía por email
+6. Verificar que todo funciona correctamente
+```
+
+#### 4. **Verificación del Sistema**
+```
+1. Revisar logs de facturación
+2. Verificar que los CAEs se obtengan correctamente
+3. Comprobar que los PDFs se generen
+4. Confirmar que los emails se envíen
+5. Validar la numeración secuencial
+```
+
+### Monitoreo y Mantenimiento
+
+#### **Dashboard de Facturación**
+- **Facturas del Día**: Cuántas se generaron hoy
+- **Estado de AFIP**: Conexión funcionando correctamente
+- **Errores Recientes**: Facturas que fallaron y por qué
+- **Próximos Vencimientos**: CAEs que vencen pronto
+
+#### **Alertas Automáticas**
+- **Conexión AFIP**: Si se pierde la conexión
+- **Errores de Facturación**: Si una factura falla
+- **Vencimiento de CAE**: Si un CAE está por vencer
+- **Certificados**: Si los certificados están por vencer
+
+#### **Reportes Disponibles**
+- **Facturas Emitidas**: Por período, tipo, cliente
+- **Ingresos Facturados**: Total facturado por mes
+- **Errores de Facturación**: Qué falló y cuándo
+- **Conciliación**: Coincidencia entre pagos y facturas
+
+### Integración con Otros Módulos
+
+#### **Con Reservas**
+- **Datos del Huésped**: Se obtienen automáticamente
+- **Servicios Contratados**: Alojamiento, desayuno, spa, etc.
+- **Fechas**: Check-in, check-out, noches
+- **Habitación**: Tipo, número, tarifa
+
+#### **Con Pagos**
+- **Monto Pagado**: Se usa para calcular totales
+- **Método de Pago**: Para identificar tipo de cliente
+- **Fecha de Pago**: Para fecha de emisión
+- **Estado del Pago**: Para validar si facturar
+
+#### **Con Dashboard**
+- **Métricas de Facturación**: Ingresos facturados
+- **Tendencias**: Facturas por mes, tipo de cliente
+- **Alertas**: Errores, vencimientos, conexiones
+
+### Beneficios del Sistema
+
+#### **Para el Hotel**
+- ✅ **Cumplimiento Fiscal**: Automático y completo
+- ✅ **Ahorro de Tiempo**: No más facturación manual
+- ✅ **Menos Errores**: Cálculos automáticos
+- ✅ **Mejor Organización**: Todo centralizado
+- ✅ **Cliente Satisfecho**: Factura inmediata
+- ✅ **Reportes Detallados**: Análisis del negocio
+
+#### **Para el Personal**
+- ✅ **Menos Trabajo Manual**: Automatización completa
+- ✅ **Menos Errores**: Validaciones automáticas
+- ✅ **Mejor Control**: Dashboard y alertas
+- ✅ **Más Tiempo**: Para atención al cliente
+
+#### **Para el Cliente**
+- ✅ **Factura Inmediata**: Recibe por email automáticamente
+- ✅ **Formato Profesional**: PDF con logo del hotel
+- ✅ **Datos Correctos**: Información precisa de la reserva
+- ✅ **Fácil Acceso**: Historial de facturas en su perfil
+
+### Resolución de Problemas Comunes
+
+#### **Problemas de Conexión AFIP**
+- **Error de Autenticación**: Verificar certificados digitales
+- **Token Expirado**: El sistema renueva automáticamente
+- **Conexión Perdida**: Revisar conectividad a internet
+- **Certificados Inválidos**: Verificar fechas de vencimiento
+
+#### **Problemas de Facturación**
+- **CAE No Obtenido**: Revisar datos del cliente y montos
+- **XML Inválido**: Verificar formato de datos
+- **Factura Rechazada**: Comprobar CUIT y punto de venta
+- **Error de Numeración**: Verificar secuencia de números
+
+#### **Problemas de PDF**
+- **PDF No Generado**: Verificar plantilla y datos
+- **Formato Incorrecto**: Revisar configuración de logo
+- **Email No Enviado**: Comprobar configuración SMTP
+- **Archivo Corrupto**: Regenerar PDF desde la factura
+
+### 🧪 Testing y Homologación
+
+#### **¿Qué es la Homologación?**
+
+La **homologación** es el proceso de validación con AFIP antes de usar el sistema en producción. Es como un "examen" que AFIP hace para asegurarse de que tu sistema funciona correctamente antes de que emitas facturas reales.
+
+#### **¿Por qué es Importante?**
+
+- **Cumplimiento Legal**: AFIP requiere homologación para facturación electrónica
+- **Validación Completa**: Asegura que todo funciona correctamente
+- **Confianza Total**: Sabes que el sistema está listo para producción
+- **Evita Problemas**: Detecta errores antes de que afecten a clientes reales
+
+#### **Proceso de Homologación**
+
+##### **1. Configuración de Pruebas**
+```
+1. Ir a Configuración → Facturación → Homologación
+2. Usar datos de prueba de AFIP:
+   - CUIT: 20123456789 (homologación)
+   - Punto de Venta: 1
+   - Ambiente: Test
+3. Cargar certificados de prueba
+4. Configurar tipos de factura a probar
+```
+
+##### **2. Pruebas Automáticas**
+El sistema ejecuta **35+ tests automáticos** que verifican:
+
+- **Conexión con AFIP**: ¿Se puede conectar correctamente?
+- **Autenticación**: ¿Se obtienen tokens válidos?
+- **Emisión de Facturas**: ¿Se pueden crear facturas A, B, C?
+- **Notas de Crédito**: ¿Se pueden generar correctamente?
+- **PDFs Fiscales**: ¿Se generan con formato correcto?
+- **Validaciones**: ¿Se verifican todos los datos?
+
+##### **3. Tipos de Factura Probados**
+- **Factura A**: Para empresas (Responsables Inscriptos)
+- **Factura B**: Para consumidores finales
+- **Factura C**: Para exentos (turismo internacional)
+- **Nota de Crédito**: Para devoluciones
+- **Nota de Débito**: Para ajustes
+
+##### **4. Tipos de Cliente Probados**
+- **DNI**: Documento Nacional de Identidad
+- **CUIT**: Código Único de Identificación Tributaria
+- **CUIL**: Código Único de Identificación Laboral
+- **Pasaporte**: Para turistas extranjeros
+
+#### **Resultados de las Pruebas**
+
+##### **✅ Pruebas Exitosas**
+- **Conexión AFIP**: Funcionando correctamente
+- **Autenticación**: Tokens válidos obtenidos
+- **Emisión**: Facturas creadas exitosamente
+- **PDFs**: Generados con formato fiscal correcto
+- **Validaciones**: Todos los datos verificados
+
+##### **❌ Pruebas Fallidas**
+- **Conexión AFIP**: Revisar configuración de red
+- **Certificados**: Verificar fechas de vencimiento
+- **Datos**: Comprobar información del cliente
+- **Montos**: Validar cálculos de IVA
+
+#### **Configuración de Ambientes**
+
+##### **Ambiente de Pruebas (Test)**
+- **Propósito**: Desarrollo y pruebas locales
+- **Datos**: Simulados con mocks
+- **AFIP**: No se conecta realmente
+- **Uso**: Para desarrolladores y testing
+
+##### **Ambiente de Homologación**
+- **Propósito**: Validación con AFIP real
+- **Datos**: Datos de prueba oficiales de AFIP
+- **AFIP**: Conexión real con servidores de prueba
+- **Uso**: Validación antes de producción
+
+##### **Ambiente de Producción**
+- **Propósito**: Uso real con clientes
+- **Datos**: Datos reales del hotel
+- **AFIP**: Conexión real con servidores de producción
+- **Uso**: Facturación real de clientes
+
+#### **Monitoreo de Pruebas**
+
+##### **Dashboard de Testing**
+- **Estado de Pruebas**: Cuáles pasaron y cuáles fallaron
+- **Tiempo de Ejecución**: Qué tan rápido se ejecutan
+- **Cobertura**: Qué funcionalidades están probadas
+- **Última Ejecución**: Cuándo se probó por última vez
+
+##### **Alertas de Pruebas**
+- **Pruebas Fallidas**: Si alguna prueba falla
+- **Conexión AFIP**: Si se pierde la conexión
+- **Certificados**: Si están por vencer
+- **Datos Inválidos**: Si hay información incorrecta
+
+#### **Beneficios del Testing**
+
+##### **Para el Hotel** 🏨
+- **Confianza Total**: Sabes que el sistema funciona
+- **Cumplimiento Legal**: Cumples con normativas de AFIP
+- **Menos Errores**: Problemas detectados antes de producción
+- **Mejor Servicio**: Clientes reciben facturas correctas
+
+##### **Para el Personal** 👥
+- **Tranquilidad**: No hay sorpresas en producción
+- **Eficiencia**: Sistema probado y confiable
+- **Soporte**: Problemas resueltos rápidamente
+- **Capacitación**: Sabes exactamente cómo funciona
+
+##### **Para los Clientes** 👤
+- **Facturas Correctas**: Siempre reciben documentos válidos
+- **Sin Retrasos**: Procesamiento automático y rápido
+- **Cumplimiento**: Documentos que cumplen con la ley
+- **Confianza**: Saben que el hotel es profesional
+
+#### **Comandos de Pruebas**
+
+##### **Ejecutar Todas las Pruebas**
+```bash
+# Desde el panel de administración
+Configuración → Facturación → Ejecutar Pruebas Completas
+```
+
+##### **Pruebas Específicas**
+```bash
+# Solo pruebas de conexión
+Configuración → Facturación → Probar Conexión AFIP
+
+# Solo pruebas de facturación
+Configuración → Facturación → Probar Emisión de Facturas
+
+# Solo pruebas de PDFs
+Configuración → Facturación → Probar Generación de PDFs
+```
+
+##### **Ver Resultados**
+```bash
+# Ver reporte de pruebas
+Configuración → Facturación → Ver Reporte de Pruebas
+```
+
+---
+
+## 3.14 Facturación Electrónica Argentina
+
+### ¿Qué hace?
+Permite emitir facturas electrónicas oficiales de Argentina con integración completa a AFIP, cumpliendo con todas las normativas fiscales del país.
+
+### ¿Cómo funciona?
+
+#### **Configuración Inicial**
+1. **Certificado Digital AFIP**: Se obtiene desde WSASS (homologación) o AFIP (producción)
+2. **Configuración del Hotel**: CUIT, punto de venta, condición de IVA
+3. **Autorización de Servicios**: Se autoriza el servicio `wsfe` (Facturación Electrónica)
+4. **Pruebas de Conexión**: Se verifica que todo funcione correctamente
+
+#### **Flujo de Facturación**
+```
+Reserva → Pago → Generación de Factura → Envío a AFIP → Obtención de CAE → PDF Fiscal
+```
+
+#### **Facturación con Señas (Pagos Parciales)**
+El sistema soporta dos modos de facturación para manejar señas:
+
+##### **Modo "Solo Recibos"**
+```
+Seña → Recibo PDF (sin AFIP)
+Pago Final → Recibo PDF (sin AFIP)
+Factura Final → Factura AFIP con CAE (incluye todos los pagos)
+```
+
+##### **Modo "Facturación en Seña"**
+```
+Seña → Factura AFIP con CAE (monto de la seña)
+Pago Final → Recibo PDF (sin AFIP)
+Nota de Crédito → Nota de crédito AFIP (ajuste final)
+```
+
+#### **Tipos de Comprobantes Soportados**
+- **Factura A**: Para Responsables Inscriptos
+- **Factura B**: Para Consumidores Finales  
+- **Factura C**: Para Exentos
+- **Factura E**: Para Exportación
+- **Nota de Crédito**: Para devoluciones
+- **Nota de Débito**: Para cargos adicionales
+
+### **Configuraciones Requeridas**
+
+#### **1. Certificado Digital AFIP**
+- **Homologación**: Obtener desde WSASS (https://wsass-homo.afip.gob.ar)
+- **Producción**: Obtener desde AFIP oficial
+- **Formato**: Certificado .crt y clave privada .key
+- **Autorización**: Debe estar autorizado para el servicio `wsfe`
+
+#### **2. Datos del Hotel**
+- **CUIT**: 11 dígitos del hotel
+- **Punto de Venta**: Número asignado por AFIP (1-9999)
+- **Condición de IVA**: Responsable Inscripto, Consumidor Final, etc.
+- **Razón Social**: Nombre oficial del hotel
+- **Domicilio**: Dirección fiscal completa
+
+#### **3. Configuración Técnica**
+- **Ambiente**: Testing (homologación) o Producción
+- **Certificados**: Rutas a los archivos .crt y .key
+- **Numeración**: Control automático de números de factura
+- **Reintentos**: Configuración de reintentos en caso de error
+
+### **Características Principales**
+
+#### **Integración AFIP Completa**
+- ✅ **Autenticación WSAA**: Token de acceso automático
+- ✅ **Emisión WSFEv1**: Envío de facturas a AFIP
+- ✅ **Obtención de CAE**: Código de Autorización Electrónica
+- ✅ **Validaciones**: Cumplimiento de normativas argentinas
+- ✅ **Reintentos**: Manejo automático de errores temporales
+
+#### **Generación de PDFs Fiscales**
+- ✅ **Diseño Oficial**: Formato según normativas AFIP
+- ✅ **Datos Completos**: Emisor, comprador, items, totales
+- ✅ **CAE Incluido**: Código de autorización visible
+- ✅ **Código QR**: Para verificación en AFIP
+- ✅ **Logo del Hotel**: Personalización profesional
+
+#### **Gestión de Estados**
+- ✅ **Borrador**: Factura creada, no enviada
+- ✅ **Enviada**: Enviada a AFIP, esperando respuesta
+- ✅ **Aprobada**: CAE obtenido, factura válida
+- ✅ **Error**: Problema en el envío, requiere revisión
+
+#### **Automatización**
+- ✅ **Generación Automática**: Al procesar pagos
+- ✅ **Reintentos Inteligentes**: En caso de errores temporales
+- ✅ **Cache de Tokens**: Reutilización de tokens AFIP
+- ✅ **Validaciones**: Antes de enviar a AFIP
+
+### **Configuración Paso a Paso**
+
+#### **Paso 1: Obtener Certificado Digital**
+1. Ir a WSASS (https://wsass-homo.afip.gob.ar)
+2. Crear nuevo certificado con CSR generado por el sistema
+3. Descargar certificado .crt
+4. Autorizar servicio `wsfe` (Facturación Electrónica)
+
+#### **Paso 2: Configurar en AlojaSys**
+1. Ir a **Configuración → Facturación AFIP**
+2. Completar datos del hotel:
+   - CUIT del hotel
+   - Punto de venta AFIP
+   - Condición de IVA
+3. Subir certificados:
+   - Archivo .crt (certificado)
+   - Archivo .key (clave privada)
+4. Seleccionar ambiente (Testing/Producción)
+
+#### **Paso 3: Probar Conexión**
+1. Hacer clic en **"Probar Conexión"**
+2. Verificar que se obtenga token AFIP válido
+3. Probar emisión de factura de prueba
+4. Verificar que se genere PDF correctamente
+
+### **Funcionalidades Implementadas**
+
+#### **Gestión de Facturas**
+- ✅ **Creación desde Reservas**: Generar factura directamente desde una reserva
+- ✅ **Validación de Datos**: Verificación automática de datos del cliente
+- ✅ **Numeración Automática**: Control secuencial de números de factura
+- ✅ **Estados de Factura**: Borrador, Enviada, Aprobada, Rechazada, Cancelada
+- ✅ **Historial Completo**: Seguimiento de todos los cambios de estado
+
+#### **Integración con AFIP**
+- ✅ **Autenticación Automática**: Token AFIP con cache inteligente
+- ✅ **Manejo de Errores**: Gestión de errores "TA ya válido" de AFIP
+- ✅ **Reintentos Automáticos**: En caso de errores temporales
+- ✅ **Validaciones Pre-AFIP**: Verificación antes del envío
+- ✅ **Obtención de CAE**: Código de Autorización Electrónica automático
+
+#### **Generación de PDFs**
+- ✅ **Template Oficial**: Diseño según normativas AFIP
+- ✅ **Conversión HTML→PDF**: Usando WeasyPrint con fallback a ReportLab
+- ✅ **Datos Dinámicos**: Información del hotel, cliente e items
+- ✅ **Estilos Oficiales**: CSS compatible con normativas AFIP
+- ✅ **Regeneración**: Forzar regeneración de PDFs actualizados
+
+#### **Interfaz de Usuario**
+- ✅ **Lista de Facturas**: Vista completa con filtros y búsqueda
+- ✅ **Estado de Facturación**: Badge visual en reservas
+- ✅ **Botón de Facturación**: En gestión de reservas
+- ✅ **Visualización de PDF**: Modal con visor integrado
+- ✅ **Acciones por Estado**: Enviar, Re-enviar, Cancelar según estado
+
+#### **Automatización**
+- ✅ **Generación Automática**: Al aprobar pagos completos
+- ✅ **Envío a AFIP**: Proceso automático con manejo de errores
+- ✅ **Notificaciones**: Alertas de estado de facturas
+- ✅ **Cache de Tokens**: Reutilización eficiente de tokens AFIP
+
+### **Flujos de Trabajo**
+
+#### **Flujo Normal de Facturación**
+1. **Reserva con Pago Completo** → Sistema detecta pago aprobado
+2. **Generación Automática** → Se crea factura en estado "Borrador"
+3. **Envío a AFIP** → Se envía automáticamente a AFIP
+4. **Obtención de CAE** → AFIP devuelve código de autorización
+5. **Generación de PDF** → Se crea PDF fiscal con CAE
+6. **Notificación** → Se notifica al usuario del éxito
+
+#### **Flujo Manual de Facturación**
+1. **Seleccionar Reserva** → En gestión de reservas
+2. **Hacer Clic en "Factura"** → Botón de facturación
+3. **Completar Datos** → Información del cliente
+4. **Generar Factura** → Se crea en estado "Borrador"
+5. **Enviar a AFIP** → Proceso manual desde lista de facturas
+6. **Verificar Estado** → Confirmar aprobación por AFIP
+
+#### **Gestión de Errores**
+1. **Error de Conexión** → Reintento automático
+2. **Error de AFIP** → Manejo específico por tipo de error
+3. **Token Expirado** → Renovación automática
+4. **Factura Rechazada** → Notificación y opción de corrección
+
+### **Estados de Factura**
+
+#### **Draft (Borrador)**
+- **Descripción**: Factura creada, no enviada a AFIP
+- **Acciones**: Enviar a AFIP, Cancelar, Editar
+- **Color**: Gris
+
+#### **Sent (Enviada)**
+- **Descripción**: Enviada a AFIP, esperando respuesta
+- **Acciones**: Re-enviar si hay error
+- **Color**: Azul
+
+#### **Approved (Aprobada)**
+- **Descripción**: CAE obtenido, factura válida
+- **Acciones**: Ver PDF, Crear Nota de Crédito
+- **Color**: Verde
+
+#### **Rejected (Rechazada)**
+- **Descripción**: Rechazada por AFIP
+- **Acciones**: Revisar y corregir, Re-enviar
+- **Color**: Rojo
+
+#### **Cancelled (Cancelada)**
+- **Descripción**: Cancelada manualmente
+- **Acciones**: Ninguna
+- **Color**: Gris
+
+### **Configuraciones Avanzadas**
+
+#### **Certificados AFIP**
+- **Desarrollo**: Certificados de prueba desde WSASS
+- **Producción**: Certificados reales desde AFIP
+- **Renovación**: Proceso automático de renovación
+- **Seguridad**: Almacenamiento seguro de claves privadas
+
+#### **Templates PDF**
+- **HTML Base**: Template oficial AFIP SDK
+- **Personalización**: Logo y datos del hotel
+- **Responsive**: Optimizado para impresión A4
+- **Fallback**: ReportLab si WeasyPrint falla
+
+#### **Manejo de Errores**
+- **"TA ya válido"**: Reutilización de token existente
+- **Timeout**: Reintentos automáticos
+- **XML malformado**: Limpieza y reparación
+- **Certificado expirado**: Renovación automática
+
+### **Beneficios para el Hotel**
+
+#### **Cumplimiento Fiscal**
+- ✅ **Normativas Argentinas**: Cumplimiento total con AFIP
+- ✅ **Auditoría**: Trazabilidad completa de facturas
+- ✅ **Validación**: Verificación automática de datos
+- ✅ **Backup**: Respaldo automático de todas las facturas
+
+#### **Automatización**
+- ✅ **Menos Errores**: Validaciones automáticas
+- ✅ **Ahorro de Tiempo**: Proceso automático
+- ✅ **Disponibilidad 24/7**: Funciona en cualquier momento
+- ✅ **Escalabilidad**: Maneja cualquier volumen de facturas
+
+#### **Experiencia del Usuario**
+- ✅ **Interfaz Intuitiva**: Fácil de usar
+- ✅ **Estados Claros**: Visualización del progreso
+- ✅ **Notificaciones**: Alertas en tiempo real
+- ✅ **PDFs Profesionales**: Documentos de calidad
+
+### **Casos de Uso Reales**
+
+#### **Hotel con 50 Habitaciones**
+- **Volumen**: ~100 facturas/mes
+- **Automatización**: 95% automático
+- **Tiempo Ahorrado**: 8 horas/mes
+- **Errores Reducidos**: 90% menos errores manuales
+
+#### **Hotel con 200 Habitaciones**
+- **Volumen**: ~500 facturas/mes
+- **Automatización**: 98% automático
+- **Tiempo Ahorrado**: 40 horas/mes
+- **Cumplimiento**: 100% normativas AFIP
+
+### **Próximas Funcionalidades**
+
+#### **En Desarrollo**
+- 🔄 **Notas de Crédito**: Para devoluciones
+- 🔄 **Notas de Débito**: Para cargos adicionales
+- 🔄 **Facturas por Lotes**: Procesamiento masivo
+- 🔄 **Reportes Fiscales**: Libro IVA y otros
+
+#### **Planificadas**
+- 📋 **Integración Contable**: Con sistemas contables
+- 📋 **Backup Automático**: Respaldo en la nube
+- 📋 **Múltiples Puntos de Venta**: Para hoteles grandes
+- 📋 **Facturas Internacionales**: Para turismo extranjero
+2. Verificar que aparezca "Conexión exitosa"
+3. Si hay errores, revisar certificados y configuración
+
+#### **Paso 4: Configurar Facturación Automática**
+1. Activar **"Generación automática de facturas"**
+2. Seleccionar tipos de comprobante por defecto
+3. Configurar datos del cliente por defecto
+
+### **Tipos de Cliente Soportados**
+
+#### **Responsable Inscripto**
+- **Documento**: CUIT
+- **Factura**: Tipo A
+- **IVA**: Desglosado
+
+#### **Consumidor Final**
+- **Documento**: DNI, CUIL, etc.
+- **Factura**: Tipo B
+- **IVA**: Incluido
+
+#### **Exento**
+- **Documento**: Cualquier tipo
+- **Factura**: Tipo C
+- **IVA**: No aplica
+
+### **Flujos de Trabajo**
+
+#### **Facturación Automática**
+1. **Cliente hace reserva** y paga
+2. **Sistema detecta pago** procesado
+3. **Genera factura automáticamente** con datos del cliente
+4. **Envía a AFIP** y obtiene CAE
+5. **Genera PDF fiscal** con CAE y QR
+6. **Envía por email** al cliente
+
+#### **Facturación Manual**
+1. **Usuario selecciona reserva** para facturar
+2. **Completa datos del cliente** si es necesario
+3. **Selecciona tipo de comprobante**
+4. **Confirma generación** de factura
+5. **Sistema procesa** igual que automático
+
+#### **Notas de Crédito**
+1. **Seleccionar factura original** a anular
+2. **Especificar motivo** de la anulación
+3. **Generar nota de crédito** automáticamente
+4. **Enviar a AFIP** para autorización
+
+### **Monitoreo y Alertas**
+
+#### **Estados de Facturas**
+- **Dashboard**: Vista general de facturas por estado
+- **Filtros**: Por fecha, tipo, estado, cliente
+- **Búsqueda**: Por número, CAE, cliente
+
+#### **Alertas Automáticas**
+- **Facturas con error**: Requieren revisión
+- **Certificados por vencer**: Renovar a tiempo
+- **Conexión AFIP**: Problemas de conectividad
+- **Límites de numeración**: Próximo a agotar
+
+#### **Reportes**
+- **Facturas emitidas**: Por período
+- **Montos facturados**: Totales por tipo
+- **Errores**: Análisis de problemas
+- **Cumplimiento**: Estadísticas de AFIP
+
+### **Beneficios para el Hotel**
+
+#### **Cumplimiento Legal** ⚖️
+- ✅ **Normativas AFIP**: Cumplimiento total
+- ✅ **Auditorías**: Documentación completa
+- ✅ **Inspecciones**: Sin problemas fiscales
+- ✅ **Multas**: Evita sanciones por incumplimiento
+
+#### **Eficiencia Operativa** ⚡
+- ✅ **Automatización**: Sin intervención manual
+- ✅ **Velocidad**: Facturas en segundos
+- ✅ **Precisión**: Sin errores humanos
+- ✅ **Trazabilidad**: Historial completo
+
+#### **Experiencia del Cliente** 👤
+- ✅ **Facturas Inmediatas**: Al momento del pago
+- ✅ **Formato Profesional**: PDFs con logo del hotel
+- ✅ **Verificación Fácil**: Código QR para validar
+- ✅ **Email Automático**: Recibe factura por correo
+
+#### **Gestión Financiera** 💰
+- ✅ **Control Total**: Todas las facturas en un lugar
+- ✅ **Reportes Detallados**: Análisis de ventas
+- ✅ **Conciliación**: Fácil con contabilidad
+- ✅ **Backup**: Respaldo automático de documentos
+
+### **Requisitos Técnicos**
+
+#### **Certificados Digitales**
+- **Formato**: PEM (.crt y .key)
+- **Algoritmo**: RSA 2048 bits mínimo
+- **Firma**: SHA256
+- **Vigencia**: Renovar antes del vencimiento
+
+#### **Conectividad**
+- **Internet**: Conexión estable requerida
+- **Puertos**: 443 (HTTPS) abierto
+- **DNS**: Resolución de dominios AFIP
+- **Firewall**: Permitir tráfico a AFIP
+
+#### **Datos Requeridos**
+- **Hotel**: CUIT, razón social, domicilio
+- **Cliente**: Nombre, documento, domicilio
+- **Servicios**: Descripción, precios, IVA
+- **Numeración**: Secuencial por punto de venta
+
+### **Solución de Problemas**
+
+#### **Errores Comunes**
+- **"Certificado no encontrado"**: Verificar rutas de archivos
+- **"Conexión fallida"**: Revisar conectividad a AFIP
+- **"TA válido existente"**: Esperar vencimiento del token
+- **"Datos inválidos"**: Verificar información del cliente
+
+#### **Soporte Técnico**
+- **Logs del sistema**: Para diagnóstico detallado
+- **Pruebas de conexión**: Verificar configuración
+- **Documentación AFIP**: Consultar manuales oficiales
+- **Contacto AFIP**: soporte-ws-testing@arca.gob.ar
+
+### **Costos y Consideraciones**
+
+#### **Costos AFIP**
+- **Homologación**: Gratuito para testing
+- **Producción**: Según tarifas AFIP vigentes
+- **Certificados**: Renovación anual
+- **Servicios**: Sin costo adicional por factura
+
+#### **Consideraciones de Seguridad**
+- **Certificados**: Almacenamiento seguro
+- **Claves**: No compartir con terceros
+- **Accesos**: Solo personal autorizado
+- **Backup**: Respaldo de configuraciones
+
+### **Beneficios de las Señas para el Negocio**
+
+#### **Para el Hotel**
+- **💰 Mejor Flujo de Caja**: Ingresos anticipados antes del check-in
+- **🔒 Reservas Aseguradas**: Menos cancelaciones de último momento
+- **📊 Menos No-Shows**: Clientes comprometidos con el pago
+- **⚡ Automatización**: Menos trabajo manual en facturación
+- **📋 Flexibilidad Contable**: Adaptable a necesidades fiscales
+- **🎯 Mayor Ocupación**: Reservas más estables y confiables
+
+#### **Para el Huésped**
+- **🏨 Reserva Garantizada**: Su lugar está asegurado
+- **💳 Pago Flexible**: Puede pagar en cuotas cómodas
+- **📄 Comprobantes Claros**: Recibe todos los documentos
+- **🔍 Transparencia Total**: Ve exactamente qué está pagando
+- **📧 Notificaciones**: Recibe emails con todos los comprobantes
+- **💾 Historial Completo**: Acceso a todos sus pagos
+
+#### **Para la Contabilidad**
+- **📊 Trazabilidad Completa**: Seguimiento de todos los pagos
+- **🏛️ Cumplimiento Fiscal**: Facturación según normativas argentinas
+- **📈 Reportes Detallados**: Análisis de ingresos por señas
+- **🔄 Conciliación Fácil**: Vinculación automática de pagos
+- **📋 Auditoría**: Registro completo de todas las operaciones
+
+---
+
+## Flujos de Trabajo del Día a Día
+
+# Ver logs detallados
+Configuración → Facturación → Ver Logs de Pruebas
+```
+
+#### **Resolución de Problemas en Pruebas**
+
+##### **Problemas de Conexión**
+- **Verificar Internet**: Conexión estable
+- **Revisar Firewall**: Puertos de AFIP abiertos
+- **Comprobar DNS**: Resolución de nombres correcta
+- **Contactar Soporte**: Si persiste el problema
+
+##### **Problemas de Certificados**
+- **Verificar Fechas**: No estén vencidos
+- **Comprobar Formato**: Archivos válidos
+- **Revisar Permisos**: Acceso a archivos
+- **Regenerar**: Si es necesario
+
+##### **Problemas de Datos**
+- **Validar CUIT**: Formato correcto
+- **Revisar Montos**: Cálculos de IVA
+- **Comprobar Cliente**: Datos completos
+- **Verificar Configuración**: Parámetros correctos
+
+### Soporte Técnico
+
+#### **Logs del Sistema**
+- **Logs de AFIP**: Registro de todas las operaciones
+- **Logs de Facturación**: Detalles de cada factura procesada
+- **Logs de Errores**: Información para resolución de problemas
+- **Logs de Autenticación**: Estado de conexión con AFIP
+
+#### **Monitoreo en Tiempo Real**
+- **Estado de AFIP**: Conexión activa o inactiva
+- **Facturas Pendientes**: Cuántas están en proceso
+- **Errores Recientes**: Últimos problemas detectados
+- **Rendimiento**: Tiempo de procesamiento promedio
+
 ---
 
 ## Beneficios del Sistema
@@ -3665,6 +5629,905 @@ Política de Reembolso NO_SHOW:
 - **Maximizar** los ingresos del hotel
 
 Con su arquitectura modular y flexible, AlojaSys se adapta a cualquier tipo de hotel, desde pequeños establecimientos boutique hasta grandes cadenas hoteleras, proporcionando una base sólida para el crecimiento y la innovación en el sector hotelero.
+
+---
+
+## 3.15 Comprobantes de Señas y Devoluciones
+
+### ¿Qué hace?
+
+El módulo de **Comprobantes de Señas y Devoluciones** permite generar, gestionar y almacenar comprobantes de pago para señas, pagos parciales y devoluciones. Es como tener un sistema de recibos digitales que se integra perfectamente con el flujo de reservas y facturación.
+
+### ¿Cómo funciona?
+
+#### Generación Automática de Comprobantes
+1. **Detección Inteligente**: El sistema identifica automáticamente cuando un pago es una seña (pago parcial)
+2. **Identificadores Únicos**: Cada comprobante tiene un número formateado único (ej: S-0001-000012 para señas, D-0001-000004 para devoluciones)
+3. **Generación Automática**: El PDF se genera automáticamente cuando:
+   - Se crea una seña (seña = pago parcial)
+   - Se confirma un reembolso (reembolso completado)
+4. **Notificaciones**: Sistema de notificaciones integrado avisa cuando se genera un comprobante
+5. **Almacenamiento Seguro**: El comprobante se guarda con una URL permanente
+6. **Acceso Inmediato**: Se puede ver y descargar el comprobante desde cualquier lugar
+
+#### Gestión de Señas
+- **Identificación Automática**: Detecta señas incluso en pagos históricos
+- **Políticas Configurables**: Se integra con las políticas de pago del hotel
+- **Validaciones Inteligentes**: Verifica montos y tipos de pago automáticamente
+- **Historial Completo**: Mantiene registro de todas las señas realizadas
+
+#### Gestión de Devoluciones
+- **Comprobantes de Reembolso**: Genera automáticamente PDFs para devoluciones
+- **Estados de Seguimiento**: Pendiente, procesando, completado, fallido, cancelado
+- **Métodos de Devolución**: Efectivo, transferencia, tarjeta, voucher, método original
+- **Integración Completa**: Se conecta con el sistema de reembolsos existente
+
+### Características Principales
+
+#### 🧾 **Generación de Comprobantes**
+- **PDFs Profesionales**: Diseño consistente con el branding del hotel
+- **Datos Completos**: Información del pago, reserva y huésped
+- **URLs Persistentes**: Acceso permanente a los comprobantes
+- **Generación Rápida**: Proceso asíncrono que no bloquea la interfaz
+
+#### 💳 **Gestión de Señas**
+- **Detección Automática**: Identifica pagos parciales vs. pagos completos
+- **Heurística Inteligente**: Detecta señas incluso sin configuración explícita
+- **Integración con Políticas**: Se adapta a las reglas de pago del hotel
+- **Validaciones Automáticas**: Verifica montos y tipos de pago
+
+#### 📋 **Interfaz de Usuario**
+- **Badges Visuales**: Indicadores claros del estado de pago en las reservas
+- **Tooltips Informativos**: Detalles completos al pasar el mouse
+- **Tabs Organizados**: Factura Electrónica, Comprobantes de Señas, Comprobantes de Devoluciones
+- **Gestión Centralizada**: Todos los comprobantes en una sola interfaz
+- **Búsqueda y Filtros**: Encuentra comprobantes por huésped, hotel, fecha, etc.
+
+### Flujos de Trabajo
+
+#### 1. **Flujo de Pago de Seña**
+1. **Usuario crea reserva** → Sistema detecta política de seña
+2. **Modal de pago** → Opciones: "Seña" o "Pagar Total"
+3. **Selecciona "Seña"** → Monto calculado según política
+4. **Procesa pago** → Se marca como pago parcial
+5. **Genera automáticamente número de comprobante** → Formato S-0001-000012
+6. **Genera PDF automáticamente** → Sin intervención del usuario
+7. **Crea notificación** → Avisa al usuario que el comprobante está disponible
+8. **Reserva confirmada** → Estado cambia a "confirmed"
+9. **Botón "Comprobante"** → Abre directamente el PDF generado automáticamente
+
+#### 2. **Flujo de Confirmación de Reembolso y Generación de Comprobante**
+1. **Usuario gestiona reembolso** → Accede a "Gestión de Reembolsos"
+2. **Marca reembolso como completado** → Cambia estado a "completed"
+3. **Genera automáticamente número de comprobante** → Formato D-0001-000004
+4. **Genera PDF automáticamente** → Sin intervención del usuario
+5. **Crea notificación** → Avisa al usuario que el comprobante de devolución está disponible
+6. **Actualiza URL** → Guarda enlace permanente en base de datos
+7. **Botón "Generar Comprobante" desaparece** → Se convierte automáticamente en íconos de vista/descarga
+8. **Lista actualizada** → Aparece en "Comprobantes de Devoluciones"
+
+#### 3. **Flujo de Gestión de Comprobantes**
+1. **Acceso a "Facturación"** → "Comprobantes" (con tabs)
+2. **Tab "Comprobantes de Señas"**:
+   - Filtrado automático → Solo pagos de señas
+   - Lista de comprobantes → Con datos de reserva y huésped
+   - Acciones disponibles → Ver y descargar PDFs
+   - Búsqueda y filtros → Por huésped, hotel, método, fecha
+3. **Tab "Comprobantes de Devoluciones"**:
+   - Filtrado automático → Solo reembolsos con comprobantes generados
+   - Lista de comprobantes → Con datos de reserva, monto y método de devolución
+   - Acciones disponibles → Generar, ver y descargar PDFs
+   - Búsqueda y filtros → Por reserva, hotel, método, estado, fecha
+
+### Ejemplos Prácticos
+
+#### **Ejemplo 1: Reserva con Seña**
+**Escenario**: Un huésped reserva una habitación por 3 noches ($300) y paga una seña de $100.
+
+1. **Reserva Creada**: Sistema detecta política de seña (30% del total)
+2. **Modal de Pago**: Usuario selecciona "Pagar Seña" ($100)
+3. **Pago Procesado**: Se marca como `is_deposit: true`
+4. **Número de Comprobante Generado**: S-0001-000012 (automático)
+5. **PDF Generado Automáticamente**: Sin intervención del usuario
+6. **Notificación Creada**: Avisa que el comprobante está disponible
+7. **Reserva Confirmada**: Estado cambia a "confirmed"
+8. **Badge "Con Seña"**: Aparece en la lista de reservas
+9. **Botón "Comprobante"**: Abre directamente el PDF generado (S-0001-000012)
+10. **Lista Actualizada**: Aparece en "Comprobantes de Señas"
+
+#### **Ejemplo 2: Gestión de Comprobantes**
+**Escenario**: El personal del hotel necesita revisar todos los comprobantes de señas del mes.
+
+1. **Acceso a Facturación**: Ir a "Facturación" → "Comprobantes de Señas"
+2. **Lista Filtrada**: Solo comprobantes de señas (pagos parciales)
+3. **Información Completa**: Huésped, hotel, monto, fecha, método
+4. **Acciones Disponibles**: Ver PDF, descargar, buscar
+5. **Filtros Avanzados**: Por fecha, huésped, hotel, método de pago
+6. **Búsqueda Rápida**: Encuentra comprobantes específicos
+
+### Beneficios para el Hotel
+
+#### **Para el Personal**
+- ✅ **Gestión Centralizada**: Todos los comprobantes en un solo lugar
+- ✅ **Acceso Rápido**: Encuentra comprobantes en segundos
+- ✅ **Automatización Completa**: Generación automática sin trabajo manual para señas y reembolsos
+- ✅ **Identificadores Claros**: Números de comprobante formateados (S-, P-, D-) para fácil identificación
+- ✅ **Notificaciones Inteligentes**: El sistema avisa cuando se generan comprobantes automáticamente
+- ✅ **Organización**: Filtros y búsqueda para mantener orden
+
+#### **Para la Contabilidad**
+- ✅ **Documentación Completa**: Comprobantes profesionales y legales
+- ✅ **Trazabilidad**: Historial completo de todas las señas
+- ✅ **Integración**: Se conecta con el sistema de facturación
+- ✅ **Cumplimiento**: Documentación adecuada para auditorías
+
+#### **Para los Huéspedes**
+- ✅ **Comprobantes Claros**: Recibos profesionales y legibles
+- ✅ **Acceso Inmediato**: Pueden ver sus comprobantes al instante
+- ✅ **Historial**: Mantienen registro de sus pagos
+- ✅ **Confianza**: Documentación oficial de sus transacciones
+
+### Casos de Uso Reales
+
+#### **Caso 1: Hotel Boutique**
+**Problema**: El hotel necesita generar comprobantes para señas de $50-200
+**Solución**: Sistema genera automáticamente comprobantes profesionales
+**Resultado**: Ahorro de 30 minutos diarios en gestión manual
+
+#### **Caso 2: Hotel de Lujo**
+**Problema**: Huéspedes requieren comprobantes para reembolsos corporativos
+**Solución**: Comprobantes profesionales con todos los datos necesarios
+**Resultado**: 100% de satisfacción en documentación de pagos
+
+#### **Caso 3: Cadena Hotelera**
+**Problema**: Necesidad de centralizar comprobantes de múltiples hoteles
+**Solución**: Sistema unificado con filtros por hotel
+**Resultado**: Gestión eficiente de 500+ comprobantes mensuales
+
+### Configuración y Uso
+
+#### **Configuración Automática**
+- **Sin configuración adicional**: El sistema funciona automáticamente
+- **Detección inteligente**: Identifica señas sin configuración explícita
+- **Integración nativa**: Se conecta con políticas de pago existentes
+
+#### **Uso Diario**
+1. **Generar Comprobante**: Clic en "Comprobante" en gestión de reservas
+2. **Ver Comprobantes**: Ir a "Facturación" → "Comprobantes de Señas"
+3. **Buscar Comprobante**: Usar filtros por huésped, fecha, hotel
+4. **Descargar PDF**: Clic en "Ver" para abrir o descargar
+
+### Integración con Otros Módulos
+
+#### **Sistema de Pagos**
+- **Detección automática**: Identifica pagos parciales
+- **Marcado inteligente**: Marca señas con `is_deposit: true`
+- **Heurística de fallback**: Detecta señas en pagos históricos
+
+#### **Sistema de Facturación**
+- **Comprobantes vs. Facturas**: Diferencia entre recibos y facturas
+- **Integración AFIP**: Se conecta con facturación electrónica
+- **Flujo unificado**: Comprobantes para señas, facturas para pagos completos
+
+#### **Sistema de Reservas**
+- **Estados visuales**: Badges "Con Seña" en listas de reservas
+- **Tooltips informativos**: Detalles de pagos al pasar el mouse
+- **Acciones contextuales**: Botón "Comprobante" disponible cuando corresponde
+
+### Métricas y Reportes
+
+#### **Métricas Clave**
+- **Comprobantes generados**: Cantidad por día/semana/mes
+- **Tiempo de generación**: Velocidad promedio de creación
+- **Uso de almacenamiento**: Espacio ocupado por PDFs
+- **Errores de generación**: Fallos en la creación de comprobantes
+
+#### **Reportes Disponibles**
+- **Comprobantes por período**: Lista filtrada por fechas
+- **Comprobantes por hotel**: Distribución por establecimiento
+- **Comprobantes por método**: Análisis por tipo de pago
+- **Comprobantes por huésped**: Historial individual
+
+### Resolución de Problemas
+
+#### **Problemas Comunes**
+
+**Problema**: "No aparece el botón Comprobante"
+- **Causa**: No hay pagos de seña en la reserva
+- **Solución**: Verificar que el pago sea parcial (seña)
+
+**Problema**: "Comprobante no se genera"
+- **Causa**: Error en el proceso de generación
+- **Solución**: Reintentar o contactar soporte técnico
+
+**Problema**: "No aparece en la lista de comprobantes"
+- **Causa**: El pago no está marcado como seña
+- **Solución**: El sistema detectará automáticamente en la próxima actualización
+
+#### **Soporte Técnico**
+- **Logs detallados**: Registro de todas las operaciones
+- **Monitoreo automático**: Detección de errores en tiempo real
+- **Recuperación automática**: Reintentos automáticos en caso de fallos
+
+### Ventajas Competitivas
+
+#### **Automatización Completa**
+- **Sin trabajo manual**: Generación automática de comprobantes
+- **Detección inteligente**: Identifica señas sin configuración
+- **Integración nativa**: Se conecta con todos los módulos
+
+#### **Experiencia de Usuario**
+- **Interfaz intuitiva**: Fácil de usar para todo el personal
+- **Acceso rápido**: Encuentra comprobantes en segundos
+- **Información completa**: Todos los datos necesarios en un lugar
+
+#### **Escalabilidad**
+- **Múltiples hoteles**: Funciona con cualquier cantidad de establecimientos
+- **Alto volumen**: Maneja miles de comprobantes sin problemas
+- **Performance optimizada**: Respuesta rápida incluso con grandes volúmenes
+
+## 3.16 Integraciones con OTAs (Channel Manager)
+
+### ¿Qué hace?
+### Nueva vista: Canales de Reservas
+
+Dispones de una pantalla específica para gestionar las conexiones con OTAs (se accede desde el menú como "Canales de Reservas").
+
+- Qué permite:
+  - Ver todos los canales configurados por hotel y proveedor (Booking.com, Airbnb, iCal, etc.).
+  - Filtrar por hotel, proveedor y estado (activo/inactivo).
+  - Editar una conexión (incluye URL iCal, modo sandbox/producción y credenciales cuando aplique).
+  - Copiar la URL iCal del hotel con un clic.
+  - Ver el estado de verificación de la URL del proveedor ("Verificado").
+  - Ejecutar "Sincronizar ahora" y ver en tiempo real el resultado del último proceso (éxito/falla/en ejecución).
+
+Seguridad de datos visibles:
+- Los tokens iCal y secretos se muestran enmascarados (solo los primeros 4 caracteres).
+- Nunca se exponen claves completas; solo se pueden actualizar.
+
+
+**AlojaSys** se conecta automáticamente con plataformas de reservas online (Booking.com, Airbnb, etc.) para sincronizar disponibilidad, tarifas y reservas en ambos sentidos. Es como tener un "asistente digital" que mantiene tu hotel sincronizado con todos los canales de venta.
+
+### ¿Cómo funciona?
+
+El sistema trabaja en **dos direcciones automáticamente**:
+
+#### 📤 Desde AlojaSys hacia las OTAs
+
+1. **Cuando creas o modificas una reserva** en AlojaSys, el sistema automáticamente:
+   - Actualiza la disponibilidad en Booking.com, Airbnb, etc.
+   - Sincroniza los precios si cambiaron
+   - Bloquea las fechas ocupadas para que no aparezcan disponibles
+
+2. **Sincronización continua**: El sistema también hace una sincronización completa todas las noches para asegurar que todo esté actualizado.
+
+#### 📥 Desde las OTAs hacia AlojaSys
+
+1. **Reservas automáticas**: Cuando alguien reserva en Booking.com o Airbnb:
+   - El sistema consulta cada 1-2 minutos si hay reservas nuevas (respaldo)
+   - Las reservas aparecen automáticamente en AlojaSys
+   - No necesitas hacer nada manual
+
+2. **Importación de calendarios**: También puedes configurar que AlojaSys lea los calendarios de las OTAs para bloquear fechas ocupadas.
+
+### Configuración Inicial
+
+#### Paso 1: Configurar el Proveedor OTA
+
+1. Ve a **Configuración → OTAs**
+2. Clic en **"Crear OTAs"**
+3. Selecciona:
+   - **Hotel**: El hotel que quieres conectar
+   - **Proveedor**: Booking.com, Airbnb, iCal, etc.
+   - **Etiqueta**: Un nombre para identificarlo (ej: "Booking Principal")
+
+**Para Booking.com o Airbnb** (cuando tengas credenciales):
+- **Hotel ID**: El ID de tu propiedad en la plataforma
+- **Client ID** y **Client Secret**: Credenciales que te entrega la OTA
+- **Base URL**: URL del entorno (sandbox para pruebas, producción para uso real)
+- **Modo**: Test (pruebas) o Producción
+
+**Para iCal** (sin credenciales):
+- Solo necesitas el **Token iCal** (el sistema puede generarlo automáticamente)
+
+#### Paso 2: Mapear Tipos de Habitación
+
+Las OTAs usan códigos diferentes para los tipos de habitación. Necesitas "mapear" (relacionar) tus tipos internos con los códigos de la OTA:
+
+1. En la pestaña **"Tipos de Habitación (Mapeos)"**
+2. Clic en **"Nuevo Mapeo Tipo"**
+3. Completa:
+   - **Hotel**: Tu hotel
+   - **Proveedor**: Booking/Airbnb
+   - **Código Tipo (PMS)**: Tu código interno (ej: "DOUBLE")
+   - **Código OTA**: El código que usa la OTA (ej: "STD_DBL")
+   - **Nombre**: Opcional, para referencia
+
+**Ejemplo**: 
+- En AlojaSys tienes una habitación tipo "DOBLE"
+- En Booking.com el mismo tipo se llama "STD_DBL"
+- El mapeo conecta ambos: "DOBLE" = "STD_DBL"
+
+#### Paso 3: Mapear Planes de Tarifa
+
+Similar a los tipos, necesitas mapear tus planes de tarifa:
+
+1. En la pestaña **"Planes de Tarifa (Mapeos)"**
+2. Clic en **"Nuevo Mapeo Plan"**
+3. Completa:
+   - **Hotel**: Tu hotel
+   - **Proveedor**: Booking/Airbnb
+   - **Código Plan (PMS)**: Tu plan interno (ej: "STANDARD")
+   - **Código OTA**: El ID que usa la OTA (ej: "STD_REFUND")
+   - **Moneda**: ARS, USD, etc.
+
+**Ejemplo**:
+- En AlojaSys tienes el plan "Estándar"
+- En Booking.com el mismo plan tiene ID "STD_REFUND"
+- El mapeo conecta ambos: "Estándar" = "STD_REFUND"
+
+#### Paso 4: (Opcional) Mapeos por Habitación Individual
+
+Si usas iCal (calendarios compartidos), puedes mapear habitación por habitación:
+
+1. En la pestaña **"Mapeos por Habitación"**
+2. Clic en **"Nuevo Mapeo"**
+3. Selecciona:
+   - **Habitación**: La habitación específica
+   - **Proveedor**: iCal
+   - **URL iCal de entrada**: La URL que te da la OTA para leer su calendario
+   - **Dirección de sincronización**: 
+     - **Ambos**: Importa y exporta (recomendado)
+     - **Solo Importar**: Solo lee el calendario de la OTA
+     - **Solo Exportar**: Solo comparte tu calendario con la OTA
+
+**Nota**: Para Booking/Airbnb con API real, no necesitas esto; el sistema usa los mapeos de tipos y planes.
+
+**¿Cuándo usar cada opción de sincronización?**
+- **Ambos**: Cuando quieres sincronización completa bidireccional (la mayoría de casos)
+- **Solo Importar**: Cuando la OTA solo te permite leer su calendario, pero no quieres compartir el tuyo
+- **Solo Exportar**: Cuando quieres que la OTA vea tu disponibilidad, pero tú gestionas todo desde AlojaSys
+
+### Uso Diario
+
+#### Ver Reservas de OTAs en AlojaSys
+
+Las reservas que vienen de Booking.com o Airbnb aparecen automáticamente en tu lista de reservas. Se identifican porque tienen el proveedor (ej: "Booking.com") y puedes ver todos los detalles del huésped.
+
+#### Sincronización Automática
+
+El sistema sincroniza automáticamente:
+
+- **⚡ Sincronización instantánea (Webhooks)** → Cuando alguien reserva en Booking.com o Airbnb, **la reserva aparece en AlojaSys en segundos**:
+  - Booking.com y Airbnb envían notificaciones automáticas al sistema
+  - Las reservas se crean/actualizan instantáneamente sin esperar
+  - **Beneficio principal**: Evita overbooking (reservas duplicadas) porque el sistema se actualiza al instante
+  - Si los webhooks no están configurados, el sistema usa el método de respaldo cada 1-2 minutos
+  
+- **Al crear/modificar/cancelar una reserva** en AlojaSys → Se actualiza en las OTAs en menos de 1 minuto
+  - **Antes de confirmar**: El sistema verifica automáticamente si la habitación está ocupada en las OTAs para evitar sobreventas (overbooking)
+  
+- **Cada 1-2 minutos (respaldo)** → El sistema consulta si hay reservas nuevas en las OTAs (solo si los webhooks no están disponibles)
+  
+- **Cada hora** → Importa calendarios iCal si los tienes configurados:
+  - Descarga los calendarios desde las URLs configuradas
+  - Procesa cada evento del calendario usando su código único (UID)
+  - Crea o actualiza reservas automáticamente:
+    - Si es un evento nuevo → Crea una nueva reserva con estado "Confirmada"
+    - Si el evento ya existe (mismo código único) → Actualiza las fechas si cambiaron
+  - Identifica el origen de cada evento (Booking.com, Airbnb, iCal genérico) para rastreo
+  - Respeta la configuración de "Dirección de sincronización" (solo importa si está permitido)
+  - Actualiza la fecha de última sincronización exitosa
+  - Registra todos los detalles en el log de sincronización (qué eventos procesó, cuántas reservas creó/actualizó, si hubo errores)
+- **Todas las noches** → Sincronización completa de seguridad
+
+#### Push Manual de Disponibilidad
+
+Si necesitas forzar una sincronización:
+
+1. Ve a **Configuración → OTAs**
+2. En la pestaña **"Mapeos por Habitación"**
+3. Clic en **"Push ARI"**
+4. Selecciona:
+   - **Hotel**: El hotel
+   - **Proveedor**: Booking/Airbnb
+   - **Desde** y **Hasta**: Rango de fechas a sincronizar
+5. Clic en **"Enviar"**
+
+El sistema actualizará disponibilidad y precios para ese rango de fechas.
+
+#### Importar Calendarios iCal
+
+Si usas feeds iCal:
+
+1. En **"Mapeos por Habitación"**
+2. Encuentra el mapeo que quieres importar
+3. Clic en el ícono de **"Importar ahora"** (flecha hacia abajo)
+4. El sistema:
+   - Descargará el calendario desde la URL configurada
+   - Procesará cada evento en el calendario
+   - **Identifica cada evento** usando su código único (UID) para evitar duplicados
+   - **Crea reservas automáticamente** con:
+     - Fechas de check-in y check-out del evento
+     - Estado "Confirmada"
+     - Canal según el proveedor (Booking.com aparece como "Booking", Airbnb/iCal como "Otro", etc.)
+     - Notas indicando que fue importado desde la OTA
+     - Un identificador único (external_id) que permite al sistema reconocer si ya existe
+   - **Si el evento ya existe** (mismo código único), actualiza las fechas automáticamente si cambiaron
+   - **Registra cada acción** en el log de sincronización con detalles completos y consistentes:
+     - Qué evento procesó (usando su código único UID)
+     - Si creó una nueva reserva o actualizó una existente (o la saltó por no tener cambios)
+     - Si hubo algún error o conflicto
+     - El origen del evento (source: "booking", "airbnb", "ical", "expedia")
+     - El canal de la reserva (channel: "booking", "expedia", "other")
+     - El estado de la operación (status: "success", "skipped", "error")
+     - Toda esta información está disponible en los logs para auditoría completa
+5. Verás el resultado con estadísticas: cuántos eventos procesó, cuántas reservas creó, actualizó o saltó por duplicados
+
+**Nota importante**: 
+- Las reservas importadas tienen un **identificador único** (UID del evento) que permite al sistema:
+  - **Evitar duplicados**: Si importas el mismo calendario varias veces, no se crean reservas duplicadas
+  - **Actualizar automáticamente**: Si la OTA cambia las fechas de una reserva, se actualiza en AlojaSys automáticamente
+  - **Rastrear el origen**: Puedes ver de dónde vino cada reserva en los logs de sincronización
+- El sistema registra **todo lo que hace** en logs detallados y consistentes que incluyen:
+  - El origen (source): Booking.com, Airbnb, iCal genérico, Expedia
+  - El canal (channel): cómo aparece la reserva en el sistema
+  - El estado (status): si fue exitoso, si se saltó por no tener cambios, o si hubo un error
+  - El identificador único (external_id): para rastrear cada evento
+  - Todos estos campos están presentes en cada log de forma consistente para facilitar el seguimiento y la auditoría
+
+También puedes copiar la URL iCal de exportación (el botón de copiar) para compartirla con otras plataformas.
+
+### Monitoreo y Estado
+
+#### Sistema de Auditoría y Logs
+
+AlojaSys registra automáticamente **todas las acciones** de sincronización con las OTAs en un sistema de logs completo y detallado. Esto te permite:
+
+**¿Qué se registra?**
+
+1. **Inicio de cada sincronización**:
+   - Cuando se inicia automáticamente (cada hora, cada 1-2 minutos)
+   - Cuando se inicia manualmente desde el sistema
+   - Cuando se inicia porque creaste o modificaste una reserva
+
+2. **Resultado de cada operación**:
+   - Si una reserva se creó correctamente desde la OTA
+   - Si una reserva se actualizó porque cambió la fecha
+   - Si una reserva se saltó porque no tenía cambios
+   - Si hubo algún error o conflicto
+
+3. **Información del origen**:
+   - De dónde vino cada reserva (Booking.com, Airbnb, iCal genérico, etc.)
+   - Qué acción la causó (creación manual, webhook, importación de calendario)
+   - Detalles completos de cada operación
+
+**¿Para qué sirve?**
+
+- ✅ **Saber qué pasó**: Puedes ver exactamente qué reservas se sincronizaron y cuándo
+- ✅ **Resolver problemas**: Si algo falla, los logs te muestran exactamente dónde y por qué
+- ✅ **Auditoría**: Tienes un registro completo de todas las sincronizaciones para revisar después
+- ✅ **Análisis**: Puedes ver patrones de uso y detectar problemas antes de que afecten
+
+**¿Dónde ver los logs?**
+
+En la interfaz de **Configuración → OTAs**, en la pestaña de **"Logs"**, puedes ver todos los registros de sincronización filtrados por:
+- Hotel
+- Proveedor (Booking, Airbnb, etc.)
+- Tipo de mensaje (éxito, advertencia, error)
+- Fecha
+
+#### Ver Última Sincronización
+
+En la tabla de **"Mapeos por Habitación"**, encontrarás:
+
+- **Columna "Sincronización"**: Muestra la dirección configurada (Ambos, Solo Importar, Solo Exportar)
+- **Columna "Última sincronización"**: Muestra la fecha y hora de la última sincronización exitosa (import o export)
+- **Columna "Última importación"**: Muestra el estado del último job de importación:
+  - **success** → Todo funcionó correctamente
+  - **running** → Está sincronizando en este momento
+  - **failed** → Hubo un error (revisa los logs)
+
+También muestra cuántos eventos procesó (ej: "success • 5/3+0+2" = procesó 5, creó 3 nuevos, actualizó 0, saltó 2 duplicados).
+
+#### Ver Jobs de Sincronización
+
+Todos los trabajos de sincronización quedan registrados para auditoría. Puedes verlos consultando el API o solicitando reportes al soporte.
+
+**Nota sobre Webhooks**: Si tienes webhooks configurados (Booking.com o Airbnb), verás jobs adicionales marcados como "webhook" en los logs. Estos indican que las reservas fueron sincronizadas instantáneamente desde las OTAs.
+
+#### Configurar Webhooks (Opcional pero Recomendado)
+
+**¿Qué son los webhooks?**
+Los webhooks son notificaciones instantáneas que Booking.com y Airbnb envían a AlojaSys cuando ocurre algo importante (nueva reserva, cancelación, modificación). Es como recibir un mensaje inmediato en lugar de tener que preguntar cada 1-2 minutos si pasó algo.
+
+**¿Por qué configurarlos?**
+- ✅ **Sincronización instantánea**: Las reservas aparecen en segundos, no en minutos
+- ✅ **Evita overbooking**: Si alguien reserva en Booking.com, el sistema se actualiza al instante y no permite otra reserva para las mismas fechas
+- ✅ **Mejor experiencia**: No hay demoras ni retrasos
+
+**¿Cómo configurarlos?**
+1. **Booking.com**:
+   - Ve a Partner Hub → Configuración → Webhooks
+   - Ingresa la URL: `https://tu-dominio.com/api/otas/webhooks/booking/`
+   - Configura eventos: Reservas nuevas, modificaciones, cancelaciones
+   - Guarda un secreto seguro (se lo proporcionarás a tu equipo técnico)
+
+2. **Airbnb**:
+   - Ve a Partner Portal → Configuración → Webhooks
+   - Ingresa la URL: `https://tu-dominio.com/api/otas/webhooks/airbnb/`
+   - Configura eventos similares a Booking.com
+
+### Gestión de Pagos de Reservas OTA
+
+#### ¿Cómo Funcionan los Pagos cuando el Huésped Reserva por una OTA?
+
+Cuando un huésped reserva a través de Booking.com, Airbnb u otra OTA, existen dos escenarios principales de pago:
+
+**1. Reserva Pagada por la OTA (OTA Collect)**
+- El huésped paga directamente a la OTA (Booking.com, Airbnb, etc.)
+- La OTA luego liquida el dinero al hotel, descontando su comisión
+- El sistema marca automáticamente la reserva como **"Pagada por [nombre del canal]"** (ej: "Pagada por Booking", "Pagada por Airbnb")
+- El sistema registra información detallada del pago:
+  - Monto bruto que pagó el huésped
+  - Comisión retenida por la OTA
+  - Monto neto que recibirá el hotel
+  - Fecha de liquidación (payout date)
+  - Método de pago (Payout directo, Tarjeta Virtual, etc.)
+
+**2. Reserva con Pago Directo (Hotel Collect)**
+- La OTA solo envía la reserva, pero el huésped paga en el hotel
+- El sistema marca la reserva como **"Pago directo"**
+- El hotel debe cobrar al huésped normalmente al check-in o check-out
+
+#### ¿Cómo Identifico las Reservas Pagadas por OTA?
+
+En la lista de reservas, verás badges (etiquetas) que indican:
+- **Badge verde "Pagada por [Canal]"**: Reserva pagada por la OTA (Booking, Airbnb, etc.)
+- **Badge azul "Pago directo"**: Reserva que debe cobrarse en el hotel
+
+Estos badges aparecen en la columna **"Estado de Pagos"** de la tabla de reservas.
+
+#### ¿Qué Pasa si Edito una Reserva Pagada por OTA?
+
+Si necesitas editar una reserva que fue pagada por la OTA (cambiar fechas, habitación, etc.), el sistema te muestra claramente:
+
+1. **Banner informativo**: Indica que la reserva está "Pagada por [Canal]" y que el pago del canal no se modifica al editar
+2. **Diferencia de precio**: Si cambias fechas o habitación y el nuevo precio es diferente, el sistema calcula automáticamente la diferencia
+3. **Opción de conciliar**: Si hay una diferencia (el nuevo precio es mayor), puedes:
+   - **Cobrar la diferencia localmente**: El botón "Cobrar diferencia" te permite registrar un pago adicional para cubrir el nuevo precio
+   - El sistema genera un nuevo registro de pago local que se suma al pago original de la OTA
+
+**Ejemplo práctico:**
+- Reserva original: 2 noches por $200 (pagada por Booking)
+- Editas y cambias a 3 noches: nuevo precio $300
+- Diferencia: $100
+- Puedes usar "Cobrar diferencia" para registrar esos $100 adicionales que el huésped debe pagar al hotel
+
+#### Información Detallada de Pagos OTA
+
+El sistema registra automáticamente información completa sobre los pagos de OTAs:
+
+**En el modelo de Pago:**
+- **Origen del pago**: OTA_PAYOUT, OTA_VCC (Tarjeta Virtual), HOTEL_POS, ONLINE_GATEWAY
+- **Proveedor**: Booking.com, Airbnb, Expedia, etc.
+- **Referencia externa**: ID de transacción de la OTA
+- **Desglose financiero**:
+  - Monto bruto (lo que pagó el huésped)
+  - Comisión de la OTA
+  - Monto neto (lo que recibirá el hotel)
+- **Fechas importantes**:
+  - Fecha de activación del pago
+  - Fecha de liquidación (cuando la OTA transferirá el dinero)
+
+Esta información está disponible en el sistema y permite una conciliación precisa con las liquidaciones de las OTAs.
+
+### Detección y Manejo de Overbooking
+
+#### ¿Qué es el Overbooking?
+
+El **overbooking** ocurre cuando la misma habitación está reservada para dos o más huéspedes en fechas que se solapan. Esto puede pasar cuando:
+- Una OTA envía una reserva que se solapa con otra ya existente
+- Hay retrasos en la sincronización entre canales
+- Se crean reservas manuales que no consideran reservas de OTAs
+
+#### ¿Cómo Detecta el Sistema el Overbooking?
+
+El sistema detecta automáticamente overbooking cuando:
+1. Se recibe una reserva desde una OTA (vía webhook o importación)
+2. Esa reserva se solapa con otra reserva activa en la misma habitación
+3. El sistema marca automáticamente la reserva con el badge **"Overbooking"** (amarillo) en la columna **"Estado"**
+
+**Ejemplo:**
+- Reserva A: Habitación 101, 5-10 de noviembre (reserva directa del hotel)
+- Reserva B: Habitación 101, 7-12 de noviembre (reserva desde Booking.com)
+- Ambas ocupan la habitación los días 7, 8, 9 y 10 → Overbooking detectado
+
+#### ¿Cómo se Comporta el Sistema con Overbooking?
+
+**Restricciones Automáticas:**
+Cuando una reserva tiene el badge "Overbooking", el sistema **bloquea automáticamente** ciertas acciones para evitar problemas:
+- ❌ **No se puede confirmar** la reserva
+- ❌ **No se puede hacer check-in**
+- ❌ **No se puede hacer check-out**
+- ❌ **No se puede cancelar** (sin resolver primero)
+- ❌ **No se puede facturar**
+- ✅ **Sí se puede editar** (para resolver el conflicto)
+
+**¿Por qué solo editar?**
+- Permite cambiar la reserva a otra habitación disponible
+- Permite ajustar las fechas para eliminar el solapamiento
+- Una vez resuelto, el badge desaparece y se habilitan todas las acciones
+
+#### ¿Cómo Resolver un Overbooking?
+
+**Paso 1: Identificar el conflicto**
+- Revisa ambas reservas en conflicto
+- Verifica fechas y habitación
+
+**Paso 2: Decidir la solución**
+- **Opción A**: Mover una reserva a otra habitación disponible
+- **Opción B**: Ajustar fechas de una reserva para eliminar el solapamiento
+- **Opción C**: Cancelar una de las reservas (si es necesario)
+
+**Paso 3: Editar la reserva**
+- Haz clic en "Editar" en la reserva con overbooking
+- Cambia la habitación o las fechas según tu decisión
+- Guarda los cambios
+
+**Paso 4: Verificación**
+- El sistema verifica automáticamente si el conflicto se resolvió
+- Si ya no hay solapamiento, el badge "Overbooking" desaparece
+- Todas las acciones se habilitan automáticamente
+
+#### Beneficios del Sistema de Overbooking
+
+- ✅ **Detección automática**: No necesitas revisar manualmente cada reserva
+- ✅ **Prevención de errores**: Evita operaciones que causarían problemas (check-in en habitación ocupada)
+- ✅ **Visibilidad clara**: El badge amarillo te alerta inmediatamente
+- ✅ **Flexibilidad**: Te permite resolver el conflicto de la mejor manera para tu hotel
+- ✅ **Auditoría**: Todos los overbookings quedan registrados para análisis posterior
+
+3. **Proporciona los secretos** a tu equipo técnico para que los configuren en el sistema.
+
+**Si no configuras webhooks**: El sistema funcionará igual, pero usará el método de respaldo (consulta cada 1-2 minutos), lo cual puede causar pequeños retrasos.
+
+#### Prevención de Overbooking (Validación Automática)
+#### Webhooks con seguridad e idempotencia
+
+- Seguridad: se verifica la firma de cada notificación (HMAC-SHA256) para garantizar que provenga de la OTA.
+- Idempotencia: aunque la OTA envíe el mismo evento más de una vez, el sistema lo procesa una sola vez (usa un identificador único del evento).
+
+
+**¿Qué hace el sistema para evitar sobreventas?**
+
+Antes de confirmar una reserva que creas directamente en AlojaSys, el sistema verifica automáticamente si esa habitación ya está reservada en Booking.com o Airbnb. Esto evita que tengas dos reservas para las mismas fechas.
+
+**¿Cómo funciona?**
+
+1. **Cuando intentas confirmar una reserva** en AlojaSys:
+   - El sistema revisa todas las OTAs configuradas para esa habitación (Booking.com, Airbnb, etc.)
+   - Busca si hay reservas de esas OTAs en las mismas fechas
+   - Si encuentra un conflicto → **No permite confirmar la reserva**
+   - Te muestra un mensaje: "La habitación no está disponible en las OTAs"
+
+2. **Ejemplo práctico**:
+   ```
+   Situación:
+   - 14:00: Cliente reserva Habitación 101 del 15 al 17 en Booking.com
+   - 14:01: (Webhook actualiza AlojaSys instantáneamente)
+   - 14:02: Recepcionista intenta crear reserva para Habitación 101 del 15 al 17
+   - Resultado: Sistema rechaza la reserva → "Habitación no disponible en las OTAs"
+   ```
+
+3. **Beneficios**:
+   - ✅ **Evita overbooking**: No puedes vender una habitación dos veces
+   - ✅ **Funciona automáticamente**: No necesitas verificar manualmente
+   - ✅ **Funciona con webhooks y sin ellos**: Aunque los webhooks no estén configurados, verifica las reservas ya sincronizadas
+
+4. **¿Cuándo NO verifica?**
+   - Para reservas que vienen de las OTAs (estas ya están sincronizadas, no pueden causar conflicto)
+   - Para reservas en estado "Pendiente" (solo verifica al confirmar)
+   - Si no hay OTAs configuradas para esa habitación
+
+5. **Modo estricto vs. advertencias**:
+   - **Al confirmar**: Si hay conflicto, rechaza la reserva completamente
+   - **Al crear como pendiente**: Puede permitir la reserva pero agregar una advertencia en las notas
+
+**En resumen**: El sistema te protege automáticamente de vender la misma habitación dos veces, tanto desde AlojaSys como desde las OTAs.
+
+### Casos de Uso Reales
+
+#### Caso 1: Hotel Boutique con Booking.com
+
+**Situación**: El hotel recibe 70% de reservas desde Booking.com.
+
+**Configuración**:
+1. Configura Booking.com con credenciales de producción
+2. Mapea 3 tipos de habitación (Simple, Doble, Suite)
+3. Mapea 2 planes de tarifa (Estándar, No Reembolsable)
+
+**Resultado**:
+- ✅ Todas las reservas de Booking aparecen automáticamente en AlojaSys
+- ✅ Cuando se cancela una reserva en AlojaSys, se libera en Booking en menos de 1 minuto
+- ✅ Los precios se sincronizan automáticamente
+- ✅ Ahorra 2 horas diarias de trabajo manual
+
+#### Caso 2: Host Airbnb Multi-Propiedad
+
+**Situación**: Administra 5 propiedades en Airbnb desde AlojaSys.
+
+**Configuración**:
+1. Configura Airbnb para cada propiedad
+2. Mapea tipos y planes por propiedad
+3. Usa iCal para importar reservas existentes
+
+**Resultado**:
+- ✅ Todas las propiedades se sincronizan desde un solo lugar
+- ✅ Evita sobreventas (el sistema bloquea automáticamente)
+- ✅ Gestión centralizada de todas las reservas
+
+#### Caso 3: Hotel con Múltiples Canales
+
+**Situación**: Vende por Booking.com, Airbnb, Expedia y sitio web propio.
+
+**Configuración**:
+1. Configura cada proveedor en AlojaSys
+2. Mapea tipos y planes para cada uno
+
+**Resultado**:
+- ✅ Disponibilidad sincronizada en todos los canales
+- ✅ Precios consistentes
+- ✅ Sin conflictos de doble reserva
+- ✅ Reportes unificados de todos los canales
+
+### Beneficios para el Hotel
+
+#### Para el Personal de Recepción
+
+- ✅ **Reservas automáticas**: Las reservas de OTAs aparecen solas, no hay que copiarlas manualmente
+- ✅ **Sincronización en tiempo real**: Cambios en AlojaSys se reflejan en las OTAs al instante
+- ✅ **Menos errores**: No hay riesgo de olvidar actualizar disponibilidad en algún canal
+- ✅ **Ahorro de tiempo**: Automatiza tareas repetitivas
+
+#### Para la Gerencia
+
+- ✅ **Control centralizado**: Gestiona todos los canales desde un solo lugar
+- ✅ **Sin sobreventas**: El sistema evita vender la misma habitación dos veces
+- ✅ **Precios consistentes**: Mantiene los precios sincronizados automáticamente
+- ✅ **Reportes completos**: Métricas de todos los canales en un solo dashboard
+
+#### Para el Negocio
+
+- ✅ **Mayor visibilidad**: Tu hotel aparece en más plataformas sin trabajo extra
+- ✅ **Aumento de reservas**: Automatización permite atender más canales simultáneamente
+- ✅ **Competitividad**: Respuesta rápida a cambios de disponibilidad y precios
+- ✅ **Reducción de costos**: Menos personal necesario para gestionar múltiples canales
+
+### Resolución de Problemas
+
+#### Problema: "Las reservas de Booking no aparecen en AlojaSys"
+
+**Causas posibles**:
+- La configuración de Booking no está activa
+- Faltan credenciales válidas
+- El proveedor está en modo "Test" sin datos reales
+
+**Solución**:
+1. Verifica que la configuración esté marcada como "Activa"
+2. Confirma que las credenciales sean correctas
+3. Si estás en modo Test, cambia a Producción cuando tengas acceso
+
+#### Problema: "La disponibilidad no se actualiza en Booking"
+
+**Causas posibles**:
+- No hay mapeos de tipos/planes activos
+- Error en la última sincronización
+- Rate limiting de Booking (muchos requests)
+
+**Solución**:
+1. Verifica que tengas mapeos activos en "Tipos de Habitación" y "Planes de Tarifa"
+2. Haz un "Push ARI" manual para forzar sincronización
+3. Si el problema persiste, revisa los logs o contacta soporte
+
+#### Problema: "El import iCal no funciona"
+
+**Causas posibles**:
+- La URL iCal no es válida o está expirada
+- La URL requiere autenticación
+- El formato del calendario no es compatible
+
+**Solución**:
+1. Verifica que la URL sea accesible (pruébala en un navegador)
+2. Confirma que no requiera login adicional
+3. Contacta a la OTA para obtener una URL válida
+
+### Seguridad
+
+#### Protección de Información Sensible
+
+- ✅ **Tokens enmascarados**: Los tokens iCal se muestran parcialmente (solo primeros 4 caracteres) para proteger la información
+- ✅ **Secrets ocultos**: Las claves secretas (Client Secret) no se muestran nunca, solo se pueden actualizar
+- ✅ **URLs completas seguras**: Las URLs de iCal se generan automáticamente sin exponer el token completo
+
+**Ejemplo**: Si tu token es `abc123xyz789`, solo verás `abc1********` en la interfaz.
+
+#### Validación de Configuraciones
+
+El sistema valida automáticamente tus configuraciones para prevenir errores:
+
+- ✅ **Validación de dominios**: Verifica que las URLs de Booking.com y Airbnb sean correctas
+  - Solo acepta dominios oficiales: `booking.com`, `airbnb.com`, o dominios de prueba
+  - Rechaza URLs inválidas o sospechosas antes de guardar
+  
+- ✅ **Indicador de verificación**: Un badge "Verificado" (verde) indica que tu configuración es válida
+  - Aparece automáticamente cuando la URL pasa la validación
+  - Si está "No Verificado" (gris), revisa que la URL sea correcta
+
+**Ejemplo de Validación**:
+```
+✅ URL válida: https://connectivity-sandbox.booking.com/api/v1/...
+   → Badge: "Verificado" (verde)
+
+❌ URL inválida: https://otro-dominio.com/api/...
+   → Error: "El dominio 'otro-dominio.com' no está permitido"
+   → Badge: "No Verificado" (gris)
+```
+
+#### Protección de Credenciales
+
+- ✅ **Credenciales encriptadas**: Los secrets de API se almacenan de forma segura en la base de datos
+- ✅ **Logs sanitizados**: Los logs del sistema no exponen información sensible
+- ✅ **Modo Test/Prod**: Separación clara entre entornos de prueba y producción
+  - No puedes mezclar credenciales de prueba con producción
+  - El sistema detecta automáticamente el tipo de credenciales
+
+#### Mejores Prácticas
+
+**Para Tokens iCal**:
+1. **No compartas tus tokens**: Son únicos para tu hotel y proveedor
+2. **Rotación periódica**: Cambia tus tokens cada cierto tiempo para mayor seguridad
+3. **Usa URLs completas**: El sistema genera las URLs automáticamente, no necesitas el token completo
+
+**Para Credenciales de API (Booking/Airbnb)**:
+1. **Mantén secreto el Client Secret**: Nunca lo compartas ni lo incluyas en emails
+2. **Usa modo Test para desarrollo**: Prueba primero con credenciales de sandbox
+3. **Verifica antes de producción**: Asegúrate de que el badge muestre "Verificado" antes de activar en producción
+
+**Indicadores Visuales**:
+- 🟢 **Badge "Verificado"**: Tu configuración es válida y lista para usar
+- ⚪ **Badge "No Verificado"**: Revisa tu configuración (URL puede ser inválida)
+- 🔒 **Campo tipo "password"**: Los secrets siempre se ocultan al escribir
+- 📋 **Botón "Copiar URL"**: Genera la URL completa sin exponer el token
+
+### Configuración Avanzada
+
+#### Modo Test vs Producción
+
+- **Test**: Para pruebas sin afectar datos reales. Usa sandbox de las OTAs.
+- **Producción**: Para uso real. Solo activar cuando estés certificado y listo.
+
+**Importante**: Nunca uses credenciales de producción en modo Test.
+
+#### Múltiples Configuraciones por Hotel
+
+Puedes tener varias configuraciones del mismo proveedor para un hotel si necesitas:
+- Diferentes cuentas (ej: Booking.com para diferentes propiedades)
+- Configuraciones de prueba y producción simultáneas
+
+#### Personalización por Proveedor
+
+Cada proveedor (Booking, Airbnb, etc.) tiene campos específicos. El sistema muestra solo los campos relevantes según el proveedor seleccionado.
+
+#### Control de Dirección de Sincronización
+
+Cada mapeo de habitación permite configurar la dirección de sincronización:
+
+- **Ambos** (recomendado): Sincronización completa en ambas direcciones
+- **Solo Importar**: Útil cuando solo quieres recibir reservas de la OTA, sin compartir tu disponibilidad
+- **Solo Exportar**: Útil cuando quieres compartir disponibilidad sin importar reservas externas
+
+**Ejemplo práctico**: Si tienes una habitación que solo se vende por tu sitio web, pero quieres que Booking.com vea que está ocupada → usa "Solo Exportar". Así, Booking.com bloqueará esas fechas, pero no recibirás reservas desde Booking para esa habitación.
 
 ---
 

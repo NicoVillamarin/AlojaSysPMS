@@ -5,7 +5,7 @@ import { useScrollAnimation } from '../hooks/useScrollAnimation'
 import DemoModal from './DemoModal'
 
 const ProblemSolution: React.FC = () => {
-  const { ref, isInView } = useScrollAnimation()
+  const { ref } = useScrollAnimation({ once: false })
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false)
 
   const problems = [
@@ -74,8 +74,16 @@ const ProblemSolution: React.FC = () => {
   }
 
   const itemVariants = {
-    hidden: { y: 30, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { duration: 0.6 } }
+    hidden: { 
+      y: 50, 
+      opacity: 0,
+      scale: 0.95
+    },
+    visible: { 
+      y: 0, 
+      opacity: 1,
+      scale: 1
+    }
   }
 
   return (
@@ -86,7 +94,8 @@ const ProblemSolution: React.FC = () => {
           className="problem-solution-content"
           variants={containerVariants}
           initial="hidden"
-          animate={isInView ? "visible" : "hidden"}
+          whileInView="visible"
+          viewport={{ once: false, amount: 0.2 }} // Se revierte al hacer scroll
         >
           {/* Header */}
           <motion.div 
@@ -119,11 +128,16 @@ const ProblemSolution: React.FC = () => {
                     key={index}
                     className="problem-item"
                     variants={itemVariants}
+                    transition={{ 
+                      duration: 0.7,
+                      ease: "easeOut",
+                      type: "spring", 
+                      stiffness: 300 
+                    }}
                     whileHover={{ 
                       scale: 1.02,
                       x: 5
                     }}
-                    transition={{ type: "spring", stiffness: 300 }}
                   >
                     <div className={`problem-icon ${problem.color}`}>
                       {problem.icon}
@@ -152,11 +166,16 @@ const ProblemSolution: React.FC = () => {
                     key={index}
                     className="solution-item"
                     variants={itemVariants}
+                    transition={{ 
+                      duration: 0.7,
+                      ease: "easeOut",
+                      type: "spring", 
+                      stiffness: 300 
+                    }}
                     whileHover={{ 
                       scale: 1.02,
                       x: -5
                     }}
-                    transition={{ type: "spring", stiffness: 300 }}
                   >
                     <div className={`solution-icon ${solution.color}`}>
                       {solution.icon}

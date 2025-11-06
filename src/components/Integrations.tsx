@@ -46,8 +46,18 @@ const Integrations: React.FC = () => {
   }
 
   const cardVariants = {
-    hidden: { y: 60, opacity: 0, scale: 0.9 },
-    visible: { y: 0, opacity: 1, scale: 1, transition: { duration: 0.6 } }
+    hidden: { 
+      y: 80, 
+      opacity: 0, 
+      scale: 0.85,
+      rotateY: -15
+    },
+    visible: { 
+      y: 0, 
+      opacity: 1, 
+      scale: 1,
+      rotateY: 0
+    }
   }
 
   return (
@@ -58,7 +68,7 @@ const Integrations: React.FC = () => {
           variants={headerVariants}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true }}
+          viewport={{ once: false, amount: 0.3 }} // Se revierte
         >
           <h2 className="features-title">Integraciones que impulsan tu operación</h2>
           <p className="features-subtitle">Conectamos tu hotel con las plataformas clave del mercado</p>
@@ -69,19 +79,26 @@ const Integrations: React.FC = () => {
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true }}
+          viewport={{ once: false, amount: 0.2 }} // Se revierte al hacer scroll
         >
           {items.map((i, idx) => (
             <motion.div
               key={idx}
               className="feature-card"
               variants={cardVariants}
-              whileHover={{ 
-                y: -10,
-                scale: 1.02,
-                boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)'
+              transition={{ 
+                duration: 0.7,
+                ease: "easeOut",
+                type: 'spring', 
+                stiffness: 300, 
+                damping: 20 
               }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              whileHover={{ 
+                y: -12,
+                scale: 1.03,
+                rotateY: 3,
+                boxShadow: '0 30px 60px rgba(212, 175, 55, 0.2)'
+              }}
             >
               <motion.div 
                 className="feature-icon"
