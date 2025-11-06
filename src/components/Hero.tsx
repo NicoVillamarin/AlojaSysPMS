@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Play, Hotel, Calendar, BarChart3, Clock, Users, CreditCard, FileText, Globe, CalendarCheck } from 'lucide-react'
+import { ArrowRight, Hotel, Calendar, BarChart3, Clock, Users, CreditCard, FileText, Globe, CalendarCheck } from 'lucide-react'
 import FloatingElements from './FloatingElements'
 import VideoBackground from './VideoBackground'
 import DemoModal from './DemoModal'
