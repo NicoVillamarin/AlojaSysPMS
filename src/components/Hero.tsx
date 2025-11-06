@@ -7,7 +7,7 @@ import DemoModal from './DemoModal'
 
 const Hero: React.FC = () => {
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false)
-  
+
   // Array de videos - usando los videos desde Cloudinary
   const videos = [
     'https://res.cloudinary.com/dsozqrhns/video/upload/v1760367161/videoUno_yqogk0.mp4', // videoUno
@@ -58,7 +58,7 @@ const Hero: React.FC = () => {
             </motion.span>
           </motion.h1>
 
-          <motion.div 
+          <motion.div
             className="hero-slogan"
             variants={itemVariants}
             initial={{ opacity: 0, y: 20 }}
@@ -69,8 +69,8 @@ const Hero: React.FC = () => {
           </motion.div>
 
           <motion.p className="hero-description" variants={itemVariants}>
-            Dejá atrás los sistemas complicados y costosos. AlojaSys te permite gestionar 
-            reservas, habitaciones, pagos y reportes desde una plataforma intuitiva, 
+            Dejá atrás los sistemas complicados y costosos. AlojaSys te permite gestionar
+            reservas, habitaciones, pagos y reportes desde una plataforma intuitiva,
             con integraciones con Booking.com, Airbnb, facturación AFIP y Google Calendar.
           </motion.p>
 
@@ -82,10 +82,10 @@ const Hero: React.FC = () => {
               whileTap={{ scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 300 }}
             >
-              Ver Demo Gratis
+              Solicitar Demo Gratis
               <ArrowRight size={20} />
             </motion.button>
-
+            {/*
             <motion.button
               className="btn btn-secondary"
               whileHover={{ scale: 1.05, backgroundColor: 'rgba(255, 255, 255, 0.2)' }}
@@ -94,7 +94,8 @@ const Hero: React.FC = () => {
             >
               <Play size={20} />
               Ver Video
-            </motion.button>
+            </motion.button> 
+             */}
           </motion.div>
         </motion.div>
 
@@ -104,15 +105,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-1"
             initial={{ opacity: 0, scale: 0.3, x: -60, y: -40 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, -8, 0],
               rotate: [0, 2, -2, 0]
             }}
-            transition={{ 
-              delay: 1.2, 
+            transition={{
+              delay: 1.2,
               duration: 1.2,
               rotate: { duration: 6, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 3, repeat: Infinity, ease: "easeInOut" }
@@ -131,15 +132,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-2"
             initial={{ opacity: 0, scale: 0.3, x: 60, y: -40 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, -8, 0],
               rotate: [0, -2, 2, 0]
             }}
-            transition={{ 
-              delay: 1.4, 
+            transition={{
+              delay: 1.4,
               duration: 1.2,
               rotate: { duration: 7, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 4, repeat: Infinity, ease: "easeInOut" }
@@ -158,15 +159,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-3"
             initial={{ opacity: 0, scale: 0.3, x: -80, y: 20 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, -10, 0],
               rotate: [0, 1.5, -1.5, 0]
             }}
-            transition={{ 
-              delay: 1.6, 
+            transition={{
+              delay: 1.6,
               duration: 1.2,
               rotate: { duration: 5, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 3.5, repeat: Infinity, ease: "easeInOut" }
@@ -185,15 +186,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-4"
             initial={{ opacity: 0, scale: 0.3, x: 80, y: 20 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, 8, 0],
               rotate: [0, -1.5, 1.5, 0]
             }}
-            transition={{ 
-              delay: 1.8, 
+            transition={{
+              delay: 1.8,
               duration: 1.2,
               rotate: { duration: 6.5, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 4.5, repeat: Infinity, ease: "easeInOut" }
@@ -212,15 +213,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-5"
             initial={{ opacity: 0, scale: 0.3, x: -50, y: 60 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, -6, 0],
               rotate: [0, 1, -1, 0]
             }}
-            transition={{ 
-              delay: 2.0, 
+            transition={{
+              delay: 2.0,
               duration: 1.2,
               rotate: { duration: 7.5, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 3.8, repeat: Infinity, ease: "easeInOut" }
@@ -239,15 +240,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-6"
             initial={{ opacity: 0, scale: 0.3, x: 50, y: 60 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, 6, 0],
               rotate: [0, -1, 1, 0]
             }}
-            transition={{ 
-              delay: 2.2, 
+            transition={{
+              delay: 2.2,
               duration: 1.2,
               rotate: { duration: 8, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 4.2, repeat: Infinity, ease: "easeInOut" }
@@ -266,15 +267,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-7"
             initial={{ opacity: 0, scale: 0.3, x: -40, y: -20 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, -5, 0],
               rotate: [0, 1.5, -1.5, 0]
             }}
-            transition={{ 
-              delay: 2.4, 
+            transition={{
+              delay: 2.4,
               duration: 1.2,
               rotate: { duration: 6, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 3.5, repeat: Infinity, ease: "easeInOut" }
@@ -292,15 +293,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-8"
             initial={{ opacity: 0, scale: 0.3, x: 40, y: -20 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, 5, 0],
               rotate: [0, -1.5, 1.5, 0]
             }}
-            transition={{ 
-              delay: 2.6, 
+            transition={{
+              delay: 2.6,
               duration: 1.2,
               rotate: { duration: 7, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 4.5, repeat: Infinity, ease: "easeInOut" }
@@ -319,15 +320,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-9"
             initial={{ opacity: 0, scale: 0.3, x: 30, y: 10 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, -8, 0],
               rotate: [0, 2, -2, 0]
             }}
-            transition={{ 
-              delay: 2.8, 
+            transition={{
+              delay: 2.8,
               duration: 1.2,
               rotate: { duration: 5, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 3, repeat: Infinity, ease: "easeInOut" }
@@ -345,15 +346,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-10"
             initial={{ opacity: 0, scale: 0.3, x: -30, y: 30 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, 6, 0],
               rotate: [0, -1.5, 1.5, 0]
             }}
-            transition={{ 
-              delay: 3.0, 
+            transition={{
+              delay: 3.0,
               duration: 1.2,
               rotate: { duration: 6, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 4, repeat: Infinity, ease: "easeInOut" }
@@ -372,15 +373,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-11"
             initial={{ opacity: 0, scale: 0.3, x: 45, y: -10 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, -6, 0],
               rotate: [0, 1.8, -1.8, 0]
             }}
-            transition={{ 
-              delay: 3.2, 
+            transition={{
+              delay: 3.2,
               duration: 1.2,
               rotate: { duration: 7, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 3.5, repeat: Infinity, ease: "easeInOut" }
@@ -398,15 +399,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-12"
             initial={{ opacity: 0, scale: 0.3, x: -45, y: 25 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, 8, 0],
               rotate: [0, -2.2, 2.2, 0]
             }}
-            transition={{ 
-              delay: 3.4, 
+            transition={{
+              delay: 3.4,
               duration: 1.2,
               rotate: { duration: 8, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 4.5, repeat: Infinity, ease: "easeInOut" }
@@ -425,15 +426,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-13"
             initial={{ opacity: 0, scale: 0.3, x: 55, y: 5 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, -7, 0],
               rotate: [0, 2.5, -2.5, 0]
             }}
-            transition={{ 
-              delay: 3.6, 
+            transition={{
+              delay: 3.6,
               duration: 1.2,
               rotate: { duration: 6, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 3.2, repeat: Infinity, ease: "easeInOut" }
@@ -451,15 +452,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-14"
             initial={{ opacity: 0, scale: 0.3, x: -55, y: 40 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, 9, 0],
               rotate: [0, -2.8, 2.8, 0]
             }}
-            transition={{ 
-              delay: 3.8, 
+            transition={{
+              delay: 3.8,
               duration: 1.2,
               rotate: { duration: 7, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 4.8, repeat: Infinity, ease: "easeInOut" }
@@ -478,15 +479,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-15"
             initial={{ opacity: 0, scale: 0.3, x: 65, y: -5 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, -8, 0],
               rotate: [0, 3, -3, 0]
             }}
-            transition={{ 
-              delay: 4.0, 
+            transition={{
+              delay: 4.0,
               duration: 1.2,
               rotate: { duration: 5, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 3, repeat: Infinity, ease: "easeInOut" }
@@ -504,15 +505,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-16"
             initial={{ opacity: 0, scale: 0.3, x: -65, y: 45 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, 10, 0],
               rotate: [0, -3, 3, 0]
             }}
-            transition={{ 
-              delay: 4.2, 
+            transition={{
+              delay: 4.2,
               duration: 1.2,
               rotate: { duration: 6, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 5, repeat: Infinity, ease: "easeInOut" }
@@ -531,15 +532,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-17"
             initial={{ opacity: 0, scale: 0.3, x: 70, y: -15 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, -9, 0],
               rotate: [0, 3.5, -3.5, 0]
             }}
-            transition={{ 
-              delay: 4.4, 
+            transition={{
+              delay: 4.4,
               duration: 1.2,
               rotate: { duration: 5.5, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 3.3, repeat: Infinity, ease: "easeInOut" }
@@ -557,15 +558,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-18"
             initial={{ opacity: 0, scale: 0.3, x: -70, y: 15 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, 11, 0],
               rotate: [0, -3.5, 3.5, 0]
             }}
-            transition={{ 
-              delay: 4.6, 
+            transition={{
+              delay: 4.6,
               duration: 1.2,
               rotate: { duration: 6.5, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 5.2, repeat: Infinity, ease: "easeInOut" }
@@ -583,15 +584,15 @@ const Hero: React.FC = () => {
           <motion.div
             className="floating-bubble bubble-19"
             initial={{ opacity: 0, scale: 0.3, x: 75, y: 20 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
-              x: 0, 
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
               y: [0, -12, 0],
               rotate: [0, 4, -4, 0]
             }}
-            transition={{ 
-              delay: 4.8, 
+            transition={{
+              delay: 4.8,
               duration: 1.2,
               rotate: { duration: 7, repeat: Infinity, ease: "easeInOut" },
               y: { duration: 3.8, repeat: Infinity, ease: "easeInOut" }
@@ -607,11 +608,11 @@ const Hero: React.FC = () => {
           </motion.div>
         </div>
       </div>
-      
+
       {/* Modal de Demo */}
-      <DemoModal 
-        isOpen={isDemoModalOpen} 
-        onClose={() => setIsDemoModalOpen(false)} 
+      <DemoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
       />
     </section>
   )

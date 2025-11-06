@@ -185,7 +185,7 @@ const ProblemSolution: React.FC = () => {
               whileTap={{ scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 300 }}
             >
-              Ver Demo Gratis
+              Solicitar Demo Gratis
             </motion.button>
           </motion.div>
         </motion.div>

@@ -25,7 +25,6 @@ function App() {
               <ProblemSolution />
               <Features />
               <Modules />
-              <UseCases />
               <Roadmap />
               <About />
               <Contact />
