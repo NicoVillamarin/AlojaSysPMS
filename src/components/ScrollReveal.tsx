@@ -1,6 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { useScrollReveal, RevealOrigin, RevealType } from '../hooks/useScrollReveal'
+import { useScrollReveal } from '../hooks/useScrollReveal'
+import type { RevealOrigin, RevealType } from '../hooks/useScrollReveal'
 
 interface ScrollRevealProps {
   children: React.ReactNode
@@ -50,14 +51,14 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({
         delayChildren: delay
       }
     }
-  } : variants
+  } : undefined
 
   return (
     <motion.div
       ref={ref}
       className={className}
       initial={stagger > 0 ? 'hidden' : initial}
-      animate={stagger > 0 ? animate : animate}
+      animate={stagger > 0 ? 'visible' : animate}
       variants={stagger > 0 ? containerVariants : variants}
     >
       {stagger > 0 ? (

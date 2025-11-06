@@ -12,7 +12,7 @@ export const useScrollAnimation = (options: UseScrollAnimationOptions = {}) => {
   const ref = useRef(null)
   const isInView = useInView(ref, { 
     once, // Si es false, la animación se revierte al salir del viewport
-    margin,
+    margin: margin as any, // Type assertion para MarginType
     amount // Porcentaje del elemento visible para activar
   })
 

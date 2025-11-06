@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Hotel, Calendar, CreditCard, BarChart3, Users, Settings, DollarSign, FileText, Globe, CalendarCheck } from 'lucide-react'
+import { Hotel, Calendar, CreditCard, BarChart3, Users, FileText, Globe, CalendarCheck } from 'lucide-react'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
 
 const Features: React.FC = () => {
-  const { ref, isInView } = useScrollAnimation({ once: false }) // Se revierte al hacer scroll
+  const { ref } = useScrollAnimation({ once: false }) // Se revierte al hacer scroll
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
   // Categorías principales

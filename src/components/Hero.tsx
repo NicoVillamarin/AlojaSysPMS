@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Hotel, Calendar, BarChart3, Clock, Users, CreditCard, FileText, Globe, CalendarCheck, Zap, CheckCircle, RefreshCw, TrendingUp, DollarSign, Settings, Lock, Activity, Bell, Receipt, Wallet } from 'lucide-react'
+import { ArrowRight, Hotel, Calendar, BarChart3, Clock, Users, Globe, CalendarCheck, Zap, CheckCircle, TrendingUp, DollarSign, Lock, Activity, Bell, Receipt, Wallet } from 'lucide-react'
 import FloatingElements from './FloatingElements'
 import VideoBackground from './VideoBackground'
 import DemoModal from './DemoModal'
@@ -45,19 +45,6 @@ const Hero: React.FC = () => {
     hidden: { y: 50, opacity: 0 },
     visible: { y: 0, opacity: 1, transition: { duration: 1 } }
   }
-
-  // Función para obtener props de animación condicionalmente
-  const getBubbleAnimationProps = (defaultProps: any) => {
-    if (isMobile) {
-      return {
-        initial: { opacity: 1, scale: 1, x: 0, y: 0 },
-        animate: { opacity: 1, scale: 1, x: 0, y: 0 },
-        transition: { duration: 0 }
-      }
-    }
-    return defaultProps
-  }
-
 
   return (
     <section id="inicio" className="hero">

@@ -45,10 +45,6 @@ export const useScrollReveal = (options: UseScrollRevealOptions = {}) => {
 
   // Calcular transformaciones según el origen
   const getTransform = () => {
-    const distanceValue = distance.includes('%') 
-      ? parseFloat(distance) / 100 
-      : parseFloat(distance.replace('px', ''))
-    
     switch (origin) {
       case 'top':
         return { y: type === 'slide' ? `-${distance}` : 0, x: 0 }
@@ -116,7 +112,7 @@ export const useScrollReveal = (options: UseScrollRevealOptions = {}) => {
       transition: {
         duration,
         delay,
-        ease: [0.16, 1, 0.3, 1] // Easing suave y moderno
+        ease: [0.16, 1, 0.3, 1] as const // Easing suave y moderno (cubic bezier)
       }
     }
   }

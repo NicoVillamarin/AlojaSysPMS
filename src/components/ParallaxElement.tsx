@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react'
-import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion'
+import { motion, useScroll, useMotionValue, useSpring } from 'framer-motion'
 
 interface ParallaxElementProps {
   children: React.ReactNode
