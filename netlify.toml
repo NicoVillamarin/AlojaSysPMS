@@ -6,27 +6,9 @@
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
 
-# Redirecciones HTTP a HTTPS y www
-# Google Search Console requiere redirecciones permanentes (301) para indexación correcta
-[[redirects]]
-  from = "http://www.alojasys.com/*"
-  to = "https://www.alojasys.com/:splat"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "http://alojasys.com/*"
-  to = "https://www.alojasys.com/:splat"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "https://alojasys.com/*"
-  to = "https://www.alojasys.com/:splat"
-  status = 301
-  force = true
-
 # Redirección para SPA - todas las rutas deben servir index.html
+# Netlify maneja automáticamente las redirecciones HTTP->HTTPS y dominio sin www->www
+# No necesitamos configurarlas aquí para evitar bucles de redirección
 [[redirects]]
   from = "/*"
   to = "/index.html"
