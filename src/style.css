@@ -3249,3 +3249,362 @@ body {
     font-size: 1rem;
   }
 }
+
+/* System Map Modal */
+.system-map-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  overflow-y: auto;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.system-map-modal {
+  background: linear-gradient(135deg, #0A304A 0%, #002D62 100%);
+  color: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 1600px;
+  max-height: 95vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s ease;
+  overflow: hidden;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.system-map-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
+
+.system-map-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 2rem;
+  gap: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.system-map-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.system-map-subtitle {
+  font-size: 1.125rem;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 600px;
+}
+
+.btn-close-modal {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+}
+
+.btn-close-modal:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: rotate(90deg);
+}
+
+.system-map-wrapper {
+  position: relative;
+  flex: 1;
+  min-height: 600px;
+  height: calc(95vh - 180px);
+  max-height: calc(95vh - 180px);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 0.5rem;
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+}
+
+.system-map-network {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.system-map-controls {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 1.25rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  min-width: 220px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.system-map-controls h3 {
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.control-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+  font-weight: 500;
+}
+
+.control-btn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(10, 48, 74, 0.3);
+}
+
+.control-btn.active {
+  background: var(--accent-color);
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.control-btn.active:hover {
+  background: #c9a52a;
+}
+
+.system-map-info-panel {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  max-width: 400px;
+  max-height: 70vh;
+  overflow-y: auto;
+  color: var(--text-primary);
+}
+
+.info-panel-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.info-panel-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--text-primary);
+}
+
+.system-map-info-panel h3 {
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  padding-right: 2rem;
+}
+
+.system-map-info-panel h4 {
+  color: var(--text-primary);
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.info-description {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.system-map-info-panel ul {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-left: 1.25rem;
+  margin-top: 0.5rem;
+  line-height: 1.6;
+}
+
+.system-map-info-panel li {
+  margin: 0.5rem 0;
+}
+
+/* Botón para abrir el mapa */
+.btn-view-map {
+  margin-top: 1.5rem;
+  padding: 1rem 2rem;
+  background: var(--accent-color);
+  color: var(--primary-color);
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+.btn-view-map:hover {
+  background: #c9a52a;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+}
+
+/* Responsive Design para System Map */
+@media (max-width: 1024px) {
+  .system-map-modal {
+    max-width: 95%;
+    max-height: 95vh;
+  }
+
+  .system-map-controls {
+    min-width: 180px;
+    padding: 1rem;
+  }
+
+  .system-map-info-panel {
+    max-width: 350px;
+  }
+}
+
+@media (max-width: 768px) {
+  .system-map-modal-overlay {
+    padding: 1rem;
+  }
+
+  .system-map-modal {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .system-map-header {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem;
+  }
+
+  .system-map-title {
+    font-size: 1.75rem;
+  }
+
+  .system-map-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .system-map-wrapper {
+    min-height: 400px;
+    padding: 0.5rem;
+  }
+
+  .system-map-network {
+    min-height: 400px;
+  }
+
+  .system-map-controls {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: 100%;
+    margin-bottom: 1rem;
+    max-height: none;
+  }
+
+  .system-map-info-panel {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    width: 100%;
+    max-width: 100%;
+    margin-top: 1rem;
+    max-height: 300px;
+  }
+
+  .control-btn {
+    font-size: 0.85rem;
+    padding: 0.625rem 0.875rem;
+  }
+
+  .btn-view-map {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.9rem;
+    padding: 0.875rem 1.5rem;
+  }
+}

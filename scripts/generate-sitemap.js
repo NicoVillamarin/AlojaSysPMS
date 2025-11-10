@@ -18,17 +18,11 @@ const DOMAIN = 'https://www.alojasys.com';
 const OUTPUT_PATH = path.join(__dirname, '../public/sitemap.xml');
 
 // Secciones del sitio con sus prioridades
+// NOTA: Solo incluimos la URL principal ya que es una SPA (Single Page Application).
+// Google no puede indexar URLs con hash fragments (#) correctamente.
+// Todas las secciones están en la misma página HTML, por lo que solo necesitamos indexar la URL principal.
 const sections = [
   { path: '/', priority: 1.0, changefreq: 'weekly' },
-  { path: '/#inicio', priority: 1.0, changefreq: 'monthly' },
-  { path: '/#integraciones', priority: 0.9, changefreq: 'monthly' },
-  { path: '/#problema-solucion', priority: 0.8, changefreq: 'monthly' },
-  { path: '/#caracteristicas', priority: 0.9, changefreq: 'monthly' },
-  { path: '/#modulos', priority: 0.9, changefreq: 'monthly' },
-  { path: '/#casos', priority: 0.8, changefreq: 'monthly' },
-  { path: '/#roadmap', priority: 0.7, changefreq: 'monthly' },
-  { path: '/#acerca', priority: 0.7, changefreq: 'monthly' },
-  { path: '/#contacto', priority: 0.8, changefreq: 'monthly' },
 ];
 
 // Fecha actual en formato ISO

@@ -1,11 +1,13 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Hotel, Calendar, CreditCard, BarChart3, Users, FileText, Globe, CalendarCheck } from 'lucide-react'
+import { Hotel, Calendar, CreditCard, BarChart3, Users, FileText, Globe, CalendarCheck, Map } from 'lucide-react'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
+import SystemMapModal from './SystemMap'
 
 const Features: React.FC = () => {
   const { ref } = useScrollAnimation({ once: false }) // Se revierte al hacer scroll
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false)
 
   // Categorías principales
   const categories = [
@@ -131,6 +133,18 @@ const Features: React.FC = () => {
           <p className="features-subtitle">
             Todo lo que necesitas para gestionar tu hotel de manera profesional, desde reservas hasta facturación
           </p>
+          <motion.button
+            className="btn-view-map"
+            onClick={() => setIsMapModalOpen(true)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Map size={20} />
+            Ver Mapa y Estructura del Sistema
+          </motion.button>
         </motion.div>
 
         {/* Filtros por categoría */}
@@ -212,6 +226,11 @@ const Features: React.FC = () => {
           ))}
         </motion.div>
       </div>
+      
+      <SystemMapModal 
+        isOpen={isMapModalOpen} 
+        onClose={() => setIsMapModalOpen(false)} 
+      />
     </section>
   )
 }

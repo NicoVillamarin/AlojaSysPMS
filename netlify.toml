@@ -5,3 +5,29 @@
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
+
+# Redirecciones HTTP a HTTPS y www
+# Google Search Console requiere redirecciones permanentes (301) para indexación correcta
+[[redirects]]
+  from = "http://www.alojasys.com/*"
+  to = "https://www.alojasys.com/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://alojasys.com/*"
+  to = "https://www.alojasys.com/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "https://alojasys.com/*"
+  to = "https://www.alojasys.com/:splat"
+  status = 301
+  force = true
+
+# Redirección para SPA - todas las rutas deben servir index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

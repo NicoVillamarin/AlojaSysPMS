@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlojaSys - Mapa de Módulos</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            position: relative;
+        }
+
+        #header h1 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        #header p {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        #mynetwork {
+            width: 100%;
+            height: calc(100vh - 120px);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+
+        .controls {
+            position: absolute;
+            top: 140px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 200px;
+        }
+
+        .controls h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .controls button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.3s;
+        }
+
+        .controls button:hover {
+            background: #764ba2;
+        }
+
+        .info-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            max-width: 300px;
+            display: none;
+        }
+
+        .info-panel h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .info-panel p {
+            color: #666;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .info-panel ul {
+            color: #666;
+            font-size: 0.85em;
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        .info-panel li {
+            margin: 5px 0;
+        }
+
+        .info-panel h4 {
+            color: #333;
+            margin-top: 10px;
+            font-size: 0.95em;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>🏨 AlojaSys - Sistema de Gestión Hotelera</h1>
+        <p>Mapa Visual de Módulos y Funcionalidades</p>
+    </div>
+
+    <div class="controls">
+        <h3>Controles</h3>
+        <button onclick="fitNetwork()">Ajustar Vista</button>
+        <button onclick="resetView()">Restablecer</button>
+        <button onclick="togglePhysics()">Alternar Física</button>
+        <button onclick="setLayout('hierarchical')">Vista Jerárquica</button>
+        <button onclick="setLayout('radial')">Vista Radial</button>
+        <button onclick="togglePaymentSubs()">Submódulos de Pagos</button>
+        <button onclick="expandAll()">Expandir Todo</button>
+        <button onclick="collapseAll()">Colapsar Todo</button>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+        <h3 id="infoTitle"></h3>
+        <p id="infoDescription"></p>
+        <ul id="infoFeatures"></ul>
+        <h4 id="reqTitle" style="display:none;">Requisitos</h4>
+        <ul id="infoRequirements"></ul>
+        <h4 id="stepsTitle" style="display:none;">Pasos de uso</h4>
+        <ul id="infoSteps"></ul>
+    </div>
+
+    <div id="mynetwork"></div>
+
+    <script type="text/javascript">
+        let nodes, edges, network, physicsEnabled = true;
+        const expandedModules = new Set();
+        let layoutMode = 'radial';
+        let showPaymentSubmodules = true;
+
+        // Datos de los módulos
+        const modulesData = {
+            // Nodo central
+            'alojaSys': {
+                label: 'AlojaSys\nSistema PMS',
+                title: 'Sistema de Gestión Hotelera Completo',
+                description: 'Plataforma integral para administrar hoteles, reservas, pagos y más.',
+                group: 'center',
+                level: 0
+            },
+            
+            // Módulos principales
+            'hoteles': {
+                label: 'Gestión de\nHoteles',
+                title: 'Configuración y administración de hoteles',
+                description: 'Gestiona información básica, horarios, automatizaciones y configuraciones de cada hotel.',
+                features: [
+                    'Datos del hotel (nombre, dirección, contacto)',
+                    'Información legal (razón social, CUIT/CUIL)',
+                    'Horarios de check-in/check-out',
+                    'Auto check-in/check-out configurable',
+                    'Auto no-show para reservas vencidas',
+                    'Zona horaria por hotel',
+                    'Soporte multi-hotel'
+                ],
+                requirements: [
+                    'Datos básicos del hotel',
+                    'CUIT/CUIL y razón social',
+                    'Ubicación (país, provincia, ciudad)',
+                    'Horarios de check-in/check-out'
+                ],
+                steps: [
+                    'Crear la empresa (opcional multi-hotel)',
+                    'Crear el hotel y completar datos legales y de contacto',
+                    'Configurar horarios y zona horaria',
+                    'Definir automatizaciones (auto check-out/no-show)'
+                ],
+                group: 'config',
+                level: 1
+            },
+            
+            'habitaciones': {
+                label: 'Gestión de\nHabitaciones',
+                title: 'Administración de habitaciones',
+                description: 'Control completo de tipos, precios, capacidad y estados de habitaciones.',
+                features: [
+                    'Tipos de habitación (Single, Doble, Triple, Suite)',
+                    'Capacidad incluida y máxima',
+                    'Precio base y extra por huésped',
+                    'Estados en tiempo real',
+                    'Gestión por piso y número',
+                    'Descripción y características'
+                ],
+                requirements: [
+                    'Hotel creado',
+                    'Tipos y capacidades definidas',
+                    'Precios base por tipo'
+                ],
+                steps: [
+                    'Definir tipos de habitación y capacidades',
+                    'Crear habitaciones (piso, número, descripción)',
+                    'Establecer precio base y extra por huésped',
+                    'Configurar estados iniciales'
+                ],
+                group: 'config',
+                level: 1
+            },
+            
+            'reservas': {
+                label: 'Gestión de\nReservas',
+                title: 'Ciclo completo de reservas',
+                description: 'Desde la consulta hasta el check-out, con validaciones automáticas.',
+                features: [
+                    'Consulta de disponibilidad',
+                    'Creación y confirmación de reservas',
+                    'Estados: Pendiente, Confirmada, Check-in, Check-out, Cancelada, No-show',
+                    'Validación de solapamientos',
+                    'Verificación con OTAs (anti-overbooking)',
+                    'Restricciones CTA/CTD',
+                    'Validación de estadía mínima/máxima'
+                ],
+                requirements: [
+                    'Hoteles y habitaciones cargadas',
+                    'Planes de tarifas activos',
+                    'Políticas de pago definidas (opcional)'
+                ],
+                steps: [
+                    'Buscar disponibilidad por fechas y capacidad',
+                    'Seleccionar habitación y plan de tarifa',
+                    'Cargar datos del huésped y confirmar',
+                    'Gestionar estados (check-in/out, cancelaciones)'
+                ],
+                group: 'core',
+                level: 1
+            },
+            
+            'pagos': {
+                label: 'Sistema de\nPagos',
+                title: 'Procesamiento de pagos',
+                description: 'Múltiples métodos de pago con políticas configurables y validaciones inteligentes.',
+                features: [
+                    'Integración con Mercado Pago',
+                    'Múltiples métodos: Tarjeta, Efectivo, Transferencia, POS',
+                    'Políticas de pago configurables',
+                    'Señas y pagos parciales',
+                    'Validaciones de seguridad',
+                    'Rotación segura de tokens',
+                    'Webhooks y confirmación automática'
+                ],
+                requirements: [
+                    'Configurar credenciales de pasarela por hotel',
+                    'Definir políticas de pago y seña',
+                    'Habilitar métodos permitidos'
+                ],
+                steps: [
+                    'Cargar claves de Mercado Pago (test/producción)',
+                    'Definir políticas (porcentaje/monto y vencimientos)',
+                    'Cobrar seña y registrar saldo al check-in/out',
+                    'Usar módulo de Cobros y/o Conciliación'
+                ],
+                group: 'payment',
+                level: 1
+            },
+            
+            'politicasCancelacion': {
+                label: 'Políticas de\nCancelación',
+                title: 'Reglas de cancelación',
+                description: 'Políticas configurables para manejar cancelaciones con reembolsos automáticos.',
+                features: [
+                    'Políticas por porcentaje o monto fijo',
+                    'Rangos de fechas configurables',
+                    'Reembolsos automáticos',
+                    'Diferentes políticas por canal',
+                    'Aplicación por tipo de habitación',
+                    'Prioridad y combinabilidad'
+                ],
+                group: 'policy',
+                level: 1
+            },
+            
+            'politicasDevolucion': {
+                label: 'Políticas de\nDevolución',
+                title: 'Reglas de devolución',
+                description: 'Gestión de devoluciones con políticas flexibles y procesamiento automático.',
+                features: [
+                    'Políticas configurables',
+                    'Procesamiento automático 24/7',
+                    'Validación de elegibilidad',
+                    'Cálculo automático de montos',
+                    'Integración con pasarelas de pago',
+                    'Notificaciones automáticas'
+                ],
+                group: 'policy',
+                level: 1
+            },
+            
+            'tarifas': {
+                label: 'Gestión de\nTarifas',
+                title: 'Sistema de tarifas dinámicas',
+                description: 'Planes de tarifas, reglas automáticas, promociones e impuestos.',
+                features: [
+                    'Planes de tarifas base',
+                    'Reglas automáticas (fin de semana, estadía mínima)',
+                    'Promociones con códigos',
+                    'Sistema de impuestos',
+                    'Prioridad y alcance configurable',
+                    'Aplicación por canal y tipo de habitación'
+                ],
+                requirements: [
+                    'Tipos de habitación y precios base',
+                    'Reglas de negocio (mín/max estadía, CTA/CTD)'
+                ],
+                steps: [
+                    'Crear planes de tarifa base',
+                    'Configurar reglas automáticas y restricciones',
+                    'Crear promociones y cupones',
+                    'Definir impuestos aplicables'
+                ],
+                group: 'pricing',
+                level: 1
+            },
+            
+            'dashboard': {
+                label: 'Dashboard y\nReportes',
+                title: 'Análisis y métricas',
+                description: 'Visualización de datos, reportes y métricas del negocio.',
+                features: [
+                    'Métricas en tiempo real',
+                    'Reportes personalizables',
+                    'Análisis de ocupación',
+                    'Estadísticas de ingresos',
+                    'Gráficos y visualizaciones',
+                    'Exportación de datos'
+                ],
+                group: 'analytics',
+                level: 1
+            },
+            
+            'calendario': {
+                label: 'Calendario de\nReservas',
+                title: 'Vista de calendario',
+                description: 'Visualización interactiva de reservas en formato calendario.',
+                features: [
+                    'Vista mensual y semanal',
+                    'Filtros por hotel y habitación',
+                    'Drag & drop para cambios',
+                    'Información detallada de reservas',
+                    'Colores por estado',
+                    'Búsqueda y filtrado'
+                ],
+                group: 'view',
+                level: 1
+            },
+            
+            'usuarios': {
+                label: 'Gestión de\nUsuarios',
+                title: 'Usuarios y permisos',
+                description: 'Administración de usuarios, roles y permisos del sistema.',
+                features: [
+                    'Creación y gestión de usuarios',
+                    'Sistema de roles y permisos',
+                    'Asignación de hoteles',
+                    'Control de acceso',
+                    'Imagen de perfil',
+                    'Información de contacto'
+                ],
+                requirements: [
+                    'Definir roles (admin, recepción, etc.)'
+                ],
+                steps: [
+                    'Crear roles y permisos',
+                    'Crear usuarios y asignar roles',
+                    'Asignar hoteles a cada usuario'
+                ],
+                group: 'config',
+                level: 1
+            },
+            
+            'empresas': {
+                label: 'Gestión de\nEmpresas',
+                title: 'Administración de empresas',
+                description: 'Gestión de empresas que operan múltiples hoteles.',
+                features: [
+                    'Datos de empresa',
+                    'Información legal (CUIT/CUIL)',
+                    'Ubicación (País, Provincia, Ciudad)',
+                    'Contacto y dirección',
+                    'Relación con hoteles'
+                ],
+                requirements: [
+                    'Datos legales y de contacto de la empresa'
+                ],
+                steps: [
+                    'Crear empresa',
+                    'Asociar hoteles existentes o crear nuevos'
+                ],
+                group: 'config',
+                level: 1
+            },
+            
+            'notificaciones': {
+                label: 'Sistema de\nNotificaciones',
+                title: 'Notificaciones automáticas',
+                description: 'Sistema de alertas y notificaciones para eventos importantes.',
+                features: [
+                    'Notificaciones en tiempo real',
+                    'Múltiples canales (email, push)',
+                    'Eventos configurables',
+                    'Historial de notificaciones',
+                    'Preferencias de usuario'
+                ],
+                group: 'system',
+                level: 1
+            },
+            
+            'reembolsos': {
+                label: 'Procesamiento\nAutomático de\nReembolsos',
+                title: 'Reembolsos automáticos',
+                description: 'Procesamiento automático 24/7 de reembolsos según políticas.',
+                features: [
+                    'Procesamiento automático',
+                    'Validación de elegibilidad',
+                    'Integración con pasarelas',
+                    'Notificaciones automáticas',
+                    'Logs de auditoría',
+                    'Manejo de errores'
+                ],
+                group: 'automation',
+                level: 1
+            },
+            
+            'facturacion': {
+                label: 'Facturación\nElectrónica\nArgentina',
+                title: 'Facturación AFIP',
+                description: 'Integración completa con AFIP para facturación electrónica.',
+                features: [
+                    'Integración con AFIP',
+                    'Generación de CAE',
+                    'Facturas A, B, C',
+                    'Notas de crédito',
+                    'Códigos QR',
+                    'PDFs fiscales'
+                ],
+                requirements: [
+                    'Datos fiscales (puntos de venta, tipo de contribuyente)',
+                    'Conexión con AFIP'
+                ],
+                steps: [
+                    'Configurar datos fiscales por hotel/empresa',
+                    'Emitir comprobantes desde reservas o cobros',
+                    'Descargar/reenviar comprobantes'
+                ],
+                group: 'billing',
+                level: 1
+            },
+            
+            'comprobantes': {
+                label: 'Comprobantes de\nSeñas y\nDevoluciones',
+                title: 'Comprobantes automáticos',
+                description: 'Generación automática de recibos y comprobantes.',
+                features: [
+                    'Recibos de señas',
+                    'Comprobantes de pagos parciales',
+                    'PDFs automáticos',
+                    'Envío por email',
+                    'Integración con facturación'
+                ],
+                group: 'billing',
+                level: 1
+            },
+            
+            'otas': {
+                label: 'Integraciones\ncon OTAs\n(Channel Manager)',
+                title: 'Channel Manager',
+                description: 'Integración con Booking.com, Airbnb y otras OTAs.',
+                features: [
+                    'Sincronización bidireccional',
+                    'Prevención de overbooking',
+                    'Actualización automática de disponibilidad',
+                    'Sincronización de tarifas',
+                    'Gestión de reservas OTA'
+                ],
+                requirements: [
+                    'Credenciales de cada canal (Booking, Airbnb, etc.)'
+                ],
+                steps: [
+                    'Conectar canales con credenciales',
+                    'Activar sincronización de disponibilidad y tarifas',
+                    'Revisar reservas entrantes y reconciliar'
+                ],
+                group: 'integration',
+                level: 1
+            }
+        };
+
+        // Subnodos por módulo (para expandir/colapsar en el grafo)
+        const moduleDetails = {
+            'hoteles': [
+                { id: 'hoteles:datos', label: 'Datos Básicos' },
+                { id: 'hoteles:ubicacion', label: 'Ubicación' },
+                { id: 'hoteles:legales', label: 'Legales' },
+                { id: 'hoteles:horarios', label: 'Horarios' },
+                { id: 'hoteles:auto', label: 'Automatizaciones' }
+            ],
+            'habitaciones': [
+                { id: 'habitaciones:tipos', label: 'Tipos' },
+                { id: 'habitaciones:capacidad', label: 'Capacidad' },
+                { id: 'habitaciones:precio', label: 'Precios' },
+                { id: 'habitaciones:estado', label: 'Estados' },
+                { id: 'habitaciones:ident', label: 'Identificación' }
+            ],
+            'tarifas': [
+                { id: 'tarifas:planes', label: 'Planes' },
+                { id: 'tarifas:reglas', label: 'Reglas' },
+                { id: 'tarifas:promos', label: 'Promociones' },
+                { id: 'tarifas:impuestos', label: 'Impuestos' }
+            ],
+            'reservas': [
+                { id: 'reservas:disp', label: 'Disponibilidad' },
+                { id: 'reservas:creacion', label: 'Creación' },
+                { id: 'reservas:estados', label: 'Estados' },
+                { id: 'reservas:valid', label: 'Validaciones' }
+            ],
+            'pagos': [
+                { id: 'pagos:pasarelas', label: 'Pasarelas' },
+                { id: 'pagos:politicas', label: 'Políticas' },
+                { id: 'pagos:senas', label: 'Señas/Parciales' },
+                { id: 'pagos:webhooks', label: 'Webhooks' }
+            ],
+            'usuarios': [
+                { id: 'usuarios:roles', label: 'Roles' },
+                { id: 'usuarios:permisos', label: 'Permisos' },
+                { id: 'usuarios:asign', label: 'Asignación Hoteles' }
+            ],
+            'empresas': [
+                { id: 'empresas:datos', label: 'Datos' },
+                { id: 'empresas:hoteles', label: 'Hoteles Asociados' }
+            ],
+            'facturacion': [
+                { id: 'facturacion:tipos', label: 'Tipos' },
+                { id: 'facturacion:cae', label: 'CAE/QR' },
+                { id: 'facturacion:pdf', label: 'PDFs' }
+            ],
+            'otas': [
+                { id: 'otas:sync', label: 'Sincronización' },
+                { id: 'otas:over', label: 'Anti-Overbooking' }
+            ],
+            'notificaciones': [
+                { id: 'notif:eventos', label: 'Eventos' },
+                { id: 'notif:canales', label: 'Canales' }
+            ],
+            'calendario': [
+                { id: 'calendario:vistas', label: 'Vistas' },
+                { id: 'calendario:filtros', label: 'Filtros' }
+            ]
+        };
+
+        // Sub-módulos de Pagos
+        const paymentSubmodules = {
+            'transferencias': {
+                label: 'Transferencias\nBancarias\ncon OCR',
+                title: 'Transferencias con OCR',
+                description: 'Procesamiento de transferencias bancarias con reconocimiento óptico de comprobantes.',
+                features: [
+                    'Subida de comprobantes',
+                    'Procesamiento OCR',
+                    'Confirmación automática',
+                    'Almacenamiento en nube',
+                    'Validación inteligente'
+                ],
+                group: 'payment',
+                level: 2
+            },
+            
+            'cobros': {
+                label: 'Módulo de\nCobros',
+                title: 'Historial de cobros',
+                description: 'Vista unificada de todos los pagos y cobros con análisis avanzado.',
+                features: [
+                    'Historial completo',
+                    'Filtros avanzados',
+                    'Estadísticas y métricas',
+                    'Exportación CSV',
+                    'Archivos adjuntos'
+                ],
+                group: 'payment',
+                level: 2
+            },
+            
+            'conciliacion': {
+                label: 'Conciliación\nBancaria\nAutomática',
+                title: 'Conciliación bancaria',
+                description: 'Matching automático de pagos con extractos bancarios.',
+                features: [
+                    'Subida de extractos CSV',
+                    'Matching inteligente',
+                    'Confirmación automática',
+                    'Logs de auditoría',
+                    'Configuración flexible'
+                ],
+                group: 'payment',
+                level: 2
+            },
+            
+            'vouchers': {
+                label: 'Sistema de\nVouchers de\nCrédito',
+                title: 'Vouchers reutilizables',
+                description: 'Sistema de vouchers de crédito para pagos futuros.',
+                features: [
+                    'Creación de vouchers',
+                    'Aplicación a reservas',
+                    'Seguimiento de uso',
+                    'Vencimientos',
+                    'Historial completo'
+                ],
+                group: 'payment',
+                level: 2
+            }
+        };
+
+        // Crear nodos y edges
+        function createNetworkData() {
+            nodes = new vis.DataSet([]);
+            edges = new vis.DataSet([]);
+
+            // Nodo central
+            nodes.add({
+                id: 'alojaSys',
+                label: modulesData.alojaSys.label,
+                title: modulesData.alojaSys.title,
+                shape: 'box',
+                color: {
+                    background: '#667eea',
+                    border: '#764ba2',
+                    highlight: { background: '#764ba2', border: '#667eea' }
+                },
+                font: { color: '#ffffff', size: 24, face: 'Arial', bold: true },
+                size: 50,
+                level: 0
+            });
+
+            // Agregar módulos principales
+            Object.keys(modulesData).forEach((key, index) => {
+                if (key === 'alojaSys') return;
+                
+                const module = modulesData[key];
+                const baseNode = {
+                    id: key,
+                    label: module.label,
+                    title: module.title,
+                    shape: 'box',
+                    color: getColorForGroup(module.group),
+                    font: { color: '#ffffff', size: 16, face: 'Arial', bold: true },
+                    size: 30
+                };
+
+                if (layoutMode === 'radial') {
+                    const angle = (index - 1) * (2 * Math.PI / (Object.keys(modulesData).length - 1));
+                    const radius = 300;
+                    const x = Math.cos(angle) * radius;
+                    const y = Math.sin(angle) * radius;
+                    nodes.add({ ...baseNode, x, y, fixed: { x: false, y: false }, level: module.level });
+                } else {
+                    nodes.add({ ...baseNode, level: getHierLevelForNode(key) });
+                }
+
+                edges.add({
+                    from: 'alojaSys',
+                    to: key,
+                    color: { color: '#ffffff', opacity: 0.6 },
+                    width: 2,
+                    smooth: { type: 'continuous', roundness: 0.5 }
+                });
+            });
+
+            // Flujos entre módulos (direccionales)
+            const flows = [
+                ['empresas','hoteles'],
+                ['hoteles','habitaciones'],
+                ['hoteles','tarifas'],
+                ['hoteles','usuarios'],
+                ['habitaciones','reservas'],
+                ['tarifas','reservas'],
+                ['otas','reservas'],
+                ['reservas','calendario'],
+                ['reservas','pagos'],
+                ['pagos','facturacion'],
+                ['pagos','cobros'],
+                ['pagos','transferencias'],
+                ['pagos','conciliacion'],
+                ['reservas','notificaciones']
+            ];
+
+            flows.forEach(pair => {
+                edges.add({
+                    from: pair[0],
+                    to: pair[1],
+                    color: { color: '#ffffff', opacity: 0.7 },
+                    width: 2,
+                    arrows: 'to',
+                    dashes: true,
+                    smooth: { type: 'continuous', roundness: 0.3 }
+                });
+            });
+
+            // Agregar sub-módulos de pagos
+            if (showPaymentSubmodules) Object.keys(paymentSubmodules).forEach((key, index) => {
+                const submodule = paymentSubmodules[key];
+
+                const baseNode = {
+                    id: key,
+                    label: submodule.label,
+                    title: submodule.title,
+                    shape: 'box',
+                    color: getColorForGroup(submodule.group),
+                    font: { color: '#ffffff', size: 14, face: 'Arial' },
+                    size: 25
+                };
+
+                if (layoutMode === 'radial') {
+                    const angle = (index) * (2 * Math.PI / Object.keys(paymentSubmodules).length);
+                    const radius = 150;
+                    const paymentAngle = (Object.keys(modulesData).indexOf('pagos') - 1) * (2 * Math.PI / (Object.keys(modulesData).length - 1));
+                    const paymentX = Math.cos(paymentAngle) * 300;
+                    const paymentY = Math.sin(paymentAngle) * 300;
+                    const x = paymentX + Math.cos(angle) * radius;
+                    const y = paymentY + Math.sin(angle) * radius;
+                    nodes.add({ ...baseNode, x, y, fixed: { x: false, y: false }, level: submodule.level });
+                } else {
+                    nodes.add({ ...baseNode, level: getHierLevelForNode(key) });
+                }
+
+                edges.add({
+                    from: 'pagos',
+                    to: key,
+                    color: { color: '#ffffff', opacity: 0.4 },
+                    width: 1.5,
+                    smooth: { type: 'continuous', roundness: 0.3 }
+                });
+            });
+        }
+
+        function getColorForGroup(group) {
+            const colors = {
+                'center': { background: '#667eea', border: '#764ba2' },
+                'config': { background: '#f093fb', border: '#f5576c' },
+                'core': { background: '#4facfe', border: '#00f2fe' },
+                'payment': { background: '#43e97b', border: '#38f9d7' },
+                'policy': { background: '#fa709a', border: '#fee140' },
+                'pricing': { background: '#30cfd0', border: '#330867' },
+                'analytics': { background: '#a8edea', border: '#fed6e3' },
+                'view': { background: '#ff9a9e', border: '#fecfef' },
+                'system': { background: '#ffecd2', border: '#fcb69f' },
+                'automation': { background: '#ff8a80', border: '#ff5722' },
+                'billing': { background: '#84fab0', border: '#8fd3f4' },
+                'integration': { background: '#a1c4fd', border: '#c2e9fb' }
+            };
+            return colors[group] || { background: '#95a5a6', border: '#7f8c8d' };
+        }
+
+        function initializeNetwork() {
+            createNetworkData();
+
+            const container = document.getElementById('mynetwork');
+            const data = {
+                nodes: nodes,
+                edges: edges
+            };
+
+            const options = {
+                nodes: {
+                    borderWidth: 3,
+                    shadow: true,
+                    shapeProperties: {
+                        borderRadius: 10
+                    }
+                },
+                edges: {
+                    shadow: true,
+                    arrows: {
+                        to: {
+                            enabled: false
+                        }
+                    }
+                },
+                physics: {
+                    enabled: physicsEnabled,
+                    stabilization: {
+                        enabled: true,
+                        iterations: 200
+                    },
+                    barnesHut: {
+                        gravitationalConstant: -2000,
+                        centralGravity: 0.1,
+                        springLength: 200,
+                        springConstant: 0.04,
+                        damping: 0.09
+                    }
+                },
+                interaction: {
+                    hover: true,
+                    tooltipDelay: 100,
+                    zoomView: true,
+                    dragView: true
+                },
+                layout: getLayoutOptions()
+            };
+
+            network = new vis.Network(container, data, options);
+
+            // Eventos
+            network.on('click', function(params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    showNodeInfo(nodeId);
+                } else {
+                    hideNodeInfo();
+                }
+            });
+
+            network.on('doubleClick', function(params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    toggleModuleDetails(nodeId);
+                }
+            });
+
+            network.on('hoverNode', function(params) {
+                document.body.style.cursor = 'pointer';
+            });
+
+            network.on('blurNode', function(params) {
+                document.body.style.cursor = 'default';
+            });
+        }
+
+        function getHierLevelForNode(nodeId) {
+            const map = {
+                'alojaSys': 0,
+                'empresas': 1,
+                'hoteles': 2,
+                'usuarios': 2,
+                'habitaciones': 3,
+                'tarifas': 3,
+                'otas': 3,
+                'politicasCancelacion': 3,
+                'politicasDevolucion': 3,
+                'reservas': 4,
+                'calendario': 5,
+                'pagos': 5,
+                'notificaciones': 5,
+                'cobros': 6,
+                'transferencias': 6,
+                'conciliacion': 6,
+                'vouchers': 6,
+                'facturacion': 6,
+                'comprobantes': 6,
+                'reembolsos': 6,
+                'dashboard': 6
+            };
+            return map[nodeId] ?? 4;
+        }
+
+        function getLayoutOptions() {
+            if (layoutMode === 'hierarchical') {
+                return {
+                    hierarchical: {
+                        enabled: true,
+                        direction: 'LR',
+                        sortMethod: 'hubsize',
+                        levelSeparation: 160,
+                        nodeSpacing: 110,
+                        treeSpacing: 180
+                    }
+                };
+            }
+            return { improvedLayout: true };
+        }
+
+        function showNodeInfo(nodeId) {
+            const infoPanel = document.getElementById('infoPanel');
+            const infoTitle = document.getElementById('infoTitle');
+            const infoDescription = document.getElementById('infoDescription');
+            const infoFeatures = document.getElementById('infoFeatures');
+            const infoRequirements = document.getElementById('infoRequirements');
+            const infoSteps = document.getElementById('infoSteps');
+            const reqTitle = document.getElementById('reqTitle');
+            const stepsTitle = document.getElementById('stepsTitle');
+
+            let moduleData = modulesData[nodeId] || paymentSubmodules[nodeId];
+            
+            if (!moduleData) return;
+
+            infoTitle.textContent = moduleData.title;
+            infoDescription.textContent = moduleData.description;
+            
+            if (moduleData.features) {
+                infoFeatures.innerHTML = '';
+                moduleData.features.forEach(feature => {
+                    const li = document.createElement('li');
+                    li.textContent = feature;
+                    infoFeatures.appendChild(li);
+                });
+            } else {
+                infoFeatures.innerHTML = '';
+            }
+
+            if (moduleData.requirements && moduleData.requirements.length) {
+                infoRequirements.innerHTML = '';
+                moduleData.requirements.forEach(r => {
+                    const li = document.createElement('li');
+                    li.textContent = r;
+                    infoRequirements.appendChild(li);
+                });
+                reqTitle.style.display = 'block';
+            } else {
+                infoRequirements.innerHTML = '';
+                reqTitle.style.display = 'none';
+            }
+
+            if (moduleData.steps && moduleData.steps.length) {
+                infoSteps.innerHTML = '';
+                moduleData.steps.forEach(s => {
+                    const li = document.createElement('li');
+                    li.textContent = s;
+                    infoSteps.appendChild(li);
+                });
+                stepsTitle.style.display = 'block';
+            } else {
+                infoSteps.innerHTML = '';
+                stepsTitle.style.display = 'none';
+            }
+
+            infoPanel.style.display = 'block';
+        }
+
+        function hideNodeInfo() {
+            document.getElementById('infoPanel').style.display = 'none';
+        }
+
+        function fitNetwork() {
+            if (network) {
+                network.fit({
+                    animation: {
+                        duration: 1000,
+                        easingFunction: 'easeInOutQuad'
+                    }
+                });
+            }
+        }
+
+        function resetView() {
+            if (network) {
+                network.setOptions({
+                    physics: {
+                        enabled: true
+                    }
+                });
+                setTimeout(() => {
+                    fitNetwork();
+                }, 100);
+            }
+        }
+
+        function togglePhysics() {
+            physicsEnabled = !physicsEnabled;
+            if (network) {
+                network.setOptions({
+                    physics: {
+                        enabled: physicsEnabled
+                    }
+                });
+            }
+        }
+
+        // Expandir / Colapsar detalles
+        function toggleModuleDetails(moduleId) {
+            if (!moduleDetails[moduleId]) return;
+            if (expandedModules.has(moduleId)) {
+                collapseModule(moduleId);
+            } else {
+                expandModule(moduleId);
+            }
+        }
+
+        function expandModule(moduleId) {
+            const details = moduleDetails[moduleId] || [];
+            const parent = nodes.get(moduleId);
+            if (!parent) return;
+            const radius = 120;
+            details.forEach((d, idx) => {
+                if (nodes.get(d.id)) return;
+                const angle = (idx) * (2 * Math.PI / details.length);
+                const x = parent.x + Math.cos(angle) * radius;
+                const y = parent.y + Math.sin(angle) * radius;
+                nodes.add({
+                    id: d.id,
+                    label: d.label,
+                    shape: 'box',
+                    color: getColorForGroup(modulesData[moduleId]?.group || 'config'),
+                    font: { color: '#ffffff', size: 12, face: 'Arial' },
+                    size: 18,
+                    x: x,
+                    y: y
+                });
+                edges.add({
+                    from: moduleId,
+                    to: d.id,
+                    color: { color: '#ffffff', opacity: 0.5 },
+                    width: 1.5,
+                    arrows: 'to',
+                    dashes: true
+                });
+            });
+            expandedModules.add(moduleId);
+        }
+
+        function collapseModule(moduleId) {
+            const details = moduleDetails[moduleId] || [];
+            details.forEach(d => {
+                if (nodes.get(d.id)) nodes.remove(d.id);
+                const related = edges.get({
+                    filter: e => (e.from === moduleId && e.to === d.id) || (e.to === moduleId && e.from === d.id)
+                });
+                (related || []).forEach(e => edges.remove(e.id));
+            });
+            expandedModules.delete(moduleId);
+        }
+
+        function expandAll() {
+            Object.keys(moduleDetails).forEach(k => expandModule(k));
+        }
+
+        function collapseAll() {
+            Object.keys(moduleDetails).forEach(k => collapseModule(k));
+        }
+
+        function setLayout(mode) {
+            layoutMode = mode;
+            rebuildNetwork();
+        }
+
+        function togglePaymentSubs() {
+            showPaymentSubmodules = !showPaymentSubmodules;
+            rebuildNetwork();
+        }
+
+        function rebuildNetwork() {
+            const prevExpanded = new Set(expandedModules);
+            expandedModules.clear();
+            createNetworkData();
+            network.setData({ nodes, edges });
+            const physicsEnabledNow = layoutMode !== 'hierarchical' && physicsEnabled;
+            network.setOptions({ layout: getLayoutOptions(), physics: { enabled: physicsEnabledNow } });
+            // Re-expandir nodos que estaban abiertos
+            prevExpanded.forEach(id => expandModule(id));
+            setTimeout(fitNetwork, 100);
+        }
+
+        // Inicializar cuando se carga la página
+        window.addEventListener('load', function() {
+            initializeNetwork();
+            setTimeout(fitNetwork, 500);
+        });
+    </script>
+</body>
+</html>

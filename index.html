@@ -20,9 +20,6 @@
     <!-- Canonical URL - Evita contenido duplicado -->
     <link rel="canonical" href="https://www.alojasys.com/" />
     
-    <!-- Logo para Google Search (ayuda a Google a identificar el logo) -->
-    <link rel="logo" type="image/png" href="https://www.alojasys.com/logo_new_alone.png" />
-    
     <!-- ============================================ -->
     <!-- OPEN GRAPH - Facebook, LinkedIn, WhatsApp -->
     <!-- ============================================ -->
@@ -50,32 +47,24 @@
     <!-- ============================================ -->
     <!-- FAVICONS - Optimizado para Google Search -->
     <!-- ============================================ -->
-    <!-- IMPORTANTE: El orden importa. Google lee de arriba hacia abajo -->
-    <!-- Favicon ICO debe ir PRIMERO (formato preferido por Google para resultados de búsqueda) -->
+    <!-- Google busca automáticamente /favicon.ico en la raíz del dominio -->
+    <!-- El favicon.ico debe contener múltiples tamaños: 16x16, 32x32, 48x48 -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
     
-    <!-- Favicon PNG 32x32 (tamaño crítico para Google Search Results) -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/logo_new_alone.png" />
+    <!-- Favicon PNG como fallback (Google también acepta PNG de 48x48 o mayor) -->
+    <link rel="icon" type="image/png" sizes="48x48" href="https://www.alojasys.com/logo_new_alone.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="https://www.alojasys.com/logo_new_alone.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="https://www.alojasys.com/logo_new_alone.png" />
     
-    <!-- Favicon PNG 16x16 (tamaño estándar para navegadores) -->
-    <link rel="icon" type="image/png" sizes="16x16" href="/logo_new_alone.png" />
-    
-    <!-- Favicon PNG 192x192 (Android Chrome) -->
-    <link rel="icon" type="image/png" sizes="192x192" href="/logo_new_alone.png" />
-    
-    <!-- Favicon PNG 512x512 (Android Chrome - alta resolución) -->
-    <link rel="icon" type="image/png" sizes="512x512" href="/logo_new_alone.png" />
-    
-    <!-- Favicons con tema claro/oscuro -->
-    <link rel="icon" type="image/png" href="/logo_new_alone.png" media="(prefers-color-scheme: light)" />
-    <link rel="icon" type="image/png" href="/logo_new_alone_white.png" media="(prefers-color-scheme: dark)" />
+    <!-- Favicons para dispositivos móviles -->
+    <link rel="icon" type="image/png" sizes="192x192" href="https://www.alojasys.com/logo_new_alone.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="https://www.alojasys.com/logo_new_alone.png" />
     
     <!-- Apple Touch Icon para iOS -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/logo_new_alone.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="https://www.alojasys.com/logo_new_alone.png" />
     
     <!-- Microsoft Tiles -->
-    <meta name="msapplication-TileImage" content="/logo_new_alone.png" />
+    <meta name="msapplication-TileImage" content="https://www.alojasys.com/logo_new_alone.png" />
     <meta name="msapplication-TileColor" content="#d4af37" />
     
     <!-- Web App Manifest -->
@@ -206,8 +195,12 @@
     <meta name="theme-color" content="#d4af37" />
     <meta name="msapplication-TileColor" content="#d4af37" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="AlojaSys" />
+    
+    <!-- Vis Network para el mapa del sistema -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     
     <!-- Preconnect para mejor rendimiento -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
