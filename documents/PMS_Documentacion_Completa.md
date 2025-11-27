@@ -19,6 +19,7 @@
    - [3.13 Módulo Facturación Electrónica](#313-módulo-facturación-electrónica)
    - [3.14 Módulo Comprobantes de Pagos](#314-módulo-comprobantes-de-pagos-payment-receipts)
    - [3.15 Módulo OTAs (Channel Manager)](#315-módulo-otas-channel-manager)
+   - [3.16 Módulo Housekeeping (Gestión de Limpieza)](#316-módulo-housekeeping-gestión-de-limpieza)
 4. [Flujos de Trabajo Principales](#flujos-de-trabajo-principales)
 5. [APIs y Endpoints](#apis-y-endpoints)
 6. [Configuraciones y Políticas](#configuraciones-y-políticas)
@@ -141,8 +142,11 @@ class Reservation(models.Model):
     room = ForeignKey(Room)
     guests = PositiveIntegerField        # Número de huéspedes
     guests_data = JSONField             # Datos de todos los huéspedes
+    group_code = CharField(64, blank=True, null=True, db_index=True)
+    # Identificador de grupo para reservas multi-habitación (misma estancia con varias habitaciones)
     channel = CharField(20)             # Canal de reserva
     promotion_code = CharField(50)      # Código promocional
+    voucher_code = CharField(50)        # Código de voucher
     check_in = DateField                # Fecha de llegada
     check_out = DateField               # Fecha de salida
     status = CharField(20)              # Estado de la reserva
@@ -257,6 +261,127 @@ class Payment(models.Model):
 - `GET /api/reservations/pricing_quote/` - Cotizar precio por rango
 - `GET /api/reservations/can_book/` - Validar si se puede reservar
 - `POST /api/reservations/quote/` - Cotización completa con validaciones
+
+#### Reservas Multi-Habitación (v2.6)
+
+**Propósito**: Permitir crear múltiples reservas vinculadas para la misma estancia (mismo check-in y check-out) en diferentes habitaciones.
+
+**Concepto**: Un grupo de reservas multi-habitación comparte:
+- Mismo `group_code` (identificador único del grupo)
+- Mismas fechas de check-in y check-out
+- Mismo hotel
+- Pueden tener diferentes habitaciones, huéspedes y precios
+
+**Modelo de Datos**:
+- Campo `group_code` en `Reservation`: Identificador único que vincula múltiples reservas
+- Cada reserva del grupo mantiene su propia instancia con su habitación, huéspedes y precio
+- El `group_code` está indexado para búsquedas rápidas
+
+**Endpoint de Creación**:
+```
+POST /api/reservations/multi-room/
+```
+
+**Payload**:
+```json
+{
+  "hotel": 1,
+  "check_in": "2024-01-15",
+  "check_out": "2024-01-18",
+  "status": "pending",
+  "channel": "direct",
+  "notes": "Reserva familiar",
+  "promotion_code": "FAMILIA2024",  // Opcional: código a nivel de grupo
+  "voucher_code": "VOUCHER123",      // Opcional: voucher a nivel de grupo
+  "rooms": [
+    {
+      "room": 1,
+      "guests": 2,
+      "guests_data": [
+        {
+          "name": "Juan Pérez",
+          "email": "juan@email.com",
+          "phone": "+54 9 11 1234-5678",
+          "document": "12345678",
+          "address": "Calle 123",
+          "is_primary": true
+        }
+      ],
+      "promotion_code": "HAB1",      // Opcional: código específico de esta habitación
+      "voucher_code": null,           // Opcional: voucher específico de esta habitación
+      "notes": "Habitación principal"
+    },
+    {
+      "room": 2,
+      "guests": 1,
+      "guests_data": [
+        {
+          "name": "María Pérez",
+          "email": "maria@email.com",
+          "phone": "+54 9 11 8765-4321",
+          "document": "87654321",
+          "is_primary": true
+        }
+      ],
+      "notes": "Habitación adicional"
+    }
+  ]
+}
+```
+
+**Proceso de Creación**:
+1. **Validación de fechas**: Verifica que todas las habitaciones estén disponibles en el rango de fechas
+2. **Generación de group_code**: Crea un identificador único (UUID) para el grupo
+3. **Creación de reservas**: Crea una instancia de `Reservation` por cada habitación
+4. **Aplicación de códigos**: Aplica códigos de promoción/voucher a nivel de grupo o individual
+5. **Cálculo de precios**: Calcula el precio de cada reserva usando el motor de tarifas
+6. **Generación de noches**: Crea `ReservationNight` para cada noche de cada reserva
+7. **Envío de emails**: Envía un email consolidado por huésped principal con todas sus habitaciones
+
+**Validaciones**:
+- ✅ **Disponibilidad por habitación**: Verifica que cada habitación esté disponible en las fechas
+- ✅ **Sin duplicados**: Previene seleccionar la misma habitación dos veces
+- ✅ **Capacidad**: Valida que el número de huéspedes no exceda la capacidad de cada habitación
+- ✅ **Fechas válidas**: Check-in debe ser anterior a check-out
+- ✅ **Huésped principal**: Cada habitación debe tener al menos un huésped principal
+
+**Cálculo de Precios**:
+- Cada reserva del grupo calcula su precio independientemente
+- Se aplican códigos de promoción/voucher a nivel de grupo si no hay códigos específicos por habitación
+- El precio total del grupo es la suma de todas las reservas individuales
+
+**Gestión de Pagos**:
+- Los pagos se pueden registrar en cualquier reserva del grupo
+- El cálculo de `balance_due` considera todos los pagos de todas las reservas del grupo
+- La seña se calcula sobre el total del grupo (suma de todas las reservas)
+- El modal de pago muestra el total consolidado del grupo
+
+**Emails Consolidados**:
+- El sistema agrupa las reservas por email del huésped principal
+- Envía un solo email por huésped con todas sus habitaciones
+- Incluye detalles de cada habitación, precios individuales y total del grupo
+- Adjunta PDFs de recibos para cada reserva del grupo
+
+**Filtrado y Búsqueda**:
+- `GET /api/reservations/?group_code=ABC123` - Obtener todas las reservas de un grupo
+- El frontend agrupa automáticamente las reservas con `group_code` en la tabla
+- Las reservas con 2+ habitaciones se muestran como una sola fila con badge "Multi-habitación · N hab."
+
+**Frontend**:
+- Modal dedicado `MultiRoomReservationsModal` para crear/editar reservas multi-habitación
+- Tabla agrupa automáticamente reservas con el mismo `group_code`
+- Modal de detalle `MultiRoomReservationDetailModal` para ver todas las habitaciones del grupo
+- Validación de ocupación en tiempo real para cada habitación seleccionada
+- Prevención de selección de habitaciones duplicadas
+
+**Serializers**:
+- `MultiRoomReservationRoomSerializer`: Valida datos de cada habitación del grupo
+- `MultiRoomReservationCreateSerializer`: Valida el payload completo del grupo
+- `ReservationSerializer`: Expone `group_code` en las respuestas
+
+**Servicios**:
+- `ReservationEmailService.send_multi_room_confirmation()`: Envía emails consolidados
+- `payment_calculator.calculate_balance_due()`: Calcula balance considerando el grupo completo
 
 ---
 
@@ -610,6 +735,134 @@ class TimeUnit(models.TextChoices):
 - ✅ **Targeting avanzado**: Por tipo de habitación, canal, temporada
 - ✅ **Política por defecto** automática
 - ✅ **Validación de tiempos** progresivos (gratuita > parcial > sin cancelación)
+
+#### Lógica de Cálculo de Políticas de Cancelación
+
+**IMPORTANTE**: El sistema calcula las políticas de cancelación basándose en el tiempo restante hasta la **fecha de check-in**, NO desde la fecha de creación de la reserva.
+
+##### Orden de los Tiempos (Descendente)
+
+Los tiempos deben configurarse en orden **descendente** (de mayor a menor):
+```
+free_cancellation_time > partial_refund_time > no_refund_time
+```
+
+**Ejemplo de configuración correcta**:
+```python
+free_cancellation_time = 72   # horas (3 días)
+partial_refund_time = 24      # horas (1 día)
+no_refund_time = 24           # horas (1 día)
+```
+
+**Validación**: El sistema valida que `free_cancellation_time >= partial_refund_time >= no_refund_time`.
+
+##### Algoritmo de Decisión
+
+```python
+def get_cancellation_rules(check_in_date):
+    """
+    Calcula las reglas de cancelación aplicables para una reserva.
+    
+    Parámetros:
+    - check_in_date: Fecha de check-in de la reserva
+    
+    Retorna:
+    - dict con 'type', 'fee_type', 'fee_value', 'message'
+    """
+    from datetime import datetime
+    
+    # 1. Calcular tiempo hasta check-in (en segundos)
+    now = datetime.now().date()
+    time_until_checkin = (check_in_date - now).total_seconds()
+    
+    # 2. Convertir tiempos de política a segundos
+    free_seconds = convert_to_seconds(free_cancellation_time, free_cancellation_unit)
+    partial_seconds = convert_to_seconds(partial_refund_time, partial_refund_unit)
+    no_refund_seconds = convert_to_seconds(no_refund_time, no_refund_unit)
+    
+    # 3. Aplicar reglas en orden descendente
+    if time_until_checkin >= free_seconds:
+        # Cancelación gratuita: tiempo >= free_cancellation_time
+        return {
+            'type': 'free',
+            'fee_type': 'none',
+            'fee_value': 0,
+            'message': 'Cancelación gratuita'
+        }
+    elif time_until_checkin >= partial_seconds:
+        # Cancelación parcial: tiempo entre partial_refund_time y free_cancellation_time
+        return {
+            'type': 'partial',
+            'fee_type': cancellation_fee_type,
+            'fee_value': cancellation_fee_value,
+            'message': 'Cancelación con penalidad'
+        }
+    else:
+        # Sin cancelación: tiempo < partial_refund_time
+        return {
+            'type': 'no_cancellation',
+            'fee_type': cancellation_fee_type,
+            'fee_value': cancellation_fee_value,
+            'message': 'Sin cancelación'
+        }
+```
+
+##### Ejemplos de Cálculo
+
+**Ejemplo 1: Cancelación Gratuita**
+```
+Configuración:
+- free_cancellation_time: 72 horas
+- partial_refund_time: 24 horas
+- no_refund_time: 24 horas
+
+Escenario:
+- Check-in: 2025-11-15
+- Fecha actual: 2025-11-12 (3 días antes = 72 horas)
+- Tiempo hasta check-in: 72 horas
+
+Resultado: ✅ Cancelación gratuita (72 >= 72)
+```
+
+**Ejemplo 2: Cancelación Parcial**
+```
+Configuración:
+- free_cancellation_time: 72 horas
+- partial_refund_time: 24 horas
+- no_refund_time: 24 horas
+
+Escenario:
+- Check-in: 2025-11-15
+- Fecha actual: 2025-11-14 (1 día antes = 24 horas)
+- Tiempo hasta check-in: 24 horas
+
+Resultado: ⚠️ Cancelación parcial (24 >= 24 pero < 72)
+```
+
+**Ejemplo 3: Sin Cancelación**
+```
+Configuración:
+- free_cancellation_time: 72 horas
+- partial_refund_time: 24 horas
+- no_refund_time: 24 horas
+
+Escenario:
+- Check-in: 2025-11-15
+- Fecha actual: 2025-11-15 (mismo día = 0 horas)
+- Tiempo hasta check-in: 0 horas
+
+Resultado: ❌ Sin cancelación (0 < 24)
+```
+
+##### Notas Importantes
+
+1. **Cálculo desde check-in**: El sistema siempre calcula desde la fecha de check-in, no desde la fecha de creación de la reserva. Esto permite que una reserva creada hoy para dentro de 7 días pueda cancelarse gratuitamente si está dentro de la ventana de cancelación gratuita.
+
+2. **Snapshot histórico**: Al confirmar una reserva, se guarda un snapshot de la política vigente en ese momento. Esto garantiza que cambios futuros en la política no afecten reservas ya confirmadas.
+
+3. **Unidades de tiempo**: Los tiempos pueden configurarse en horas, días o semanas. El sistema convierte todo a segundos para comparación interna.
+
+4. **Mensajes personalizados**: Cada tipo de cancelación puede tener un mensaje personalizado. Si no se configura, el sistema genera uno automático basado en los tiempos configurados.
 
 #### Procesamiento de Pagos
 - ✅ **Integración con Mercado Pago** (tarjetas de crédito/débito)
@@ -8123,6 +8376,510 @@ logger.error(f"Error generando comprobante para pago {payment.id}: {error}")
 
 # Acceso a comprobante
 logger.info(f"Usuario {user.id} accedió a comprobante {payment.id}")
+```
+
+---
+
+## 3.16 Módulo Housekeeping (Gestión de Limpieza)
+
+**Propósito**: Sistema completo de gestión de tareas de limpieza y mantenimiento de habitaciones, con asignación automática de personal, generación de tareas programadas, y seguimiento de checklists.
+
+### Modelos Principales
+
+#### CleaningZone (Zona de Limpieza)
+```python
+class CleaningZone(models.Model):
+    hotel = ForeignKey(Hotel)
+    name = CharField(120)              # Nombre de la zona (ej: Piso 1, Ala A)
+    description = TextField(blank=True)
+    floor = IntegerField(blank=True)   # Piso (opcional)
+    is_active = BooleanField(default=True)
+```
+
+**Propósito**: Organizar habitaciones en zonas para facilitar la asignación de personal y la gestión de tareas.
+
+#### CleaningStaff (Personal de Limpieza)
+```python
+class CleaningStaff(models.Model):
+    hotel = ForeignKey(Hotel)
+    first_name = CharField(120)
+    last_name = CharField(120, blank=True)
+    zone = CharField(120, blank=True)  # Legacy, usar cleaning_zones
+    shift = CharField(20, choices=Shift)  # morning, afternoon, night
+    work_start_time = TimeField(blank=True)  # Hora de inicio (ej: 09:00)
+    work_end_time = TimeField(blank=True)    # Hora de fin (ej: 17:00)
+    cleaning_zones = ManyToManyField(CleaningZone)  # Zonas asignadas
+    is_active = BooleanField(default=True)
+    user = ForeignKey(User, blank=True)  # Usuario del sistema (opcional)
+```
+
+**Propósito**: Gestionar el personal de limpieza con sus horarios, turnos y zonas asignadas.
+
+**Permisos**:
+- `housekeeping.access_housekeeping`: Acceso al módulo
+- `housekeeping.manage_all_tasks`: Gestionar todas las tareas
+
+#### HousekeepingTask (Tarea de Limpieza)
+```python
+class HousekeepingTask(models.Model):
+    hotel = ForeignKey(Hotel)
+    room = ForeignKey(Room)
+    task_type = CharField(20, choices=TaskType)  # checkout, daily, maintenance
+    status = CharField(20, choices=TaskStatus)   # pending, in_progress, completed, cancelled
+    assigned_to = ForeignKey(CleaningStaff, blank=True)
+    notes = TextField(blank=True)
+    priority = IntegerField(default=0)
+    zone = CharField(120, blank=True)
+    checklist = ForeignKey(Checklist, blank=True)
+    created_by = ForeignKey(User, blank=True)
+    started_at = DateTimeField(blank=True)
+    completed_at = DateTimeField(blank=True)
+    estimated_minutes = PositiveIntegerField(blank=True)  # Duración estimada
+    is_overdue = BooleanField(default=False)  # Indica si está vencida
+```
+
+**Estados**:
+- `PENDING`: Pendiente de iniciar
+- `IN_PROGRESS`: En proceso
+- `COMPLETED`: Completada
+- `CANCELLED`: Cancelada
+
+**Tipos de Tarea**:
+- `CHECKOUT`: Limpieza después de salida
+- `DAILY`: Limpieza diaria
+- `MAINTENANCE`: Mantenimiento
+
+#### HousekeepingConfig (Configuración)
+```python
+class HousekeepingConfig(models.Model):
+    hotel = OneToOneField(Hotel)
+    # Generación y asignación
+    enable_auto_assign = BooleanField(default=True)
+    create_daily_tasks = BooleanField(default=True)
+    daily_generation_time = TimeField(default=time(7, 0))
+    # Reglas de servicio
+    skip_service_on_checkin = BooleanField(default=True)
+    skip_service_on_checkout = BooleanField(default=True)
+    linens_every_n_nights = PositiveIntegerField(default=3)
+    towels_every_n_nights = PositiveIntegerField(default=1)
+    # Ventanas de tiempo
+    morning_window_start = TimeField(default=time(9, 0))
+    morning_window_end = TimeField(default=time(13, 0))
+    afternoon_window_start = TimeField(default=time(13, 0))
+    afternoon_window_end = TimeField(default=time(18, 0))
+    quiet_hours_start = TimeField(blank=True)
+    quiet_hours_end = TimeField(blank=True)
+    # Asignación
+    prefer_by_zone = BooleanField(default=True)
+    rebalance_every_minutes = PositiveIntegerField(default=5)
+    # Prioridades
+    checkout_priority = PositiveIntegerField(default=2)
+    daily_priority = PositiveIntegerField(default=1)
+    # Duraciones estimadas
+    durations = JSONField(default=dict)  # Por tipo y tipo de habitación
+    # Alertas
+    alert_checkout_unstarted_minutes = PositiveIntegerField(default=30)
+    # Vencimiento de tareas
+    max_task_duration_minutes = PositiveIntegerField(default=120)
+    auto_complete_overdue = BooleanField(default=False)
+    overdue_grace_minutes = PositiveIntegerField(default=30)
+```
+
+**Propósito**: Configuración centralizada de reglas y parámetros de housekeeping por hotel.
+
+#### TaskTemplate (Plantilla de Tarea)
+```python
+class TaskTemplate(models.Model):
+    hotel = ForeignKey(Hotel)
+    room_type = CharField(20)  # single, double, triple, suite
+    task_type = CharField(20, choices=TaskType)
+    name = CharField(255)
+    description = TextField(blank=True)
+    estimated_minutes = PositiveIntegerField(default=15)
+    is_required = BooleanField(default=True)
+    order = PositiveIntegerField(default=0)
+    is_active = BooleanField(default=True)
+```
+
+**Propósito**: Define tareas estándar por tipo de habitación y tipo de tarea.
+
+#### Checklist (Lista de Verificación)
+```python
+class Checklist(models.Model):
+    hotel = ForeignKey(Hotel)
+    name = CharField(255)
+    description = TextField(blank=True)
+    room_type = CharField(20, blank=True)  # Opcional
+    task_type = CharField(20, choices=TaskType, blank=True)  # Opcional
+    is_default = BooleanField(default=False)
+    is_active = BooleanField(default=True)
+```
+
+**Propósito**: Checklists personalizables por hotel, tipo de habitación y tipo de tarea.
+
+#### ChecklistItem (Item de Checklist)
+```python
+class ChecklistItem(models.Model):
+    checklist = ForeignKey(Checklist)
+    name = CharField(255)
+    description = TextField(blank=True)
+    order = PositiveIntegerField(default=0)
+    is_required = BooleanField(default=True)
+    is_active = BooleanField(default=True)
+```
+
+**Propósito**: Items individuales de un checklist.
+
+#### TaskChecklistCompletion (Completado de Item)
+```python
+class TaskChecklistCompletion(models.Model):
+    task = ForeignKey(HousekeepingTask)
+    checklist_item = ForeignKey(ChecklistItem)
+    completed = BooleanField(default=False)
+    completed_by = ForeignKey(User, blank=True)
+    completed_at = DateTimeField(blank=True)
+    notes = TextField(blank=True)
+```
+
+**Propósito**: Registro de completado de items de checklist para cada tarea.
+
+### Servicios
+
+#### TaskGeneratorService
+
+Servicio centralizado para generar y gestionar tareas de housekeeping.
+
+##### Métodos Principales
+
+**`create_task(hotel, room, task_type, **kwargs)`**
+```python
+# Crea una tarea de housekeeping con:
+# - Asignación automática de personal
+# - Cálculo de duración estimada
+# - Asociación de checklist relevante
+# - Notificaciones al personal asignado
+```
+
+**`find_best_staff(hotel, room, task_type, config)`**
+```python
+# Encuentra el mejor personal disponible basado en:
+# - Estado activo
+# - Horarios de trabajo (work_start_time, work_end_time)
+# - Turno actual (morning, afternoon, night)
+# - Zonas asignadas (cleaning_zones)
+# - Carga de trabajo actual (pending_tasks_count)
+```
+
+**`is_staff_available_now(staff, hotel, current_time)`**
+```python
+# Verifica si el personal está disponible según:
+# - Horarios de trabajo configurados
+# - Manejo de turnos nocturnos que cruzan medianoche
+```
+
+**`find_relevant_checklist(hotel, room_type, task_type)`**
+```python
+# Prioridad de búsqueda:
+# 1. Checklist específico para room_type y task_type
+# 2. Checklist específico para task_type (sin room_type)
+# 3. Checklist por defecto del hotel
+```
+
+**`create_daily_tasks_for_hotel(hotel, target_date)`**
+```python
+# Genera tareas diarias para habitaciones ocupadas:
+# - Considera skip_service_on_checkin
+# - Considera skip_service_on_checkout
+# - Aplica reglas de linens_every_n_nights y towels_every_n_nights
+```
+
+### Views y Endpoints
+
+#### HousekeepingTaskViewSet
+
+**Endpoints**:
+- `GET /api/housekeeping/tasks/` - Listar tareas
+- `POST /api/housekeeping/tasks/` - Crear tarea
+- `GET /api/housekeeping/tasks/{id}/` - Detalle de tarea
+- `PUT /api/housekeeping/tasks/{id}/` - Actualizar tarea
+- `DELETE /api/housekeeping/tasks/{id}/` - Eliminar tarea (solo si está pendiente)
+- `POST /api/housekeeping/tasks/{id}/start/` - Iniciar tarea
+- `POST /api/housekeeping/tasks/{id}/complete/` - Completar tarea
+- `POST /api/housekeeping/tasks/{id}/cancel/` - Cancelar tarea
+
+**Filtros**:
+- `hotel`: ID del hotel
+- `status`: Estado (puede ser múltiple: `pending,in_progress`)
+- `assigned_to`: ID del personal asignado
+- `room_id`: ID de la habitación
+- `task_type`: Tipo de tarea
+- `priority`: Prioridad
+- `created_from`: Fecha de creación desde
+- `created_to`: Fecha de creación hasta
+- `completed_from`: Fecha de completado desde
+- `completed_to`: Fecha de completado hasta
+
+**Restricciones**:
+- Personal de limpieza solo ve sus tareas asignadas
+- No puede eliminar tareas en progreso o completadas
+- Solo puede cancelar tareas pendientes o en progreso
+
+#### CleaningStaffViewSet
+
+**Endpoints**:
+- `GET /api/housekeeping/staff/` - Listar personal
+- `POST /api/housekeeping/staff/` - Crear personal
+- `GET /api/housekeeping/staff/{id}/` - Detalle
+- `PUT /api/housekeeping/staff/{id}/` - Actualizar
+- `DELETE /api/housekeeping/staff/{id}/` - Eliminar
+
+#### HousekeepingConfigViewSet
+
+**Endpoints**:
+- `GET /api/housekeeping/config/` - Listar configuraciones
+- `POST /api/housekeeping/config/` - Crear configuración
+- `GET /api/housekeeping/config/by-hotel/{hotel_id}/` - Obtener o crear configuración por hotel
+- `PUT /api/housekeeping/config/{id}/` - Actualizar
+- `DELETE /api/housekeeping/config/{id}/` - Eliminar
+
+#### Otros ViewSets
+
+- `CleaningZoneViewSet`: Gestión de zonas de limpieza
+- `TaskTemplateViewSet`: Gestión de plantillas de tareas
+- `ChecklistViewSet`: Gestión de checklists
+- `ChecklistItemViewSet`: Gestión de items de checklist
+- `TaskChecklistCompletionViewSet`: Gestión de completados
+
+### Permisos
+
+#### HousekeepingAccessPermission
+```python
+# Permite acceso si:
+# - Es superusuario
+# - Tiene permiso housekeeping.access_housekeeping
+# - Su perfil tiene is_housekeeping_staff=True
+```
+
+#### HousekeepingManageAllPermission
+```python
+# Permite gestionar todo si:
+# - Es superusuario
+# - Tiene permiso housekeeping.manage_all_tasks
+```
+
+### Tareas Celery
+
+#### `check_overdue_tasks`
+```python
+@shared_task
+def check_overdue_tasks():
+    """
+    Verifica tareas en progreso que hayan excedido su tiempo estimado.
+    - Marca como is_overdue=True
+    - Auto-completa si auto_complete_overdue está activo
+    """
+```
+
+**Programación**: Ejecuta periódicamente (configurado en `CELERY_BEAT_SCHEDULE`)
+
+#### `generate_daily_tasks`
+```python
+@shared_task
+def generate_daily_tasks():
+    """
+    Genera tareas diarias para todos los hoteles activos.
+    Se ejecuta según daily_generation_time configurado.
+    """
+```
+
+**Programación**: Ejecuta cada hora (configurado en `CELERY_BEAT_SCHEDULE`)
+
+### Integraciones
+
+#### Con Módulo de Reservas
+
+**Checkout automático**:
+- Al hacer checkout de una reserva, se crea automáticamente una tarea de tipo `CHECKOUT`
+- Se asigna personal automáticamente si `enable_auto_assign=True`
+- Se envía notificación al personal asignado
+
+**Early Checkout**:
+- Al hacer "Salida Anticipada", se crea tarea de limpieza inmediatamente
+
+#### Con Módulo de Habitaciones
+
+**Estados de limpieza**:
+- Al iniciar tarea: `room.cleaning_status = IN_CLEANING`
+- Al completar tarea: `room.cleaning_status = CLEAN`
+- Al cancelar tarea: Se actualiza según estado de la habitación
+
+#### Con Módulo de Notificaciones
+
+**Notificaciones automáticas**:
+- Al crear tarea: Notificación al personal asignado
+- Si no hay usuario asociado: Notificación a todos los usuarios con `is_housekeeping_staff=True`
+- Tipo: `HOUSEKEEPING_TASK_CREATED`
+
+### Flujos de Trabajo
+
+#### Flujo de Creación de Tarea
+
+1. **Trigger**: Checkout, generación diaria, o creación manual
+2. **TaskGeneratorService.create_task()**:
+   - Busca checklist relevante
+   - Calcula duración estimada (desde template o config)
+   - Asigna personal automáticamente (si está habilitado)
+   - Crea la tarea
+   - Envía notificación
+3. **Actualización de habitación**: `cleaning_status = IN_CLEANING` (si es checkout)
+
+#### Flujo de Asignación Automática
+
+1. **TaskGeneratorService.find_best_staff()**:
+   - Filtra personal activo
+   - Verifica disponibilidad horaria
+   - Verifica turno actual
+   - Verifica zonas asignadas
+   - Compara carga de trabajo
+   - Retorna el mejor candidato
+
+#### Flujo de Completado
+
+1. Usuario inicia tarea: `POST /api/housekeeping/tasks/{id}/start/`
+   - `status = IN_PROGRESS`
+   - `started_at = now()`
+   - `room.cleaning_status = IN_CLEANING`
+
+2. Usuario completa tarea: `POST /api/housekeeping/tasks/{id}/complete/`
+   - `status = COMPLETED`
+   - `completed_at = now()`
+   - `room.cleaning_status = CLEAN`
+
+#### Flujo de Cancelación
+
+1. Usuario cancela tarea: `POST /api/housekeeping/tasks/{id}/cancel/`
+   - `status = CANCELLED`
+   - Actualiza `room.cleaning_status` según estado de la habitación
+
+### Configuración de Celery Beat
+
+```python
+CELERY_BEAT_SCHEDULE = {
+    'check-overdue-tasks': {
+        'task': 'apps.housekeeping.tasks.check_overdue_tasks',
+        'schedule': crontab(minute='*/15'),  # Cada 15 minutos
+    },
+    'generate-daily-housekeeping-tasks': {
+        'task': 'apps.housekeeping.tasks.generate_daily_tasks',
+        'schedule': crontab(minute=0),  # Cada hora
+    },
+}
+```
+
+### Frontend
+
+#### Páginas Principales
+
+**`/housekeeping`** (Housekeeping.jsx):
+- Lista de tareas pendientes y en progreso
+- Filtros: hotel, estado, asignado a
+- Acciones: iniciar, completar, cancelar, editar, eliminar
+- Botón "Nueva tarea" (solo si tiene permiso `add_housekeepingtask`)
+- Verificación de permisos para mostrar/ocultar acciones
+
+**`/housekeeping/historical`** (HousekeepingHistorical.jsx):
+- Lista de todas las tareas (histórico)
+- Filtros avanzados: hotel, habitación, tipo, prioridad, fechas
+- Solo lectura (sin acciones)
+
+#### Componentes
+
+**`ChecklistDetailModal`**:
+- Muestra detalles de un checklist
+- Lista items ordenados
+- Indica items requeridos
+
+**`HousekeepingModal`**:
+- Crear/editar tareas
+- Selección de habitación, tipo, prioridad
+- Asignación de personal
+
+#### Permisos en Frontend
+
+**Personal de Limpieza** (solo ver):
+- `housekeeping.access_housekeeping`
+- `housekeeping.view_housekeepingtask`
+- No puede crear, editar, eliminar
+
+**Comandanta** (gestión completa):
+- `housekeeping.access_housekeeping`
+- `housekeeping.view_housekeepingtask`
+- `housekeeping.add_housekeepingtask`
+- `housekeeping.change_housekeepingtask`
+- `housekeeping.delete_housekeepingtask`
+- `housekeeping.manage_all_tasks`
+
+**Configuraciones** (solo administradores):
+- Requiere permisos específicos de templates, checklists, zones, staff, config
+
+### Sidebar y Navegación
+
+**Restricciones para Personal de Limpieza**:
+- Solo ve "Gestión de Limpieza" en el sidebar
+- Redirección automática desde Dashboard a `/housekeeping`
+- No ve configuraciones ni otros módulos
+
+### Tests
+
+#### Tests Unitarios
+```python
+def test_create_task_with_auto_assignment():
+    """Test creación de tarea con asignación automática"""
+    
+def test_find_best_staff():
+    """Test búsqueda de mejor personal"""
+    
+def test_checklist_selection():
+    """Test selección de checklist relevante"""
+    
+def test_overdue_task_detection():
+    """Test detección de tareas vencidas"""
+```
+
+#### Tests de Integración
+```python
+def test_checkout_creates_task():
+    """Test que checkout crea tarea automáticamente"""
+    
+def test_daily_task_generation():
+    """Test generación de tareas diarias"""
+    
+def test_notification_on_task_creation():
+    """Test notificación al crear tarea"""
+```
+
+### Monitoreo y Logs
+
+#### Métricas Clave
+- Tareas creadas por día
+- Tareas completadas vs pendientes
+- Tiempo promedio de completado
+- Tareas vencidas
+- Personal más activo
+
+#### Logs Importantes
+```python
+# Creación de tarea
+logger.info(f"Tarea {task.id} creada para habitación {room.name}")
+
+# Asignación automática
+logger.info(f"Personal {staff.id} asignado a tarea {task.id}")
+
+# Tarea vencida
+logger.warning(f"Tarea {task.id} marcada como vencida")
+
+# Auto-completado
+logger.info(f"Tarea {task.id} auto-completada por vencimiento")
 ```
 
 ---

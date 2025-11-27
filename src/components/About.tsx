@@ -19,8 +19,8 @@ const About: React.FC = () => {
     },
     {
       icon: <Heart size={32} />,
-      title: "Enfocado en Hoteles",
-      description: "Creado específicamente para las necesidades reales de hoteles argentinos"
+      title: "Enfocado en Alojamientos",
+      description: "Creado específicamente para las necesidades reales de hoteles, hostels y alojamientos argentinos"
     },
     {
       icon: <Zap size={32} />,
@@ -93,8 +93,8 @@ const About: React.FC = () => {
               transition={{ duration: 0.8, delay: 0.4 }}
             >
               AlojaSys nació en Mar del Plata, Buenos Aires, Argentina, de la necesidad real de 
-              hoteles que buscan una solución moderna, simple y económica. Desarrollado por un 
-              equipo local que conoce las particularidades del mercado hotelero argentino.
+              hoteles, hostels y alojamientos que buscan una solución moderna, simple y económica. 
+              Desarrollado por un equipo local que conoce las particularidades del mercado de alojamientos argentino.
             </motion.p>
             
             <motion.p 
@@ -103,9 +103,9 @@ const About: React.FC = () => {
               animate={isInView ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
             >
-              Creemos que gestionar un hotel no debería ser complicado. Por eso, AlojaSys está 
+              Creemos que gestionar un alojamiento no debería ser complicado. Por eso, AlojaSys está 
               diseñado para ser intuitivo desde el primer día, sin necesidad de ser experto en 
-              tecnología. Nuestro objetivo es que tu hotel funcione mejor, más simple y más eficiente.
+              tecnología. Nuestro objetivo es que tu alojamiento funcione mejor, más simple y más eficiente.
             </motion.p>
           </motion.div>
           

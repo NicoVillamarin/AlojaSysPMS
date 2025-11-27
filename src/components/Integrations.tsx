@@ -71,7 +71,7 @@ const Integrations: React.FC = () => {
           viewport={{ once: false, amount: 0.3 }} // Se revierte
         >
           <h2 className="features-title">Integraciones que impulsan tu operación</h2>
-          <p className="features-subtitle">Conectamos tu hotel con las plataformas clave del mercado</p>
+          <p className="features-subtitle">Conectamos tu alojamiento con las plataformas clave del mercado</p>
         </motion.div>
 
         <motion.div 

@@ -466,6 +466,38 @@ const SystemMapModal: React.FC<SystemMapModalProps> = ({ isOpen, onClose }) => {
       ],
       group: 'integration',
       level: 1
+    },
+    
+    limpieza: {
+      label: 'Gestión de\nLimpieza\n(Housekeeping)',
+      title: 'Sistema de Housekeeping',
+      description: 'Sistema completo de gestión de tareas de limpieza y mantenimiento con asignación automática de personal y checklists personalizables.',
+      features: [
+        'Asignación automática de personal',
+        'Generación automática de tareas (diarias y checkout)',
+        'Checklists personalizables por tipo de habitación',
+        'Seguimiento en tiempo real de tareas',
+        'Gestión de zonas y turnos',
+        'Control de vencimientos y alertas',
+        'Estados: Pendiente, En Proceso, Completada, Cancelada',
+        'Integración con reservas (checkout automático)',
+        'Historial completo de tareas',
+        'Notificaciones al personal'
+      ],
+      requirements: [
+        'Personal de limpieza registrado',
+        'Zonas de limpieza configuradas',
+        'Checklists definidos (opcional)'
+      ],
+      steps: [
+        'Registrar personal de limpieza con horarios y zonas',
+        'Configurar zonas de limpieza del alojamiento',
+        'Crear checklists por tipo de habitación y tarea',
+        'Configurar reglas de generación automática',
+        'Las tareas se generan automáticamente al hacer checkout'
+      ],
+      group: 'core',
+      level: 1
     }
   }
 
@@ -601,6 +633,13 @@ const SystemMapModal: React.FC<SystemMapModalProps> = ({ isOpen, onClose }) => {
     calendario: [
       { id: 'calendario:vistas', label: 'Vistas' },
       { id: 'calendario:filtros', label: 'Filtros' }
+    ],
+    limpieza: [
+      { id: 'limpieza:tareas', label: 'Tareas' },
+      { id: 'limpieza:personal', label: 'Personal' },
+      { id: 'limpieza:zonas', label: 'Zonas' },
+      { id: 'limpieza:checklists', label: 'Checklists' },
+      { id: 'limpieza:config', label: 'Configuración' }
     ]
   }
 
@@ -663,6 +702,7 @@ const SystemMapModal: React.FC<SystemMapModalProps> = ({ isOpen, onClose }) => {
       calendario: 5,
       pagos: 5,
       notificaciones: 5,
+      limpieza: 5,
       cobros: 6,
       transferencias: 6,
       conciliacion: 6,
@@ -776,6 +816,8 @@ const SystemMapModal: React.FC<SystemMapModalProps> = ({ isOpen, onClose }) => {
       ['otas', 'reservas'],
       ['reservas', 'calendario'],
       ['reservas', 'pagos'],
+      ['reservas', 'limpieza'],
+      ['habitaciones', 'limpieza'],
       ['pagos', 'facturacion'],
       ['pagos', 'cobros'],
       ['pagos', 'transferencias'],

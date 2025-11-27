@@ -16,8 +16,8 @@ const Footer: React.FC = () => {
               <div className="footer-tagline">Web Hotel Management</div>
             </div>
             <p className="footer-description">
-              Sistema de gestión hotelera completo que permite administrar todos los aspectos 
-              de un hotel de manera digital y eficiente.
+              Sistema de gestión completo para hoteles, hostels y alojamientos que permite administrar todos los aspectos 
+              de manera digital y eficiente.
             </p>
             <div className="footer-social">
               <a href="#" className="social-link" aria-label="Facebook" target="_blank" rel="noopener noreferrer">
@@ -49,7 +49,7 @@ const Footer: React.FC = () => {
           <div className="footer-section">
             <h4 className="footer-section-title">Módulos</h4>
             <ul className="footer-links">
-              <li><a href="#modulos">Gestión de Hoteles</a></li>
+              <li><a href="#modulos">Gestión de Alojamientos</a></li>
               <li><a href="#modulos">Gestión de Habitaciones</a></li>
               <li><a href="#modulos">Calendario de Reservas</a></li>
               <li><a href="#modulos">Sistema de Pagos</a></li>

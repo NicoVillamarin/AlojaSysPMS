@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Hotel, Calendar, CreditCard, BarChart3, Users, FileText, Globe, CalendarCheck, Map } from 'lucide-react'
+import { Hotel, Calendar, CreditCard, BarChart3, Users, FileText, Globe, CalendarCheck, Map, Sparkles } from 'lucide-react'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
 import SystemMapModal from './SystemMap'
 
@@ -23,9 +23,9 @@ const Features: React.FC = () => {
     {
       category: 'core',
       icon: <Hotel size={40} />,
-      title: "Gestión de Hoteles y Habitaciones",
-      description: "Configura y administra hoteles, habitaciones, tipos, precios y estados en tiempo real.",
-      features: ["Datos del hotel e información legal", "Tipos de habitaciones y precios base", "Estados en tiempo real", "Horarios de check-in/out", "Gestión multi-hotel"]
+      title: "Gestión de Alojamientos y Habitaciones",
+      description: "Configura y administra hoteles, hostels y alojamientos, habitaciones, tipos, precios y estados en tiempo real.",
+      features: ["Datos del alojamiento e información legal", "Tipos de habitaciones y precios base", "Estados en tiempo real", "Horarios de check-in/out", "Gestión multi-alojamiento"]
     },
     {
       category: 'reservas',
@@ -73,8 +73,15 @@ const Features: React.FC = () => {
       category: 'core',
       icon: <Users size={40} />,
       title: "Gestión de Usuarios y Empresas",
-      description: "Administra el acceso, permisos del personal y estructura empresarial multi-hotel.",
+      description: "Administra el acceso, permisos del personal y estructura empresarial multi-alojamiento.",
       features: ["Perfiles y tipos de usuarios", "Permisos granulares", "Gestión multi-empresa", "Reportes consolidados"]
+    },
+    {
+      category: 'core',
+      icon: <Sparkles size={40} />,
+      title: "Gestión de Limpieza (Housekeeping)",
+      description: "Sistema completo de gestión de tareas de limpieza y mantenimiento con asignación automática de personal y checklists personalizables.",
+      features: ["Asignación automática de personal", "Generación automática de tareas diarias y de checkout", "Checklists personalizables por tipo de habitación", "Seguimiento en tiempo real de tareas", "Gestión de zonas y turnos", "Control de vencimientos y alertas"]
     }
   ]
 
@@ -131,7 +138,7 @@ const Features: React.FC = () => {
         >
           <h2 className="features-title">Funcionalidades Completas</h2>
           <p className="features-subtitle">
-            Todo lo que necesitas para gestionar tu hotel de manera profesional, desde reservas hasta facturación
+            Todo lo que necesitas para gestionar tu alojamiento de manera profesional, desde reservas hasta facturación
           </p>
           <motion.button
             className="btn-view-map"

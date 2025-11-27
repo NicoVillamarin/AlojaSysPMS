@@ -59,7 +59,7 @@ const Hero: React.FC = () => {
           animate="visible"
         >
           <motion.h1 className="hero-title" variants={titleVariants}>
-            El PMS que tu hotel
+            El PMS que tu alojamiento
             <motion.span
               className="hero-title-accent"
               initial={{ opacity: 0, scale: 0.8 }}
@@ -77,13 +77,14 @@ const Hero: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.2, duration: 0.8 }}
           >
-            <span className="slogan-text">Moderno, simple y diseñado para hoteles</span>
+            <span className="slogan-text">Moderno, simple y diseñado para hoteles, hostels y alojamientos</span>
           </motion.div>
 
           <motion.p className="hero-description" variants={itemVariants}>
             Dejá atrás los sistemas complicados y costosos. AlojaSys te permite gestionar
             reservas, habitaciones, pagos y reportes desde una plataforma intuitiva,
             con integraciones con Booking.com, Airbnb, facturación AFIP y Google Calendar.
+            Perfecto para hoteles, hostels, apartamentos y cualquier tipo de alojamiento.
           </motion.p>
 
           <motion.div className="hero-buttons" variants={itemVariants}>
@@ -253,7 +254,7 @@ const Hero: React.FC = () => {
                 <Hotel size={18} />
               </div>
               <div className="bubble-content">
-                <div className="bubble-text">Multi-hotel</div>
+                <div className="bubble-text">Multi-alojamiento</div>
               </div>
             </motion.div>
           </ParallaxElement>

@@ -16,10 +16,10 @@ const UseCases: React.FC = () => {
     },
     {
       icon: <Building2 size={28} />,
-      title: 'Cadena Hotelera (5 hoteles)',
+      title: 'Cadena de Alojamientos (5 propiedades)',
       highlights: [
-        'Configuraciones estándar por hotel',
-        'Personal compartido multi‑hotel',
+        'Configuraciones estándar por alojamiento',
+        'Personal compartido multi‑alojamiento',
         'Reportes consolidados del grupo'
       ],
       benefit: 'Gestión centralizada con métricas comparativas entre propiedades.'
@@ -47,7 +47,7 @@ const UseCases: React.FC = () => {
           transition={{ duration: 0.6 }}
         >
           <h2 className="use-cases-title">Casos de Uso Reales</h2>
-          <p className="use-cases-subtitle">Cómo hoteles como el tuyo usan AlojaSys día a día</p>
+          <p className="use-cases-subtitle">Cómo hoteles, hostels y alojamientos usan AlojaSys día a día</p>
         </motion.div>
 
         <motion.div 

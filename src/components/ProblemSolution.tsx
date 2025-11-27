@@ -106,7 +106,7 @@ const ProblemSolution: React.FC = () => {
               ¿Estás cansado de los PMS complicados?
             </h2>
             <p className="problem-solution-subtitle">
-              Conocemos los problemas que enfrentan los hoteles argentinos. 
+              Conocemos los problemas que enfrentan hoteles, hostels y alojamientos argentinos. 
               Por eso creamos AlojaSys.
             </p>
           </motion.div>
@@ -198,7 +198,7 @@ const ProblemSolution: React.FC = () => {
             <h3 className="cta-title">¿Listo para cambiar?</h3>
             <p className="cta-description">
               Dejá atrás los sistemas complicados y costosos. 
-              AlojaSys es la solución que tu hotel necesita.
+              AlojaSys es la solución que tu alojamiento necesita.
             </p>
             <motion.button
               className="btn btn-primary cta-button"

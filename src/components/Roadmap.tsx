@@ -14,9 +14,9 @@ const Roadmap: React.FC = () => {
       status: "Completada",
       statusColor: "var(--accent-color)",
       title: "Sistema Core",
-      description: "La base sólida de AlojaSys. Todo lo esencial para gestionar un hotel de manera profesional.",
+      description: "La base sólida de AlojaSys. Todo lo esencial para gestionar un alojamiento de manera profesional.",
       features: [
-        "Gestión completa de hoteles y habitaciones",
+        "Gestión completa de alojamientos y habitaciones",
         "Sistema de reservas con validaciones avanzadas",
         "Integración completa con Mercado Pago",
         "Dashboard con métricas en tiempo real",
@@ -36,7 +36,7 @@ const Roadmap: React.FC = () => {
         "Sistema completo de vouchers de crédito",
         "Reembolsos automáticos 24/7 con múltiples métodos",
         "Sistema de notificaciones inteligente en tiempo real",
-        "Gestión multi-hotel y multi-empresa",
+        "Gestión multi-alojamiento y multi-empresa",
         "Motor de tarifas dinámicas y promociones"
       ],
       iconColor: "var(--accent-color)"
@@ -48,7 +48,7 @@ const Roadmap: React.FC = () => {
       title: "Sistema de Pagos Completo",
       description: "Procesamiento de pagos, políticas y reembolsos totalmente implementado.",
       features: [
-        "Políticas de pago configurables por hotel",
+        "Políticas de pago configurables por alojamiento",
         "Procesamiento automático de reembolsos",
         "Sistema de vouchers con códigos únicos",
         "Integración con múltiples pasarelas de pago",
@@ -281,7 +281,7 @@ const Roadmap: React.FC = () => {
               animate={isInView ? "visible" : "hidden"}
               viewport={{ once: true, amount: 0.3 }}
             >
-              <p className="roadmap-cta-text">¿Quieres ser uno de nuestros primeros hoteles?</p>
+              <p className="roadmap-cta-text">¿Quieres ser uno de nuestros primeros alojamientos?</p>
               <motion.button 
                 className="roadmap-cta-button"
                 onClick={() => setIsDemoModalOpen(true)}

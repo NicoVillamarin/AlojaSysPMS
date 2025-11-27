@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Hotel, Calendar, CreditCard, BarChart3, Users, Settings, DollarSign, FileText, Globe, CalendarCheck } from 'lucide-react'
+import { Hotel, Calendar, CreditCard, BarChart3, Users, Settings, DollarSign, FileText, Globe, CalendarCheck, Sparkles } from 'lucide-react'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
 
 const Modules: React.FC = () => {
@@ -9,9 +9,9 @@ const Modules: React.FC = () => {
   const modules = [
     {
       icon: <Hotel size={40} />,
-      title: "Gestión de Hoteles",
-      description: "Configura y administra la información básica de cada hotel en el sistema.",
-      features: ["Datos del hotel", "Información legal", "Horarios de check-in/out", "Zona horaria"]
+      title: "Gestión de Alojamientos",
+      description: "Configura y administra la información básica de cada alojamiento (hotel, hostel, etc.) en el sistema.",
+      features: ["Datos del alojamiento", "Información legal", "Horarios de check-in/out", "Zona horaria"]
     },
     {
       icon: <Hotel size={40} />,
@@ -46,19 +46,19 @@ const Modules: React.FC = () => {
     {
       icon: <Calendar size={40} />,
       title: "Calendario de Reservas",
-      description: "Vista visual e interactiva de todas las reservas del hotel.",
+      description: "Vista visual e interactiva de todas las reservas del alojamiento.",
       features: ["Vista mensual/semanal/diaria", "Colores por estado", "Filtros avanzados", "Gestión desde calendario"]
     },
     {
       icon: <Users size={40} />,
       title: "Gestión de Usuarios",
-      description: "Administra el acceso y permisos del personal del hotel.",
-      features: ["Perfiles de usuario", "Tipos de usuarios", "Asignación de hoteles", "Control de acceso"]
+      description: "Administra el acceso y permisos del personal del alojamiento.",
+      features: ["Perfiles de usuario", "Tipos de usuarios", "Asignación de alojamientos", "Control de acceso"]
     },
     {
       icon: <Settings size={40} />,
       title: "Gestión de Empresas",
-      description: "Administra empresas que pueden tener múltiples hoteles.",
+      description: "Administra empresas que pueden tener múltiples alojamientos (hoteles, hostels, etc.).",
       features: ["Estructura empresarial", "Configuraciones globales", "Personal compartido", "Reportes consolidados"]
     },
     {
@@ -78,6 +78,12 @@ const Modules: React.FC = () => {
       title: "Google Calendar",
       description: "Sincroniza todas tus reservas con Google Calendar para una gestión visual completa.",
       features: ["Sincronización automática", "Eventos en tiempo real", "Integración nativa", "Vista unificada"]
+    },
+    {
+      icon: <Sparkles size={40} />,
+      title: "Gestión de Limpieza (Housekeeping)",
+      description: "Sistema completo de gestión de tareas de limpieza y mantenimiento con asignación automática de personal y checklists personalizables.",
+      features: ["Asignación automática de personal", "Generación automática de tareas", "Checklists personalizables", "Seguimiento en tiempo real", "Gestión de zonas y turnos"]
     }
   ]
 
@@ -132,7 +138,7 @@ const Modules: React.FC = () => {
         >
           <h2 className="modules-title">Módulos del Sistema</h2>
           <p className="modules-subtitle">
-            Cada módulo está diseñado para cubrir una función específica de la gestión hotelera
+            Cada módulo está diseñado para cubrir una función específica de la gestión de alojamientos
           </p>
         </motion.div>
         

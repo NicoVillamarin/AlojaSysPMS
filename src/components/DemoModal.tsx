@@ -103,7 +103,7 @@ const DemoModal: React.FC<DemoModalProps> = ({ isOpen, onClose }) => {
     
     const whatsappMessage = `🏨 *Solicitud de Demo - AlojaSys*
 
-Hola! Me interesa solicitar una demo de AlojaSys para mi hotel.
+Hola! Me interesa solicitar una demo de AlojaSys para mi alojamiento.
 
 📋 *Mis datos:*
 • Nombre: ${name}
@@ -374,7 +374,7 @@ ${message}
                         disabled={isLoading}
                         rows={4}
                         className="form-textarea"
-                        placeholder="Cuéntanos más sobre tu hotel y qué te interesa conocer de AlojaSys..."
+                        placeholder="Cuéntanos más sobre tu alojamiento y qué te interesa conocer de AlojaSys..."
                       />
                     </div>
 
@@ -488,7 +488,7 @@ ${message}
                           value={formData.hotel}
                           onChange={(e) => setFormData({...formData, hotel: e.target.value})}
                           className="form-input"
-                          placeholder="Nombre de tu hotel o empresa"
+                          placeholder="Nombre de tu alojamiento o empresa"
                         />
                       </div>
 
@@ -546,7 +546,7 @@ ${message}
                           onChange={(e) => setFormData({...formData, message: e.target.value})}
                           className="form-textarea"
                           rows={3}
-                          placeholder="Cuéntanos más sobre tu hotel y qué te interesa conocer de AlojaSys..."
+                          placeholder="Cuéntanos más sobre tu alojamiento y qué te interesa conocer de AlojaSys..."
                         />
                       </div>
                     </motion.div>
