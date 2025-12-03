@@ -318,8 +318,7 @@ const Pricing: React.FC = () => {
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      
-                      const button = e.currentTarget
+
                       const newExpanded = new Set(expandedPlans)
                       const wasExpanded = newExpanded.has(index)
                       
