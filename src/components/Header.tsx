@@ -19,10 +19,18 @@ const Header: React.FC = () => {
       const headerHeight = 80 // Altura del header
       const elementPosition = element.offsetTop - headerHeight
       
+      // Actualizar la sección activa inmediatamente
+      setActiveSection(sectionId)
+      
       window.scrollTo({
         top: elementPosition,
         behavior: 'smooth'
       })
+      
+      // Asegurar que la sección se detecte después del scroll
+      setTimeout(() => {
+        setActiveSection(sectionId)
+      }, 500)
     }
     setIsMenuOpen(false) // Cerrar el menú móvil después del click
   }
@@ -32,19 +40,37 @@ const Header: React.FC = () => {
       setScrolled(window.scrollY > 50)
       
       // Detectar sección activa
-      const sections = ['inicio', 'integraciones', 'caracteristicas', 'roadmap', 'acerca', 'contacto']
-      const scrollPosition = window.scrollY + 100
+      const sections = ['inicio', 'integraciones', 'caracteristicas', 'planes', 'roadmap', 'acerca', 'contacto']
+      const scrollPosition = window.scrollY + 150
+      const headerHeight = 80
+
+      // Buscar la sección más cercana al scroll
+      let activeSection = 'inicio'
+      let minDistance = Infinity
 
       for (const section of sections) {
         const element = document.getElementById(section)
         if (element) {
           const { offsetTop, offsetHeight } = element
-          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
-            setActiveSection(section)
+          const sectionTop = offsetTop - headerHeight
+          const sectionBottom = sectionTop + offsetHeight
+          
+          // Si el scroll está dentro de la sección
+          if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
+            activeSection = section
             break
+          }
+          
+          // Calcular distancia para encontrar la más cercana
+          const distance = Math.abs(scrollPosition - sectionTop)
+          if (distance < minDistance && scrollPosition >= sectionTop - 200) {
+            minDistance = distance
+            activeSection = section
           }
         }
       }
+      
+      setActiveSection(activeSection)
     }
     
     window.addEventListener('scroll', handleScroll)
@@ -139,6 +165,14 @@ const Header: React.FC = () => {
             Características
           </motion.button>
           <motion.button 
+            onClick={() => scrollToSection('planes')}
+            className={`nav-link ${activeSection === 'planes' ? 'active' : ''}`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Planes
+          </motion.button>
+          <motion.button 
             onClick={() => scrollToSection('roadmap')}
             className={`nav-link ${activeSection === 'roadmap' ? 'active' : ''}`}
             whileHover={{ scale: 1.05 }}
@@ -200,6 +234,15 @@ const Header: React.FC = () => {
                 whileTap={{ scale: 0.95 }}
               >
                 Características
+              </motion.button>
+              <motion.button 
+                onClick={() => scrollToSection('planes')}
+                className={`nav-link ${activeSection === 'planes' ? 'active' : ''}`}
+                variants={linkVariants}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Planes
               </motion.button>
               <motion.button 
                 onClick={() => scrollToSection('roadmap')}

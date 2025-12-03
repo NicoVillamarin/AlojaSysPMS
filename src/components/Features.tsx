@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Hotel, Calendar, CreditCard, BarChart3, Users, FileText, Globe, CalendarCheck, Map, Sparkles } from 'lucide-react'
+import { Hotel, Calendar, CreditCard, BarChart3, Users, FileText, Globe, CalendarCheck, Map, Sparkles, MessageCircle } from 'lucide-react'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
 import SystemMapModal from './SystemMap'
 
@@ -23,65 +23,72 @@ const Features: React.FC = () => {
     {
       category: 'core',
       icon: <Hotel size={40} />,
-      title: "Gestión de Alojamientos y Habitaciones",
-      description: "Configura y administra hoteles, hostels y alojamientos, habitaciones, tipos, precios y estados en tiempo real.",
-      features: ["Datos del alojamiento e información legal", "Tipos de habitaciones y precios base", "Estados en tiempo real", "Horarios de check-in/out", "Gestión multi-alojamiento"]
+      title: "Alojamientos y Habitaciones",
+      description: "Administra hoteles, hostels, habitaciones, precios y disponibilidad en tiempo real.",
+      features: ["Información del alojamiento", "Tipos de habitaciones y precios", "Estados en tiempo real", "Check-in/out automático", "Multi-alojamiento"]
     },
     {
       category: 'reservas',
       icon: <Calendar size={40} />,
-      title: "Gestión de Reservas",
-      description: "Maneja todo el ciclo de vida de una reserva con validaciones automáticas y calendario visual interactivo.",
-      features: ["Consulta de disponibilidad en tiempo real", "Creación y gestión de reservas", "Calendario visual con arrastrar y soltar", "Estados de reserva dinámicos", "Validaciones automáticas"]
+      title: "Reservas",
+      description: "Control total del ciclo de vida de reservas con calendario visual interactivo.",
+      features: ["Disponibilidad en tiempo real", "Creación rápida de reservas", "Calendario drag & drop", "Estados dinámicos", "Validaciones automáticas"]
     },
     {
       category: 'pagos',
       icon: <CreditCard size={40} />,
-      title: "Sistema de Pagos y Tarifas",
-      description: "Procesa pagos de manera segura con políticas configurables y gestiona tarifas dinámicas.",
-      features: ["Mercado Pago integrado", "Pagos manuales", "Políticas de pago configurables", "Tarifas dinámicas y promociones", "Cálculo automático de impuestos"]
+      title: "Pagos y Tarifas",
+      description: "Procesa pagos seguros con tarifas dinámicas y políticas configurables.",
+      features: ["Mercado Pago integrado", "Pagos manuales", "Políticas personalizables", "Tarifas dinámicas", "Impuestos automáticos"]
     },
     {
       category: 'integraciones',
       icon: <FileText size={40} />,
       title: "Facturación AFIP",
-      description: "Genera facturas electrónicas automáticamente integrado con AFIP de Argentina.",
-      features: ["Facturación electrónica automática", "Integración completa con AFIP", "Facturas A, B y C", "Comprobantes automáticos"]
+      description: "Facturación electrónica automática integrada con AFIP Argentina.",
+      features: ["Facturación automática", "Integración AFIP completa", "Facturas A, B y C", "Comprobantes digitales"]
     },
     {
       category: 'integraciones',
       icon: <Globe size={40} />,
-      title: "Integraciones con OTAs",
-      description: "Sincroniza reservas automáticamente con Booking.com y Airbnb desde un solo lugar.",
-      features: ["Booking.com integrado", "Airbnb sincronizado", "Sincronización bidireccional", "Gestión unificada de disponibilidad"]
+      title: "Booking y Airbnb",
+      description: "Sincronización automática con las principales OTAs desde un solo lugar.",
+      features: ["Booking.com integrado", "Airbnb sincronizado", "Sync bidireccional", "Disponibilidad unificada"]
     },
     {
       category: 'integraciones',
       icon: <CalendarCheck size={40} />,
       title: "Google Calendar",
-      description: "Sincroniza todas tus reservas con Google Calendar para una gestión visual completa.",
-      features: ["Sincronización automática", "Eventos en tiempo real", "Integración nativa", "Vista unificada"]
+      description: "Sincroniza reservas con Google Calendar para gestión visual completa.",
+      features: ["Sync automática", "Eventos en tiempo real", "Integración nativa", "Vista unificada"]
     },
     {
       category: 'analisis',
       icon: <BarChart3 size={40} />,
       title: "Dashboard y Reportes",
-      description: "Métricas y análisis del negocio en tiempo real con reportes automáticos.",
-      features: ["Métricas de habitaciones y ocupación", "Métricas de reservas en tiempo real", "Análisis financiero detallado", "Reportes automáticos personalizables"]
+      description: "Métricas y análisis en tiempo real con reportes personalizables.",
+      features: ["Ocupación y disponibilidad", "Métricas de reservas", "Análisis financiero", "Reportes automáticos"]
     },
     {
       category: 'core',
       icon: <Users size={40} />,
-      title: "Gestión de Usuarios y Empresas",
-      description: "Administra el acceso, permisos del personal y estructura empresarial multi-alojamiento.",
-      features: ["Perfiles y tipos de usuarios", "Permisos granulares", "Gestión multi-empresa", "Reportes consolidados"]
+      title: "Usuarios y Permisos",
+      description: "Control de acceso y permisos del personal con estructura multi-empresa.",
+      features: ["Perfiles de usuarios", "Permisos granulares", "Multi-empresa", "Reportes consolidados"]
     },
     {
       category: 'core',
       icon: <Sparkles size={40} />,
-      title: "Gestión de Limpieza (Housekeeping)",
-      description: "Sistema completo de gestión de tareas de limpieza y mantenimiento con asignación automática de personal y checklists personalizables.",
-      features: ["Asignación automática de personal", "Generación automática de tareas diarias y de checkout", "Checklists personalizables por tipo de habitación", "Seguimiento en tiempo real de tareas", "Gestión de zonas y turnos", "Control de vencimientos y alertas"]
+      title: "Housekeeping",
+      description: "Gestión completa de limpieza con asignación automática y checklists.",
+      features: ["Asignación automática", "Tareas diarias y checkout", "Checklists personalizables", "Seguimiento en tiempo real", "Gestión de turnos", "Alertas automáticas"]
+    },
+    {
+      category: 'integraciones',
+      icon: <MessageCircle size={40} />,
+      title: "Chatbot WhatsApp",
+      description: "Recibe y gestiona reservas directamente por WhatsApp con un chatbot inteligente.",
+      features: ["Chatbot de reservas automático", "Flujo guiado de reservas", "Disponibilidad en tiempo real", "Notificaciones instantáneas", "Reservas desde WhatsApp"]
     }
   ]
 
@@ -136,9 +143,9 @@ const Features: React.FC = () => {
           whileInView="visible"
           viewport={{ once: false, amount: 0.3 }} // Se revierte
         >
-          <h2 className="features-title">Funcionalidades Completas</h2>
+          <h2 className="features-title">Todo lo que necesitas</h2>
           <p className="features-subtitle">
-            Todo lo que necesitas para gestionar tu alojamiento de manera profesional, desde reservas hasta facturación
+            Gestión completa de tu alojamiento en una sola plataforma
           </p>
           <motion.button
             className="btn-view-map"

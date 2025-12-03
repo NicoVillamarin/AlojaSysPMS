@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { FileText } from 'lucide-react'
+import { FileText, MessageCircle } from 'lucide-react'
 // @ts-ignore
 import Booking from '../assets/icons/Booking.jsx'
 // @ts-ignore
@@ -29,6 +29,11 @@ const Integrations: React.FC = () => {
       icon: <GoogleCalendar size="32" />,
       title: 'Google Calendar',
       description: 'Eventos de reservas en tiempo real.'
+    },
+    {
+      icon: <MessageCircle size={32} />,
+      title: 'WhatsApp',
+      description: 'Chatbot inteligente para recibir reservas directamente por WhatsApp.'
     }
   ]
 

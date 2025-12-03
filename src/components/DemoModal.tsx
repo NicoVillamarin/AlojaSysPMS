@@ -8,9 +8,25 @@ import Whasapp from '../assets/icons/Whasapp'
 interface DemoModalProps {
   isOpen: boolean
   onClose: () => void
+  mode?: 'demo' | 'pricing'
+  selectedPlan?: string
 }
 
-const DemoModal: React.FC<DemoModalProps> = ({ isOpen, onClose }) => {
+const DemoModal: React.FC<DemoModalProps> = ({ isOpen, onClose, mode = 'demo', selectedPlan }) => {
+  const isPricingMode = mode === 'pricing'
+  
+  const modalTitle = isPricingMode ? 'Consultar Precios de AlojaSys' : 'Solicitar Demo de AlojaSys'
+  const modalSubtitle = isPricingMode 
+    ? 'Elige cómo prefieres que nos contactemos contigo para conocer los precios'
+    : 'Elige cómo prefieres que nos contactemos contigo'
+  const emailOptionTitle = isPricingMode ? 'Consultar via Email' : 'Solicitar via Email'
+  const whatsappOptionTitle = isPricingMode ? 'Consultar via WhatsApp' : 'Solicitar via WhatsApp'
+  const emailFormTitle = isPricingMode ? 'Consultar Precios por Email' : 'Solicitar Demo por Email'
+  const whatsappFormTitle = isPricingMode ? 'Consultar Precios por WhatsApp' : 'Solicitar Demo por WhatsApp'
+  const submitButtonText = isPricingMode ? 'Enviar consulta de precios' : 'Enviar solicitud de demo'
+  const successMessage = isPricingMode 
+    ? '¡Consulta enviada! Te contactaremos pronto con información de precios.'
+    : '¡Solicitud enviada! Te contactaremos pronto para coordinar la demo.'
   const [selectedOption, setSelectedOption] = useState<'email' | 'whatsapp' | null>(null)
   const [formData, setFormData] = useState({
     name: '',
@@ -49,6 +65,9 @@ const DemoModal: React.FC<DemoModalProps> = ({ isOpen, onClose }) => {
         message: formData.message,
         to_email: EMAILJS_CONFIG.TO_EMAIL,
         reply_to: formData.email,
+        request_type: isPricingMode ? 'Consulta de Precios' : 'Solicitud de Demo',
+        selected_plan: selectedPlan || (isPricingMode ? 'No especificado' : 'N/A'),
+        plan_info: selectedPlan && isPricingMode ? `Plan consultado: ${selectedPlan}` : '',
         current_date: new Date().toLocaleDateString('es-ES', {
           year: 'numeric',
           month: 'long',
@@ -101,7 +120,25 @@ const DemoModal: React.FC<DemoModalProps> = ({ isOpen, onClose }) => {
     const preferredDate = formData.preferredDate || '[Fecha preferida]'
     const message = formData.message || '[Sin mensaje adicional]'
     
-    const whatsappMessage = `🏨 *Solicitud de Demo - AlojaSys*
+    const planInfo = selectedPlan && isPricingMode ? `\n📦 *Plan consultado:* ${selectedPlan}` : ''
+    
+    const whatsappMessage = isPricingMode 
+      ? `🏨 *Consulta de Precios - AlojaSys*
+
+Hola! Me interesa conocer los precios de AlojaSys para mi alojamiento.${planInfo}
+
+📋 *Mis datos:*
+• Nombre: ${name}
+• Hotel/Empresa: ${hotel}
+• Cargo: ${position}
+• Teléfono: ${phone}
+• Fecha preferida: ${preferredDate}
+
+💬 *Mensaje:*
+${message}
+
+¿Podrían contactarme con información de precios? ¡Gracias!`
+      : `🏨 *Solicitud de Demo - AlojaSys*
 
 Hola! Me interesa solicitar una demo de AlojaSys para mi alojamiento.
 
@@ -170,9 +207,9 @@ ${message}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3 }}
               >
-                <h2 className="modal-title">Solicitar Demo de AlojaSys</h2>
+                <h2 className="modal-title">{modalTitle}</h2>
                 <p className="modal-subtitle">
-                  Elige cómo prefieres que nos contactemos contigo
+                  {modalSubtitle}
                 </p>
                 
                 <div className="option-cards">
@@ -192,8 +229,8 @@ ${message}
                     >
                       <Mail size={48} className="option-icon" />
                     </motion.div>
-                    <h3>Solicitar via Email</h3>
-                    <p>Completa el formulario y te contactaremos por email</p>
+                      <h3>{emailOptionTitle}</h3>
+                      <p>Completa el formulario y te contactaremos por email</p>
                   </motion.button>
 
                   <motion.button
@@ -212,8 +249,8 @@ ${message}
                     >
                       <Whasapp size={48} className="option-icon" />
                     </motion.div>
-                    <h3>Solicitar via WhatsApp</h3>
-                    <p>Chatea directamente con nuestro equipo</p>
+                      <h3>{whatsappOptionTitle}</h3>
+                      <p>Chatea directamente con nuestro equipo</p>
                   </motion.button>
                 </div>
               </motion.div>
@@ -241,13 +278,13 @@ ${message}
                     >
                       ← Volver
                     </motion.button>
-                    <h2 className="form-title">Solicitar Demo por Email</h2>
+                    <h2 className="form-title">{emailFormTitle}</h2>
                   </motion.div>
 
                   {submitStatus === 'success' && (
                     <div className="form-message form-message-success">
                       <Mail size={20} />
-                      <span>¡Solicitud enviada! Te contactaremos pronto para coordinar la demo.</span>
+                      <span>{successMessage}</span>
                     </div>
                   )}
 
@@ -374,7 +411,10 @@ ${message}
                         disabled={isLoading}
                         rows={4}
                         className="form-textarea"
-                        placeholder="Cuéntanos más sobre tu alojamiento y qué te interesa conocer de AlojaSys..."
+                        placeholder={isPricingMode 
+                          ? "Cuéntanos más sobre tu alojamiento y qué plan te interesa..."
+                          : "Cuéntanos más sobre tu alojamiento y qué te interesa conocer de AlojaSys..."
+                        }
                       />
                     </div>
 
@@ -391,7 +431,7 @@ ${message}
                       ) : (
                         <>
                           <Mail size={20} />
-                          Enviar solicitud de demo
+                          {submitButtonText}
                         </>
                       )}
                     </button>
@@ -422,7 +462,7 @@ ${message}
                     >
                       ← Volver
                     </motion.button>
-                    <h2 className="form-title">Solicitar Demo por WhatsApp</h2>
+                    <h2 className="form-title">{whatsappFormTitle}</h2>
                   </motion.div>
 
                   <motion.div 
@@ -546,7 +586,10 @@ ${message}
                           onChange={(e) => setFormData({...formData, message: e.target.value})}
                           className="form-textarea"
                           rows={3}
-                          placeholder="Cuéntanos más sobre tu alojamiento y qué te interesa conocer de AlojaSys..."
+                          placeholder={isPricingMode 
+                            ? "Cuéntanos más sobre tu alojamiento y qué plan te interesa..."
+                            : "Cuéntanos más sobre tu alojamiento y qué te interesa conocer de AlojaSys..."
+                          }
                         />
                       </div>
                     </motion.div>

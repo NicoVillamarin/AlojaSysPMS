@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Hotel, Calendar, BarChart3, Clock, Users, Globe, CalendarCheck, Zap, CheckCircle, TrendingUp, DollarSign, Lock, Activity, Bell, Receipt, Wallet } from 'lucide-react'
+import { ArrowRight, Hotel, Calendar, BarChart3, Users, Globe, CalendarCheck, Zap, Bell, Receipt, Wallet, Lock, Activity } from 'lucide-react'
 import FloatingElements from './FloatingElements'
 import VideoBackground from './VideoBackground'
 import DemoModal from './DemoModal'
@@ -59,14 +59,14 @@ const Hero: React.FC = () => {
           animate="visible"
         >
           <motion.h1 className="hero-title" variants={titleVariants}>
-            El PMS que tu alojamiento
+            Gestión hotelera
             <motion.span
               className="hero-title-accent"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 1, duration: 0.8 }}
             >
-              {" "}realmente necesita
+              {" "}simple y profesional
             </motion.span>
           </motion.h1>
 
@@ -77,14 +77,12 @@ const Hero: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.2, duration: 0.8 }}
           >
-            <span className="slogan-text">Moderno, simple y diseñado para hoteles, hostels y alojamientos</span>
+            <span className="slogan-text">El PMS completo para hoteles, hostels y alojamientos</span>
           </motion.div>
 
           <motion.p className="hero-description" variants={itemVariants}>
-            Dejá atrás los sistemas complicados y costosos. AlojaSys te permite gestionar
-            reservas, habitaciones, pagos y reportes desde una plataforma intuitiva,
-            con integraciones con Booking.com, Airbnb, facturación AFIP y Google Calendar.
-            Perfecto para hoteles, hostels, apartamentos y cualquier tipo de alojamiento.
+            Todo lo que necesitas para gestionar tu alojamiento en una sola plataforma. 
+            Con múltiples integraciones que automatizan y mejoran tu gestión diaria.
           </motion.p>
 
           <motion.div className="hero-buttons" variants={itemVariants}>
@@ -112,48 +110,48 @@ const Hero: React.FC = () => {
           </motion.div>
         </motion.div>
 
-        {/* Burbujas flotantes que rodean el contenido central */}
+        {/* Burbujas flotantes modernas - Más pequeñas y profesionales */}
         <div className={`floating-bubbles-container ${isMobile ? 'no-animations' : ''}`}>
-          {/* Burbuja 1 - Superior izquierda (con parallax) */}
+          {/* Burbuja 1 - Reservas rápidas */}
           <ParallaxElement speed={0.2} direction="up" className="bubble-parallax bubble-1">
             <motion.div
-              className="floating-bubble"
-              initial={{ opacity: 0, scale: 0.3, x: -60, y: -40 }}
+              className="floating-bubble bubble-size-md"
+              initial={{ opacity: 0, scale: 0.3, x: -40, y: -30 }}
               animate={{
                 opacity: 1,
                 scale: 1,
                 x: 0,
-                y: [0, -8, 0],
-                rotate: [0, 2, -2, 0]
+                y: [0, -6, 0],
+                rotate: [0, 1.5, -1.5, 0]
               }}
               transition={{
                 delay: 1.2,
                 duration: 1.2,
                 rotate: { duration: 6, repeat: Infinity, ease: "easeInOut" },
-                y: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+                y: { duration: 3.5, repeat: Infinity, ease: "easeInOut" }
               }}
-              whileHover={{ scale: 1.15, y: -10 }}
+              whileHover={{ scale: 1.12, y: -8 }}
             >
               <div className="bubble-icon">
-                <Clock size={20} />
+                <CalendarCheck size={18} />
               </div>
               <div className="bubble-content">
-                <div className="bubble-text">Configuraciones rápidas</div>
+                <div className="bubble-text">Reservas rápidas</div>
               </div>
             </motion.div>
           </ParallaxElement>
 
-          {/* Burbuja 2 - Superior derecha (con parallax) */}
-          <ParallaxElement speed={0.3} direction="down" className="bubble-parallax bubble-2">
+          {/* Burbuja 2 - Dashboard */}
+          <ParallaxElement speed={0.25} direction="down" className="bubble-parallax bubble-2">
             <motion.div
-              className="floating-bubble"
-              initial={{ opacity: 0, scale: 0.3, x: 60, y: -40 }}
+              className="floating-bubble bubble-size-lg bubble-featured"
+              initial={{ opacity: 0, scale: 0.3, x: 50, y: -35 }}
               animate={{
                 opacity: 1,
                 scale: 1,
                 x: 0,
-                y: [0, -8, 0],
-                rotate: [0, -2, 2, 0]
+                y: [0, -7, 0],
+                rotate: [0, -1.8, 1.8, 0]
               }}
               transition={{
                 delay: 1.4,
@@ -161,97 +159,39 @@ const Hero: React.FC = () => {
                 rotate: { duration: 7, repeat: Infinity, ease: "easeInOut" },
                 y: { duration: 4, repeat: Infinity, ease: "easeInOut" }
               }}
-              whileHover={{ scale: 1.15, y: -10 }}
+              whileHover={{ scale: 1.15, y: -10, boxShadow: "0 12px 35px rgba(212, 175, 55, 0.4)" }}
             >
-              <div className="bubble-icon">
-                <Users size={20} />
+              <div className="bubble-icon bubble-icon-featured">
+                <BarChart3 size={20} />
               </div>
               <div className="bubble-content">
-                <div className="bubble-text">Super intuitivo</div>
+                <div className="bubble-text">Dashboard</div>
               </div>
             </motion.div>
           </ParallaxElement>
 
-          {/* Burbuja 3 - Centro izquierda (con parallax) */}
-          <ParallaxElement speed={0.15} direction="up" className="bubble-parallax bubble-3">
+          {/* Burbuja 3 - Multi-alojamiento */}
+          <ParallaxElement speed={0.18} direction="up" className="bubble-parallax bubble-3">
             <motion.div
-              className="floating-bubble"
-              initial={{ opacity: 0, scale: 0.3, x: -80, y: 20 }}
+              className="floating-bubble bubble-size-sm"
+              initial={{ opacity: 0, scale: 0.3, x: -60, y: 15 }}
               animate={{
                 opacity: 1,
                 scale: 1,
                 x: 0,
-                y: [0, -10, 0],
-                rotate: [0, 1.5, -1.5, 0]
+                y: [0, -5, 0],
+                rotate: [0, 1.2, -1.2, 0]
               }}
               transition={{
                 delay: 1.6,
                 duration: 1.2,
-                rotate: { duration: 5, repeat: Infinity, ease: "easeInOut" },
-                y: { duration: 3.5, repeat: Infinity, ease: "easeInOut" }
+                rotate: { duration: 5.5, repeat: Infinity, ease: "easeInOut" },
+                y: { duration: 3.2, repeat: Infinity, ease: "easeInOut" }
               }}
-              whileHover={{ scale: 1.15, y: -10 }}
+              whileHover={{ scale: 1.12, y: -8 }}
             >
               <div className="bubble-icon">
-                <Globe size={20} />
-              </div>
-              <div className="bubble-content">
-                <div className="bubble-text">3 idiomas</div>
-              </div>
-            </motion.div>
-          </ParallaxElement>
-
-          {/* Burbuja 4 - Centro derecha (con parallax) */}
-          <ParallaxElement speed={0.25} direction="down" className="bubble-parallax bubble-4">
-            <motion.div
-              className="floating-bubble"
-              initial={{ opacity: 0, scale: 0.3, x: 80, y: 20 }}
-              animate={{
-                opacity: 1,
-                scale: 1,
-                x: 0,
-                y: [0, 8, 0],
-                rotate: [0, -1.5, 1.5, 0]
-              }}
-              transition={{
-                delay: 1.8,
-                duration: 1.2,
-                rotate: { duration: 6.5, repeat: Infinity, ease: "easeInOut" },
-                y: { duration: 4.5, repeat: Infinity, ease: "easeInOut" }
-              }}
-              whileHover={{ scale: 1.15, y: -10 }}
-            >
-              <div className="bubble-icon">
-                <BarChart3 size={18} />
-              </div>
-              <div className="bubble-content">
-                <div className="bubble-text">Super configurable</div>
-              </div>
-            </motion.div>
-          </ParallaxElement>
-
-          {/* Burbuja 5 - Inferior izquierda (con parallax) */}
-          <ParallaxElement speed={0.18} direction="up" className="bubble-parallax bubble-5">
-            <motion.div
-              className="floating-bubble"
-              initial={{ opacity: 0, scale: 0.3, x: -50, y: 60 }}
-              animate={{
-                opacity: 1,
-                scale: 1,
-                x: 0,
-                y: [0, -6, 0],
-                rotate: [0, 1, -1, 0]
-              }}
-              transition={{
-                delay: 2.0,
-                duration: 1.2,
-                rotate: { duration: 7.5, repeat: Infinity, ease: "easeInOut" },
-                y: { duration: 3.8, repeat: Infinity, ease: "easeInOut" }
-              }}
-              whileHover={{ scale: 1.15, y: -10 }}
-            >
-              <div className="bubble-icon">
-                <Hotel size={18} />
+                <Hotel size={16} />
               </div>
               <div className="bubble-content">
                 <div className="bubble-text">Multi-alojamiento</div>
@@ -259,376 +199,252 @@ const Hero: React.FC = () => {
             </motion.div>
           </ParallaxElement>
 
-          {/* Burbuja 6 - Inferior derecha (con parallax) */}
-          <ParallaxElement speed={0.22} direction="down" className="bubble-parallax bubble-6">
+          {/* Burbuja 4 - Integraciones */}
+          <ParallaxElement speed={0.22} direction="down" className="bubble-parallax bubble-4">
             <motion.div
-              className="floating-bubble"
-              initial={{ opacity: 0, scale: 0.3, x: 50, y: 60 }}
+              className="floating-bubble bubble-size-md bubble-featured"
+              initial={{ opacity: 0, scale: 0.3, x: 65, y: 10 }}
               animate={{
                 opacity: 1,
                 scale: 1,
                 x: 0,
                 y: [0, 6, 0],
-                rotate: [0, -1, 1, 0]
+                rotate: [0, -1.5, 1.5, 0]
+              }}
+              transition={{
+                delay: 1.8,
+                duration: 1.2,
+                rotate: { duration: 6.5, repeat: Infinity, ease: "easeInOut" },
+                y: { duration: 4.2, repeat: Infinity, ease: "easeInOut" }
+              }}
+              whileHover={{ scale: 1.15, y: -10, boxShadow: "0 12px 35px rgba(212, 175, 55, 0.4)" }}
+            >
+              <div className="bubble-icon bubble-icon-featured">
+                <Globe size={18} />
+              </div>
+              <div className="bubble-content">
+                <div className="bubble-text">Booking & Airbnb</div>
+              </div>
+            </motion.div>
+          </ParallaxElement>
+
+          {/* Burbuja 5 - Facturación */}
+          <ParallaxElement speed={0.15} direction="up" className="bubble-parallax bubble-5">
+            <motion.div
+              className="floating-bubble bubble-size-sm"
+              initial={{ opacity: 0, scale: 0.3, x: -45, y: 50 }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                x: 0,
+                y: [0, -4, 0],
+                rotate: [0, 1, -1, 0]
+              }}
+              transition={{
+                delay: 2.0,
+                duration: 1.2,
+                rotate: { duration: 7, repeat: Infinity, ease: "easeInOut" },
+                y: { duration: 3.8, repeat: Infinity, ease: "easeInOut" }
+              }}
+              whileHover={{ scale: 1.12, y: -8 }}
+            >
+              <div className="bubble-icon">
+                <Receipt size={16} />
+              </div>
+              <div className="bubble-content">
+                <div className="bubble-text">Facturación AFIP</div>
+              </div>
+            </motion.div>
+          </ParallaxElement>
+
+          {/* Burbuja 6 - Reportes */}
+          <ParallaxElement speed={0.2} direction="down" className="bubble-parallax bubble-6">
+            <motion.div
+              className="floating-bubble bubble-size-md"
+              initial={{ opacity: 0, scale: 0.3, x: 55, y: 45 }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                x: 0,
+                y: [0, 5, 0],
+                rotate: [0, -1.2, 1.2, 0]
               }}
               transition={{
                 delay: 2.2,
                 duration: 1.2,
                 rotate: { duration: 8, repeat: Infinity, ease: "easeInOut" },
-                y: { duration: 4.2, repeat: Infinity, ease: "easeInOut" }
+                y: { duration: 4.5, repeat: Infinity, ease: "easeInOut" }
               }}
-              whileHover={{ scale: 1.15, y: -10 }}
+              whileHover={{ scale: 1.12, y: -8 }}
             >
               <div className="bubble-icon">
-                <Calendar size={18} />
+                <Activity size={17} />
               </div>
               <div className="bubble-content">
-                <div className="bubble-text">Calendario visual</div>
+                <div className="bubble-text">Reportes</div>
               </div>
             </motion.div>
           </ParallaxElement>
 
-          {/* Burbujas adicionales para mejor distribución */}
+          {/* Burbuja 7 - Pagos */}
           <motion.div
-            className="floating-bubble bubble-7"
-            initial={{ opacity: 0, scale: 0.3, x: -40, y: -20 }}
+            className="floating-bubble bubble-7 bubble-size-sm"
+            initial={{ opacity: 0, scale: 0.3, x: -35, y: -15 }}
             animate={{
               opacity: 1,
               scale: 1,
               x: 0,
-              y: [0, -5, 0],
-              rotate: [0, 1.5, -1.5, 0]
+              y: [0, -4, 0],
+              rotate: [0, 1.3, -1.3, 0]
             }}
             transition={{
               delay: 2.4,
               duration: 1.2,
-              rotate: { duration: 6, repeat: Infinity, ease: "easeInOut" },
-              y: { duration: 3.5, repeat: Infinity, ease: "easeInOut" }
+              rotate: { duration: 6.2, repeat: Infinity, ease: "easeInOut" },
+              y: { duration: 3.3, repeat: Infinity, ease: "easeInOut" }
             }}
-            whileHover={{ scale: 1.15, y: -10 }}
+            whileHover={{ scale: 1.12, y: -8 }}
           >
             <div className="bubble-icon">
-              <Receipt size={16} />
-            </div>
-            <div className="bubble-content">
-              <div className="bubble-text">Facturación AFIP</div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="floating-bubble bubble-8"
-            initial={{ opacity: 0, scale: 0.3, x: 40, y: -20 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              x: 0,
-              y: [0, 5, 0],
-              rotate: [0, -1.5, 1.5, 0]
-            }}
-            transition={{
-              delay: 2.6,
-              duration: 1.2,
-              rotate: { duration: 7, repeat: Infinity, ease: "easeInOut" },
-              y: { duration: 4.5, repeat: Infinity, ease: "easeInOut" }
-            }}
-            whileHover={{ scale: 1.15, y: -10 }}
-          >
-            <div className="bubble-icon">
-              <Users size={16} />
-            </div>
-            <div className="bubble-content">
-              <div className="bubble-text">Soporte local</div>
-            </div>
-          </motion.div>
-
-          {/* Burbujas adicionales para llenar espacios intermedios */}
-          <motion.div
-            className="floating-bubble bubble-9"
-            initial={{ opacity: 0, scale: 0.3, x: 30, y: 10 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              x: 0,
-              y: [0, -8, 0],
-              rotate: [0, 2, -2, 0]
-            }}
-            transition={{
-              delay: 2.8,
-              duration: 1.2,
-              rotate: { duration: 5, repeat: Infinity, ease: "easeInOut" },
-              y: { duration: 3, repeat: Infinity, ease: "easeInOut" }
-            }}
-            whileHover={{ scale: 1.15, y: -10 }}
-          >
-            <div className="bubble-icon">
-              <Wallet size={16} />
+              <Wallet size={15} />
             </div>
             <div className="bubble-content">
               <div className="bubble-text">Mercado Pago</div>
             </div>
           </motion.div>
 
+          {/* Burbuja 8 - Seguridad */}
           <motion.div
-            className="floating-bubble bubble-10"
-            initial={{ opacity: 0, scale: 0.3, x: -30, y: 30 }}
+            className="floating-bubble bubble-8 bubble-size-sm"
+            initial={{ opacity: 0, scale: 0.3, x: 38, y: -18 }}
             animate={{
               opacity: 1,
               scale: 1,
               x: 0,
-              y: [0, 6, 0],
-              rotate: [0, -1.5, 1.5, 0]
+              y: [0, 4, 0],
+              rotate: [0, -1.4, 1.4, 0]
             }}
             transition={{
-              delay: 3.0,
+              delay: 2.6,
               duration: 1.2,
-              rotate: { duration: 6, repeat: Infinity, ease: "easeInOut" },
-              y: { duration: 4, repeat: Infinity, ease: "easeInOut" }
+              rotate: { duration: 6.8, repeat: Infinity, ease: "easeInOut" },
+              y: { duration: 4.3, repeat: Infinity, ease: "easeInOut" }
             }}
-            whileHover={{ scale: 1.15, y: -10 }}
+            whileHover={{ scale: 1.12, y: -8 }}
           >
             <div className="bubble-icon">
-              <Bell size={16} />
-            </div>
-            <div className="bubble-content">
-              <div className="bubble-text">Notificaciones</div>
-            </div>
-          </motion.div>
-
-          {/* Burbujas adicionales para llenar espacios superiores */}
-          <motion.div
-            className="floating-bubble bubble-11"
-            initial={{ opacity: 0, scale: 0.3, x: 45, y: -10 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              x: 0,
-              y: [0, -6, 0],
-              rotate: [0, 1.8, -1.8, 0]
-            }}
-            transition={{
-              delay: 3.2,
-              duration: 1.2,
-              rotate: { duration: 7, repeat: Infinity, ease: "easeInOut" },
-              y: { duration: 3.5, repeat: Infinity, ease: "easeInOut" }
-            }}
-            whileHover={{ scale: 1.15, y: -10 }}
-          >
-            <div className="bubble-icon">
-              <Lock size={16} />
+              <Lock size={15} />
             </div>
             <div className="bubble-content">
               <div className="bubble-text">Seguro</div>
             </div>
           </motion.div>
 
+          {/* Burbuja 9 - Notificaciones */}
           <motion.div
-            className="floating-bubble bubble-12"
-            initial={{ opacity: 0, scale: 0.3, x: -45, y: 25 }}
+            className="floating-bubble bubble-9 bubble-size-sm"
+            initial={{ opacity: 0, scale: 0.3, x: 25, y: 8 }}
             animate={{
               opacity: 1,
               scale: 1,
               x: 0,
-              y: [0, 8, 0],
-              rotate: [0, -2.2, 2.2, 0]
+              y: [0, -5, 0],
+              rotate: [0, 1.6, -1.6, 0]
             }}
             transition={{
-              delay: 3.4,
+              delay: 2.8,
               duration: 1.2,
-              rotate: { duration: 8, repeat: Infinity, ease: "easeInOut" },
-              y: { duration: 4.5, repeat: Infinity, ease: "easeInOut" }
+              rotate: { duration: 5.5, repeat: Infinity, ease: "easeInOut" },
+              y: { duration: 3.4, repeat: Infinity, ease: "easeInOut" }
             }}
-            whileHover={{ scale: 1.15, y: -10 }}
+            whileHover={{ scale: 1.12, y: -8 }}
           >
             <div className="bubble-icon">
-              <Zap size={16} />
+              <Bell size={15} />
+            </div>
+            <div className="bubble-content">
+              <div className="bubble-text">Notificaciones</div>
+            </div>
+          </motion.div>
+
+          {/* Burbuja 10 - Velocidad */}
+          <motion.div
+            className="floating-bubble bubble-10 bubble-size-sm"
+            initial={{ opacity: 0, scale: 0.3, x: -28, y: 28 }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
+              y: [0, 5, 0],
+              rotate: [0, -1.4, 1.4, 0]
+            }}
+            transition={{
+              delay: 3.0,
+              duration: 1.2,
+              rotate: { duration: 6.3, repeat: Infinity, ease: "easeInOut" },
+              y: { duration: 4.1, repeat: Infinity, ease: "easeInOut" }
+            }}
+            whileHover={{ scale: 1.12, y: -8 }}
+          >
+            <div className="bubble-icon">
+              <Zap size={15} />
             </div>
             <div className="bubble-content">
               <div className="bubble-text">Rápido</div>
             </div>
           </motion.div>
 
-          {/* Burbujas adicionales para llenar espacios laterales */}
+          {/* Burbuja 11 - Google Calendar */}
           <motion.div
-            className="floating-bubble bubble-13"
-            initial={{ opacity: 0, scale: 0.3, x: 55, y: 5 }}
+            className="floating-bubble bubble-11 bubble-size-md bubble-featured"
+            initial={{ opacity: 0, scale: 0.3, x: 42, y: 32 }}
             animate={{
               opacity: 1,
               scale: 1,
               x: 0,
-              y: [0, -7, 0],
-              rotate: [0, 2.5, -2.5, 0]
+              y: [0, -6, 0],
+              rotate: [0, 1.7, -1.7, 0]
             }}
             transition={{
-              delay: 3.6,
+              delay: 3.2,
               duration: 1.2,
-              rotate: { duration: 6, repeat: Infinity, ease: "easeInOut" },
-              y: { duration: 3.2, repeat: Infinity, ease: "easeInOut" }
+              rotate: { duration: 7.2, repeat: Infinity, ease: "easeInOut" },
+              y: { duration: 3.7, repeat: Infinity, ease: "easeInOut" }
             }}
-            whileHover={{ scale: 1.15, y: -10 }}
+            whileHover={{ scale: 1.15, y: -10, boxShadow: "0 12px 35px rgba(212, 175, 55, 0.4)" }}
           >
-            <div className="bubble-icon">
-              <DollarSign size={16} />
-            </div>
-            <div className="bubble-content">
-              <div className="bubble-text">Económico</div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="floating-bubble bubble-14"
-            initial={{ opacity: 0, scale: 0.3, x: -55, y: 40 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              x: 0,
-              y: [0, 9, 0],
-              rotate: [0, -2.8, 2.8, 0]
-            }}
-            transition={{
-              delay: 3.8,
-              duration: 1.2,
-              rotate: { duration: 7, repeat: Infinity, ease: "easeInOut" },
-              y: { duration: 4.8, repeat: Infinity, ease: "easeInOut" }
-            }}
-            whileHover={{ scale: 1.15, y: -10 }}
-          >
-            <div className="bubble-icon">
-              <TrendingUp size={16} />
-            </div>
-            <div className="bubble-content">
-              <div className="bubble-text">Escalable</div>
-            </div>
-          </motion.div>
-
-          {/* Burbujas adicionales para llenar espacios superiores */}
-          <motion.div
-            className="floating-bubble bubble-15"
-            initial={{ opacity: 0, scale: 0.3, x: 65, y: -5 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              x: 0,
-              y: [0, -8, 0],
-              rotate: [0, 3, -3, 0]
-            }}
-            transition={{
-              delay: 4.0,
-              duration: 1.2,
-              rotate: { duration: 5, repeat: Infinity, ease: "easeInOut" },
-              y: { duration: 3, repeat: Infinity, ease: "easeInOut" }
-            }}
-            whileHover={{ scale: 1.15, y: -10 }}
-          >
-            <div className="bubble-icon">
-              <Activity size={16} />
-            </div>
-            <div className="bubble-content">
-              <div className="bubble-text">Reportes</div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="floating-bubble bubble-16"
-            initial={{ opacity: 0, scale: 0.3, x: -65, y: 45 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              x: 0,
-              y: [0, 10, 0],
-              rotate: [0, -3, 3, 0]
-            }}
-            transition={{
-              delay: 4.2,
-              duration: 1.2,
-              rotate: { duration: 6, repeat: Infinity, ease: "easeInOut" },
-              y: { duration: 5, repeat: Infinity, ease: "easeInOut" }
-            }}
-            whileHover={{ scale: 1.15, y: -10 }}
-          >
-            <div className="bubble-icon">
-              <CheckCircle size={16} />
-            </div>
-            <div className="bubble-content">
-              <div className="bubble-text">Todo incluido</div>
-            </div>
-          </motion.div>
-
-          {/* Nuevas burbujas para destacar módulos nuevos */}
-          <motion.div
-            className="floating-bubble bubble-17"
-            initial={{ opacity: 0, scale: 0.3, x: 70, y: -15 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              x: 0,
-              y: [0, -9, 0],
-              rotate: [0, 3.5, -3.5, 0]
-            }}
-            transition={{
-              delay: 4.4,
-              duration: 1.2,
-              rotate: { duration: 5.5, repeat: Infinity, ease: "easeInOut" },
-              y: { duration: 3.3, repeat: Infinity, ease: "easeInOut" }
-            }}
-            whileHover={{ scale: 1.2, y: -15, boxShadow: "0 10px 30px rgba(212, 175, 55, 0.4)" }}
-          >
-            <div className="bubble-icon" style={{ background: 'linear-gradient(135deg, #d4af37, #f4d03f)' }}>
-              <BarChart3 size={18} />
-            </div>
-            <div className="bubble-content">
-              <div className="bubble-text">Dashboard</div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="floating-bubble bubble-18"
-            initial={{ opacity: 0, scale: 0.3, x: -70, y: 15 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              x: 0,
-              y: [0, 11, 0],
-              rotate: [0, -3.5, 3.5, 0]
-            }}
-            transition={{
-              delay: 4.6,
-              duration: 1.2,
-              rotate: { duration: 6.5, repeat: Infinity, ease: "easeInOut" },
-              y: { duration: 5.2, repeat: Infinity, ease: "easeInOut" }
-            }}
-            whileHover={{ scale: 1.2, y: -15, boxShadow: "0 10px 30px rgba(212, 175, 55, 0.4)" }}
-          >
-            <div className="bubble-icon" style={{ background: 'linear-gradient(135deg, #d4af37, #f4d03f)' }}>
-              <Globe size={18} />
-            </div>
-            <div className="bubble-content">
-              <div className="bubble-text">Booking & Airbnb</div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="floating-bubble bubble-19"
-            initial={{ opacity: 0, scale: 0.3, x: 75, y: 20 }}
-            animate={{
-              opacity: 1,
-              scale: 1,
-              x: 0,
-              y: [0, -12, 0],
-              rotate: [0, 4, -4, 0]
-            }}
-            transition={{
-              delay: 4.8,
-              duration: 1.2,
-              rotate: { duration: 7, repeat: Infinity, ease: "easeInOut" },
-              y: { duration: 3.8, repeat: Infinity, ease: "easeInOut" }
-            }}
-            whileHover={{ scale: 1.2, y: -15, boxShadow: "0 10px 30px rgba(212, 175, 55, 0.4)" }}
-          >
-            <div className="bubble-icon" style={{ background: 'linear-gradient(135deg, #d4af37, #f4d03f)' }}>
-              <CalendarCheck size={18} />
+            <div className="bubble-icon bubble-icon-featured">
+              <Calendar size={18} />
             </div>
             <div className="bubble-content">
               <div className="bubble-text">Google Calendar</div>
+            </div>
+          </motion.div>
+
+          {/* Burbuja 12 - Soporte */}
+          <motion.div
+            className="floating-bubble bubble-12 bubble-size-sm"
+            initial={{ opacity: 0, scale: 0.3, x: -32, y: 35 }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              x: 0,
+              y: [0, 6, 0],
+              rotate: [0, -1.8, 1.8, 0]
+            }}
+            transition={{
+              delay: 3.4,
+              duration: 1.2,
+              rotate: { duration: 7.8, repeat: Infinity, ease: "easeInOut" },
+              y: { duration: 4.6, repeat: Infinity, ease: "easeInOut" }
+            }}
+            whileHover={{ scale: 1.12, y: -8 }}
+          >
+            <div className="bubble-icon">
+              <Users size={15} />
+            </div>
+            <div className="bubble-content">
+              <div className="bubble-text">Soporte local</div>
             </div>
           </motion.div>
         </div>

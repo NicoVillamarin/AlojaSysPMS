@@ -9,23 +9,23 @@ const About: React.FC = () => {
   const values = [
     {
       icon: <MapPin size={32} />,
-      title: "Hecho en Argentina",
-      description: "Desarrollado en Mar del Plata por un equipo que conoce el mercado hotelero local"
+      title: "100% Argentino",
+      description: "Desarrollado en Mar del Plata por expertos en hotelería local"
     },
     {
       icon: <Users size={32} />,
-      title: "Soporte Local",
-      description: "Atención personalizada en español, cuando lo necesites"
+      title: "Soporte en Español",
+      description: "Atención personalizada en tu idioma y zona horaria"
     },
     {
       icon: <Heart size={32} />,
-      title: "Enfocado en Alojamientos",
-      description: "Creado específicamente para las necesidades reales de hoteles, hostels y alojamientos argentinos"
+      title: "Diseñado para Alojamientos",
+      description: "Creado específicamente para hoteles, hostels y alojamientos"
     },
     {
       icon: <Zap size={32} />,
-      title: "Simple y Rápido",
-      description: "Sin complicaciones. Configuración rápida y uso intuitivo desde el primer día"
+      title: "Fácil y Rápido",
+      description: "Configuración rápida y uso intuitivo desde el día 1"
     }
   ]
 
@@ -92,9 +92,9 @@ const About: React.FC = () => {
               animate={isInView ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              AlojaSys nació en Mar del Plata, Buenos Aires, Argentina, de la necesidad real de 
-              hoteles, hostels y alojamientos que buscan una solución moderna, simple y económica. 
-              Desarrollado por un equipo local que conoce las particularidades del mercado de alojamientos argentino.
+              AlojaSys nació en Mar del Plata de la necesidad real de alojamientos que buscan 
+              una solución moderna, simple y económica. Desarrollado por un equipo local que 
+              conoce el mercado argentino.
             </motion.p>
             
             <motion.p 
@@ -103,9 +103,8 @@ const About: React.FC = () => {
               animate={isInView ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
             >
-              Creemos que gestionar un alojamiento no debería ser complicado. Por eso, AlojaSys está 
-              diseñado para ser intuitivo desde el primer día, sin necesidad de ser experto en 
-              tecnología. Nuestro objetivo es que tu alojamiento funcione mejor, más simple y más eficiente.
+              Creemos que gestionar un alojamiento no debería ser complicado. AlojaSys es 
+              intuitivo desde el primer día, sin necesidad de ser experto en tecnología.
             </motion.p>
           </motion.div>
           

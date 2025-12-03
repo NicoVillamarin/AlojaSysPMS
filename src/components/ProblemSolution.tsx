@@ -11,8 +11,8 @@ const ProblemSolution: React.FC = () => {
   const problems = [
     {
       icon: <AlertTriangle size={24} />,
-      title: "Sistemas complicados",
-      description: "PMS extranjeros difíciles de usar y configurar",
+      title: "Sistemas complejos",
+      description: "PMS difíciles de usar y configurar",
       color: "text-red-500"
     },
     {
@@ -23,14 +23,14 @@ const ProblemSolution: React.FC = () => {
     },
     {
       icon: <Clock size={24} />,
-      title: "Setup lento",
-      description: "Meses para configurar y capacitar al personal",
+      title: "Implementación lenta",
+      description: "Meses de configuración y capacitación",
       color: "text-red-500"
     },
     {
       icon: <Users size={24} />,
-      title: "Soporte lejano",
-      description: "Atención en inglés y horarios extranjeros",
+      title: "Soporte limitado",
+      description: "Atención en otros idiomas y zonas horarias",
       color: "text-red-500"
     }
   ]
@@ -38,20 +38,20 @@ const ProblemSolution: React.FC = () => {
   const solutions = [
     {
       icon: <CheckCircle size={24} />,
-      title: "Interfaz intuitiva",
-      description: "Diseñado para ser fácil de usar desde el primer día",
+      title: "Fácil de usar",
+      description: "Intuitivo desde el primer día",
       color: "text-green-500"
     },
     {
       icon: <DollarSign size={24} />,
-      title: "Precio justo",
-      description: "Costos transparentes en pesos argentinos",
+      title: "Precio transparente",
+      description: "Costos claros en pesos argentinos",
       color: "text-green-500"
     },
     {
       icon: <Zap size={24} />,
-      title: "Setup rápido",
-      description: "Configuración completa en 1 día",
+      title: "Implementación rápida",
+      description: "Listo en 1 día",
       color: "text-green-500"
     },
     {
@@ -103,11 +103,10 @@ const ProblemSolution: React.FC = () => {
             variants={itemVariants}
           >
             <h2 className="problem-solution-title">
-              ¿Estás cansado de los PMS complicados?
+              ¿Cansado de sistemas complicados?
             </h2>
             <p className="problem-solution-subtitle">
-              Conocemos los problemas que enfrentan hoteles, hostels y alojamientos argentinos. 
-              Por eso creamos AlojaSys.
+              Conocemos los desafíos de los alojamientos argentinos. Por eso creamos AlojaSys.
             </p>
           </motion.div>
 
@@ -197,8 +196,7 @@ const ProblemSolution: React.FC = () => {
           >
             <h3 className="cta-title">¿Listo para cambiar?</h3>
             <p className="cta-description">
-              Dejá atrás los sistemas complicados y costosos. 
-              AlojaSys es la solución que tu alojamiento necesita.
+              Cambia a un sistema moderno, fácil y hecho para Argentina.
             </p>
             <motion.button
               className="btn btn-primary cta-button"

@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Hotel, Calendar, CreditCard, BarChart3, Users, Settings, DollarSign, FileText, Globe, CalendarCheck, Sparkles } from 'lucide-react'
+import { Hotel, Calendar, CreditCard, BarChart3, Users, Settings, DollarSign, FileText, Globe, CalendarCheck, Sparkles, MessageCircle } from 'lucide-react'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
 
 const Modules: React.FC = () => {
@@ -84,6 +84,12 @@ const Modules: React.FC = () => {
       title: "Gestión de Limpieza (Housekeeping)",
       description: "Sistema completo de gestión de tareas de limpieza y mantenimiento con asignación automática de personal y checklists personalizables.",
       features: ["Asignación automática de personal", "Generación automática de tareas", "Checklists personalizables", "Seguimiento en tiempo real", "Gestión de zonas y turnos"]
+    },
+    {
+      icon: <MessageCircle size={40} />,
+      title: "Chatbot WhatsApp",
+      description: "Recibe y gestiona reservas directamente por WhatsApp con un chatbot inteligente que guía a los clientes paso a paso.",
+      features: ["Chatbot de reservas automático", "Flujo guiado interactivo", "Consulta de disponibilidad en tiempo real", "Creación automática de reservas", "Notificaciones instantáneas al hotel"]
     }
   ]
 
