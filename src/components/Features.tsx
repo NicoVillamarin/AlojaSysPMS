@@ -1,13 +1,63 @@
-import React, { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Hotel, Calendar, CreditCard, BarChart3, Users, FileText, Globe, CalendarCheck, Map, Sparkles, MessageCircle } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Hotel, Calendar, CreditCard, BarChart3, Users, FileText, Globe, CalendarCheck, Map, Sparkles, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
 import SystemMapModal from './SystemMap'
+import capUno from '../assets/img/capUno.png'
+import capDos from '../assets/img/capDos.png'
+import CapTres from '../assets/img/CapTres.png'
+import captCuatro from '../assets/img/captCuatro.png'
+import captCingo from '../assets/img/captCingo.png'
 
 const Features: React.FC = () => {
   const { ref } = useScrollAnimation({ once: false }) // Se revierte al hacer scroll
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [isMapModalOpen, setIsMapModalOpen] = useState(false)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+
+  const showcaseImages = [
+    { id: 1, image: capUno, title: 'Dashboard Principal' },
+    { id: 2, image: capDos, title: 'Gestión de Reservas' },
+    { id: 3, image: CapTres, title: 'Calendario Interactivo' },
+    { id: 4, image: captCuatro, title: 'Reportes y Análisis' },
+    { id: 5, image: captCingo, title: 'Configuración' }
+  ]
+
+  // Auto-play del carrusel
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % showcaseImages.length)
+    }, 5000) // Cambia cada 5 segundos
+
+    return () => clearInterval(interval)
+  }, [showcaseImages.length])
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % showcaseImages.length)
+  }
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + showcaseImages.length) % showcaseImages.length)
+  }
+
+  const goToImage = (index: number) => {
+    setCurrentImageIndex(index)
+  }
+
+  const imageVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 1000 : -1000,
+      opacity: 0
+    }),
+    center: {
+      x: 0,
+      opacity: 1
+    },
+    exit: (direction: number) => ({
+      x: direction < 0 ? 1000 : -1000,
+      opacity: 0
+    })
+  }
 
   // Categorías principales
   const categories = [
@@ -159,6 +209,96 @@ const Features: React.FC = () => {
             <Map size={20} />
             Ver Mapa y Estructura del Sistema
           </motion.button>
+        </motion.div>
+
+        {/* Notebook Showcase */}
+        <motion.div
+          className="features-showcase"
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, amount: 0.2 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+        >
+          <div className="features-laptop-container">
+            <div className="features-laptop-3d">
+              {/* Bisagra */}
+              <div className="features-laptop-hinge"></div>
+              
+              {/* Pantalla */}
+              <div className="features-laptop-screen-wrapper">
+                <div className="features-laptop-screen-frame">
+                  <div className="features-laptop-screen-bezel">
+                    <div className="features-laptop-camera"></div>
+                    <div className="features-laptop-screen-content">
+                      <AnimatePresence mode="wait" custom={currentImageIndex}>
+                        <motion.img
+                          key={currentImageIndex}
+                          src={showcaseImages[currentImageIndex].image}
+                          alt={showcaseImages[currentImageIndex].title}
+                          className="features-laptop-screen-image"
+                          custom={currentImageIndex}
+                          variants={imageVariants}
+                          initial="enter"
+                          animate="center"
+                          exit="exit"
+                          transition={{
+                            x: { type: "spring", stiffness: 300, damping: 30 },
+                            opacity: { duration: 0.2 }
+                          }}
+                        />
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Base del laptop */}
+              <div className="features-laptop-base-wrapper">
+                <div className="features-laptop-base">
+                  <div className="features-laptop-keyboard-area">
+                    <div className="features-laptop-keyboard-keys">
+                      {Array.from({ length: 56 }).map((_, i) => (
+                        <div key={i} className="features-laptop-key"></div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="features-laptop-trackpad-area">
+                    <div className="features-laptop-trackpad"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Controles del carrusel */}
+            <div className="features-carousel-controls">
+              <button 
+                className="features-carousel-btn features-carousel-btn-prev"
+                onClick={prevImage}
+                aria-label="Imagen anterior"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              
+              <div className="features-carousel-indicators">
+                {showcaseImages.map((_, index) => (
+                  <button
+                    key={index}
+                    className={`features-carousel-indicator ${index === currentImageIndex ? 'active' : ''}`}
+                    onClick={() => goToImage(index)}
+                    aria-label={`Ir a imagen ${index + 1}`}
+                  />
+                ))}
+              </div>
+              
+              <button 
+                className="features-carousel-btn features-carousel-btn-next"
+                onClick={nextImage}
+                aria-label="Siguiente imagen"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          </div>
         </motion.div>
 
         {/* Filtros por categoría */}

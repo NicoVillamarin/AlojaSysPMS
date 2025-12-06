@@ -667,6 +667,436 @@ body {
   background: var(--bg-secondary);
 }
 
+/* Notebook Showcase dentro de Features */
+.features-showcase {
+  margin: 3rem 0 4rem;
+  display: flex;
+  justify-content: center;
+}
+
+.features-laptop-container {
+  position: relative;
+  width: 100%;
+  max-width: 550px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.features-laptop-3d {
+  position: relative;
+  width: 100%;
+  max-width: 550px;
+  transform-style: preserve-3d;
+  transform: perspective(2000px) rotateX(25deg) rotateY(-8deg);
+  transition: transform 0.5s ease;
+}
+
+.features-laptop-3d:hover {
+  transform: perspective(2000px) rotateX(23deg) rotateY(-6deg);
+}
+
+.features-laptop-hinge {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 3px;
+  background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 50%, #1a1a1a 100%);
+  border-radius: 1.5px 1.5px 0 0;
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.4),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.05);
+  z-index: 10;
+}
+
+.features-laptop-screen-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 46%;
+  background: #0a0a0a;
+  border-radius: 6px 6px 0 0;
+  box-shadow: 
+    0 25px 70px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(0, 0, 0, 0.3);
+  transform-origin: bottom center;
+  transform: rotateX(-25deg);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+}
+
+.features-laptop-screen-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+.features-laptop-screen-bezel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 
+    inset 0 0 20px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.features-laptop-camera {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: #dc2626;
+  border-radius: 50%;
+  box-shadow: 
+    inset 0 0 2px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(0, 0, 0, 0.3);
+  z-index: 5;
+}
+
+.features-laptop-camera::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 4px;
+  background: #000;
+  border-radius: 50%;
+}
+
+.features-laptop-screen-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  background: #fff;
+}
+
+.features-laptop-screen-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center center;
+  display: block;
+  background: #fff;
+}
+
+.features-laptop-base-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 45%;
+  margin-top: -2.5%;
+  transform-origin: top center;
+  transform-style: preserve-3d;
+  transform: rotateX(25deg);
+}
+
+.features-laptop-base {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 50%, #0a0a0a 100%);
+  border-radius: 0 0 6px 6px;
+  box-shadow: 
+    0 15px 50px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  padding: 3.5% 4% 4% 4%;
+  box-sizing: border-box;
+  border: 1px solid rgba(0, 0, 0, 0.5);
+}
+
+.features-laptop-keyboard-area {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2% 0 0.5% 0;
+  height: 50%;
+  background: #0a0a0a;
+  border-radius: 2px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+  position: relative;
+  z-index: 1;
+  margin-bottom: 0;
+}
+
+.features-laptop-keyboard-keys {
+  display: grid;
+  grid-template-columns: repeat(14, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 1px;
+  width: 100%;
+  max-width: 98%;
+  height: 100%;
+  padding: 2px;
+}
+
+.features-laptop-key {
+  aspect-ratio: 1.1;
+  background: linear-gradient(180deg, #1f1f1f 0%, #151515 50%, #0f0f0f 100%);
+  border-radius: 1px;
+  box-shadow: 
+    0 0.5px 1px rgba(0, 0, 0, 0.9),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -0.5px 0 rgba(0, 0, 0, 0.7);
+  border: 0.5px solid rgba(0, 0, 0, 0.7);
+  transition: all 0.1s ease;
+  position: relative;
+}
+
+.features-laptop-key::after {
+  content: '';
+  position: absolute;
+  top: 0.5px;
+  left: 0.5px;
+  right: 0.5px;
+  height: 20%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+  border-radius: 1px 1px 0 0;
+  pointer-events: none;
+}
+
+.features-laptop-trackpad-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0.5% 0 2% 0;
+  margin-top: 11%;
+  height: 25%;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.features-laptop-trackpad {
+  width: 25%;
+  max-width: 150px;
+  aspect-ratio: 1.8;
+  background: linear-gradient(180deg, #151515 0%, #0f0f0f 100%);
+  border-radius: 4px;
+  box-shadow: 
+    inset 0 2px 3px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    0 1px 1px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+.features-laptop-trackpad::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70%;
+  height: 70%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+.features-carousel-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.features-carousel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: white;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  color: var(--primary-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.features-carousel-btn:hover {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
+  transform: scale(1.1);
+  box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+}
+
+.features-carousel-indicators {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.features-carousel-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border-color);
+  border: 2px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.features-carousel-indicator:hover {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  transform: scale(1.2);
+}
+
+.features-carousel-indicator.active {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  width: 28px;
+  border-radius: 5px;
+}
+
+.features-image-title {
+  text-align: center;
+}
+
+.features-image-title h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.features-laptop-3d::after {
+  content: '';
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 65%;
+  height: 30px;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.25) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(15px);
+  z-index: -1;
+}
+
+@media (max-width: 768px) {
+  .features-showcase {
+    margin: 2rem 0 3rem;
+  }
+
+  .features-laptop-3d {
+    transform: perspective(1500px) rotateX(22deg) rotateY(-6deg);
+    max-width: 100%;
+  }
+
+  .features-laptop-3d:hover {
+    transform: perspective(1500px) rotateX(20deg) rotateY(-4deg);
+  }
+
+  .features-laptop-screen-wrapper {
+    padding-bottom: 60%;
+    transform: rotateX(-22deg);
+  }
+
+  .features-laptop-base-wrapper {
+    padding-bottom: 32%;
+  }
+
+  .features-laptop-keyboard-keys {
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+  }
+
+  .features-carousel-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .features-image-title h3 {
+    font-size: 1.125rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .features-laptop-3d {
+    transform: perspective(1200px) rotateX(20deg) rotateY(-5deg);
+  }
+
+  .features-laptop-3d:hover {
+    transform: perspective(1200px) rotateX(18deg) rotateY(-3deg);
+  }
+
+  .features-laptop-screen-wrapper {
+    padding-bottom: 58%;
+    transform: rotateX(-20deg);
+  }
+
+  .features-laptop-base-wrapper {
+    padding-bottom: 30%;
+  }
+
+  .features-laptop-keyboard-keys {
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+  }
+
+  .features-laptop-3d:hover {
+    transform: rotate(0deg);
+  }
+
+  .features-laptop-screen-wrapper {
+    padding-bottom: 58%;
+    transform: none;
+  }
+
+  .features-laptop-base-wrapper {
+    padding-bottom: 9%;
+  }
+
+  .features-carousel-controls {
+    gap: 1rem;
+  }
+
+  .features-carousel-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .features-carousel-indicator {
+    width: 8px;
+    height: 8px;
+  }
+
+  .features-carousel-indicator.active {
+    width: 24px;
+  }
+
+  .features-image-title h3 {
+    font-size: 1rem;
+  }
+}
+
 .features-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -4192,6 +4622,459 @@ body {
 
   .pricing-feature {
     font-size: 0.875rem;
+  }
+}
+
+/* ===== LAPTOPS SHOWCASE SECTION ===== */
+.laptops-showcase {
+  padding: 6rem 0;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.laptops-showcase::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="%23cbd5e1" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+  opacity: 0.3;
+  z-index: 0;
+}
+
+.laptops-showcase-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.laptops-showcase-header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.laptops-showcase-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.laptops-showcase-subtitle {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Contenedor principal de la notebook */
+.laptop-showcase-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  perspective: 2000px;
+  perspective-origin: center center;
+  padding: 3rem 0;
+}
+
+.laptop-container {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+/* Notebook 3D realista */
+.laptop-3d {
+  position: relative;
+  width: 100%;
+  max-width: 800px;
+  transform-style: preserve-3d;
+  transform: perspective(2000px) rotateX(5deg) rotateY(-5deg);
+  transition: transform 0.5s ease;
+}
+
+.laptop-3d:hover {
+  transform: perspective(2000px) rotateX(2deg) rotateY(-2deg);
+}
+
+/* Bisagra */
+.laptop-hinge {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 8px;
+  background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 50%, #1a1a1a 100%);
+  border-radius: 4px 4px 0 0;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  z-index: 10;
+}
+
+/* Pantalla */
+.laptop-screen-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 62.5%; /* Ratio 16:10 */
+  background: #000;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    0 0 0 2px #1a1a1a,
+    inset 0 0 20px rgba(0, 0, 0, 0.5);
+  transform-origin: bottom center;
+  transform: rotateX(-25deg);
+}
+
+.laptop-screen-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.laptop-screen-bezel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #0a0a0a;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 
+    inset 0 0 30px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Cámara web */
+.laptop-camera {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: #1a1a1a;
+  border-radius: 50%;
+  box-shadow: 
+    inset 0 0 4px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  z-index: 5;
+}
+
+.laptop-camera::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 4px;
+  background: #333;
+  border-radius: 50%;
+}
+
+/* Contenido de la pantalla */
+.laptop-screen-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  background: #fff;
+}
+
+.laptop-screen-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Base del laptop */
+.laptop-base-wrapper {
+  position: relative;
+  width: 100%;
+  padding-bottom: 20%;
+  margin-top: -2%;
+  transform-origin: top center;
+}
+
+.laptop-base {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 50%, #0f0f0f 100%);
+  border-radius: 0 0 8px 8px;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.5),
+    0 0 0 2px #1a1a1a,
+    inset 0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 -2px 4px rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5% 2%;
+  box-sizing: border-box;
+}
+
+/* Área del teclado */
+.laptop-keyboard-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1% 0;
+}
+
+.laptop-keyboard-keys {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+  width: 100%;
+  max-width: 90%;
+}
+
+.laptop-key {
+  aspect-ratio: 1.2;
+  background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
+  border-radius: 2px;
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.3);
+}
+
+/* Trackpad */
+.laptop-trackpad-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1% 0;
+  margin-top: 1%;
+}
+
+.laptop-trackpad {
+  width: 30%;
+  max-width: 200px;
+  aspect-ratio: 1.6;
+  background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
+  border-radius: 4px;
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.5);
+}
+
+/* Controles del carrusel */
+.laptop-carousel-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.carousel-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  background: white;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  color: var(--primary-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.carousel-btn:hover {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);
+}
+
+.carousel-btn:active {
+  transform: scale(0.95);
+}
+
+.carousel-indicators {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.carousel-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--border-color);
+  border: 2px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.carousel-indicator:hover {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  transform: scale(1.2);
+}
+
+.carousel-indicator.active {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  width: 32px;
+  border-radius: 6px;
+}
+
+/* Título de la imagen */
+.laptop-image-title {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.laptop-image-title h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.laptop-image-counter {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Sombra debajo de la notebook */
+.laptop-3d::after {
+  content: '';
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70%;
+  height: 40px;
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(20px);
+  z-index: -1;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .laptop-3d {
+    transform: perspective(1500px) rotateX(3deg) rotateY(-3deg);
+  }
+  
+  .laptop-3d:hover {
+    transform: perspective(1500px) rotateX(1deg) rotateY(-1deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .laptops-showcase {
+    padding: 4rem 0;
+  }
+
+  .laptops-showcase-container {
+    padding: 0 1rem;
+  }
+
+  .laptops-showcase-title {
+    font-size: 2rem;
+  }
+
+  .laptops-showcase-subtitle {
+    font-size: 1.125rem;
+  }
+
+  .laptop-3d {
+    transform: perspective(1200px) rotateX(2deg);
+    max-width: 100%;
+  }
+
+  .laptop-3d:hover {
+    transform: perspective(1200px) rotateX(1deg);
+  }
+
+  .laptop-screen-wrapper {
+    padding-bottom: 60%;
+  }
+
+  .carousel-btn {
+    width: 45px;
+    height: 45px;
+  }
+
+  .laptop-image-title h3 {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .laptops-showcase {
+    padding: 3rem 0;
+  }
+
+  .laptops-showcase-title {
+    font-size: 1.75rem;
+  }
+
+  .laptops-showcase-subtitle {
+    font-size: 1rem;
+  }
+
+  .laptop-3d {
+    transform: perspective(1000px);
+  }
+
+  .laptop-screen-wrapper {
+    padding-bottom: 58%;
+  }
+
+  .laptop-carousel-controls {
+    gap: 1rem;
+  }
+
+  .carousel-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .carousel-indicator {
+    width: 10px;
+    height: 10px;
+  }
+
+  .carousel-indicator.active {
+    width: 24px;
+  }
+
+  .laptop-image-title h3 {
+    font-size: 1.125rem;
   }
 }
 
